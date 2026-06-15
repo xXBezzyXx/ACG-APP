@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Order Board</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="auth-locked">
+  <div class="app">
+    <header class="top-bar">
+      <div>
+        <p class="small-text">Shared Orders</p>
+        <h1>Order Board</h1>
+      </div>
+      <a class="admin-link" href="index.html">App</a>
+    </header>
+
+    <main>
+      <div class="admin-card">
+        <div class="admin-card-head">
+          <h2>Orders</h2>
+          <button id="refreshOrdersBtn" class="primary-btn" type="button">Refresh</button>
+        </div>
+        <p id="orderDebug" class="admin-note"></p>
+        <div id="orderBoardList"></div>
+      </div>
+    </main>
+  </div>
+  <script src="board.js"></script>
+</body>
+</html>

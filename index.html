@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Material Order App</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="auth-locked">
+  <div class="app">
+    <section id="jobsScreen" class="screen active">
+      <header class="top-bar">
+        <div>
+          <p class="small-text">Material Ordering</p>
+          <h1 id="mainPageTitle">Jobs</h1>
+        </div>
+        <span></span>
+      </header>
+      <div class="search-box"><span>⌕</span><input id="jobSearch" type="search" placeholder="Search jobs" /></div>
+      <div id="jobList" class="job-list"></div>
+    </section>
+
+
+    <section id="jobActionScreen" class="screen">
+      <header class="top-bar center"><button class="back-btn" onclick="showScreen('jobsScreen')" type="button">‹</button><h2>Select Action</h2><span></span></header>
+      <div class="review-job-card"><div class="job-image">🏗️</div><div><h3 id="jobActionJobName">Selected Job</h3><span class="status-dot">● Active</span></div></div>
+      <div class="action-choice-grid">
+        <button id="dailyReportChoiceBtn" class="action-choice-card" type="button"><span>📝</span><strong>Daily Report</strong><small>Manpower, work performed, issues, photos</small></button>
+        <button id="materialOrderChoiceBtn" class="action-choice-card" type="button"><span>📦</span><strong>Material Order</strong><small>Request materials and email PDF</small></button>
+        <button id="rentalChoiceBtn" class="action-choice-card" type="button"><span>🚜</span><strong>Job Site Rentals</strong><small>Track conex, lull, lifts, and rental quantity</small></button>
+      </div>
+    </section>
+
+
+    <section id="rentalScreen" class="screen">
+      <header class="top-bar center"><button class="back-btn" onclick="showScreen('jobActionScreen')" type="button">‹</button><h2>Job Site Rental</h2><span></span></header>
+      <div class="daily-auto-grid">
+        <div class="daily-auto-box"><span>Job</span><strong id="rentalJob">Selected Job</strong></div>
+        <div class="daily-auto-box"><span>Requested By</span><strong id="rentalRequestedBy">Logged-in user</strong></div>
+      </div>
+
+      <div class="daily-form-card">
+        <label class="daily-label">Rental Item
+          <div id="rentalItemGrid" class="material-list rental-item-grid"></div>
+          <input id="rentalItemInput" class="daily-input" type="text" placeholder="Custom rental item" style="display:none;" />
+        </label>
+<div class="cart-preview-card rental-preview-card">
+          <div class="cart-preview-head">
+            <div>
+              <p class="small-text">Rentals</p>
+              <h3>Selected Rentals</h3>
+            </div>
+            <span id="rentalCount">0 rentals</span>
+          </div>
+          <div id="rentalPreview" class="cart-preview-empty">Nothing added yet.</div>
+        </div>
+
+        <label class="daily-label">Vendor
+          <input id="rentalVendorInput" class="daily-input" type="text" placeholder="Example: Sunbelt, United Rentals, Herc" />
+        </label>
+
+        <label class="daily-label">Notes
+          <textarea id="rentalNotesInput" class="daily-textarea" placeholder="Example: 10k lull needed for rooftop units"></textarea>
+        </label>
+
+        <button id="submitRentalBtn" class="submit-btn" type="button">Submit Rentals</button>
+      </div>
+    </section>
+
+    <section id="dailyReportScreen" class="screen">
+      <header class="top-bar center"><button class="back-btn" onclick="showScreen('jobActionScreen')" type="button">‹</button><h2>Daily Report</h2><span></span></header>
+      <div class="daily-auto-grid">
+        <div class="daily-auto-box"><span>Job</span><strong id="dailyReportJob">Selected Job</strong></div>
+        <div class="daily-auto-box"><span>Date / Time</span><strong id="dailyReportDateTime">Auto</strong></div>
+        <div class="daily-auto-box"><span>Submitted By</span><strong id="dailyReportSubmittedBy">Login User</strong></div>
+      </div>
+      <label class="notes-box">Manpower Count<input id="dailyManpower" class="daily-input" type="text" placeholder="Example: 4 men / 8 hours" /></label>
+      <label class="notes-box">Work Performed Today<textarea id="dailyWorkPerformed" rows="5" placeholder="Type what was completed today..."></textarea></label>
+
+      <div class="notes-box daily-question-box">
+        <div class="daily-question-head">Delays / Issues?</div>
+        <div class="daily-toggle-row" data-daily-toggle="delays">
+          <button id="dailyDelaysNo" class="daily-toggle-btn active" type="button" data-value="No">No</button>
+          <button id="dailyDelaysYes" class="daily-toggle-btn" type="button" data-value="Yes">Yes</button>
+        </div>
+        <div id="dailyDelaysWrap" class="daily-conditional-box">
+          <textarea id="dailyDelays" rows="4" placeholder="Explain the delay or issue..."></textarea>
+        </div>
+      </div>
+
+      <div class="notes-box daily-question-box">
+        <div class="daily-question-head">Safety Issues?</div>
+        <div class="daily-toggle-row" data-daily-toggle="safety">
+          <button id="dailySafetyNo" class="daily-toggle-btn active" type="button" data-value="No">No</button>
+          <button id="dailySafetyYes" class="daily-toggle-btn" type="button" data-value="Yes">Yes</button>
+        </div>
+        <div id="dailySafetyWrap" class="daily-conditional-box">
+          <textarea id="dailySafety" rows="4" placeholder="Explain the safety issue..."></textarea>
+        </div>
+      </div>
+
+      <label class="notes-box">Photos for PDF — Max 6<input id="dailyReportPhotos" class="daily-input" type="file" accept="image/*" multiple /><small class="photo-help">On phone, this should let you choose Camera or Photo Library/Gallery.</small></label>
+      <div id="dailyPhotoList" class="photo-note">No photos selected.</div>
+      <button id="submitDailyReportBtn" class="primary-btn send" type="button">Submit Daily Report <span>✈</span></button>
+      <p class="send-note">This creates an emailed Daily Report PDF. Photos are included in the PDF only.</p>
+    </section>
+
+    <section id="orderScreen" class="screen">
+      <header class="top-bar center"><button class="back-btn" onclick="showScreen('jobsScreen')" type="button">‹</button><h2>New Order</h2><span></span></header>
+      <div class="step"><div class="step-number">1</div><div class="step-body"><p>Select Job</p><select id="selectedJob"></select></div></div>
+      <div class="step"><div class="step-number">2</div><div class="step-body"><p>Select Material</p><div id="categoryTabs" class="chips"></div></div></div>
+      <div id="materialList" class="material-list"></div>
+      <div class="cart-preview-card">
+        <div class="cart-preview-head"><span>Cart</span><strong id="cartCount">0 items</strong></div>
+        <div id="cartPreview" class="cart-preview-empty">Nothing added yet.</div>
+      </div>
+      <div id="requestedByAuto" class="auto-requester">Requested by your login</div>
+      <label class="notes-box">Additional Notes<textarea id="notes" rows="5" placeholder="If material is not listed in the app, type it here. Include size, quantity, delivery location, needed date, or any special instructions."></textarea></label>
+      <button id="reviewOrderBtn" class="primary-btn" type="button">Review Order <span>→</span></button>
+    </section>
+
+    <section id="reviewScreen" class="screen">
+      <header class="top-bar center"><button class="back-btn" onclick="showScreen('orderScreen')" type="button">‹</button><h2>Review Order</h2><span></span></header>
+      <div class="review-job-card"><div class="job-image">🏗️</div><div><h3 id="reviewJobName">Job Name</h3><span class="status-dot">● Active</span></div></div>
+      <div class="priority-review-card"><label class="review-priority-label">Add Priority<select id="reviewPrioritySelect" class="review-priority-select"><option value="Normal">Normal</option><option value="Rush">Rush</option><option value="Emergency">Emergency</option></select></label></div>
+      <div class="review-card"><h3 id="reviewCategory">Items Requested</h3><div id="reviewItems"></div></div>
+      <div class="review-card"><h3>Additional Notes</h3><p id="reviewNotes">None</p></div>
+      <div class="total-card"><span>Total Items</span><strong id="reviewTotal">0</strong></div>
+      <button id="submitEmailBtn" class="primary-btn send" type="button">Submit Order <span>✈</span></button>
+      <p class="send-note">This sends a branded PDF material form to the job contact.</p>
+    </section>
+
+    <nav class="bottom-nav">
+      <button onclick="showScreen('jobsScreen')" class="nav-btn active" data-screen="jobsScreen" type="button"><span>▣</span>Jobs</button>
+      <a href="order-board.html" class="nav-btn"><span>▤</span>Orders</a>
+      <a href="admin.html" class="nav-btn"><span>⚙</span>Admin</a>
+    </nav>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

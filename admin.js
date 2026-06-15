@@ -1,0 +1,2027 @@
+const DEFAULT_PASSWORD = "password";
+
+const DEFAULT_PDF_LETTERHEAD = {
+  leftLogo: "pdf-assets/ac-general-logo.png",
+  rightLogo: "pdf-assets/gator-100-logo.png",
+  titleLine1: "Commercial Mechanical",
+  titleLine2: "Industrial Refrigeration",
+  address: "401 Agmac Avenue, Jacksonville, FL 32254",
+  phoneFax: "Phone (904) 783-4200  Fax (904) 781-0806",
+  website: "acgeneral.net",
+  license: "CMC1250807",
+  companyName: "AC General",
+  documentTitle: "MATERIAL PROCUREMENT REQUEST",
+  footerMessage: "Thank you for using the Material Order App!"
+};
+
+const DEFAULT_SETTINGS = {
+  companyTitle: "AC General",
+  mainPageTitle: "Jobs",
+  adminPassword: DEFAULT_PASSWORD,
+  googleAppsScriptUrl: "",
+  senderEmail: "",
+  pdfLetterhead: DEFAULT_PDF_LETTERHEAD
+};
+
+const DEFAULT_JOBS = [
+  { name: "DCPS Spring Park", active: true, email: "nmcdonald@acgeneral.net" },
+  { name: "UF Jax Bay Street", active: true, email: "nmcdonald@acgeneral.net" },
+  { name: "FSDB", active: true, email: "nmcdonald@acgeneral.net" },
+  { name: "NE Park", active: true, email: "nmcdonald@acgeneral.net" },
+  { name: "SMA", active: true, email: "nmcdonald@acgeneral.net" },
+  { name: "RR", active: true, email: "nmcdonald@acgeneral.net" },
+  { name: "Other Job", active: true, email: "nmcdonald@acgeneral.net" }
+];
+
+const DEFAULT_CATEGORIES = {
+  hanging: {
+    label: "Hanging Material",
+    items: [
+      { icon: "🔩", name: "Nuts", options: ['1/4"', '3/8"', '1/2"'], units: ["Box", "Each"] },
+      { icon: "🔧", name: "Bolts", options: ["TDC Bolt"], units: ["Box", "Each"] },
+      { icon: "⚙️", name: "Washers", options: ['1/4"', '3/8"', '1/2"'], units: ["Box", "Each"] },
+      { icon: "➖", name: "All Thread", options: ['1/4"', '3/8"', '1/2"'], units: ["Bundle", "Stick", "Each"] },
+      { icon: "▰", name: "Unistrut", options: ["1-5/8 x 10 ft"], units: ["Bundle", "Stick", "Each"] },
+      { icon: "⛓️", name: "Beam Clamps", options: ['1/4"', '3/8"', '1/2"'], units: ["Box", "Each"] }
+    ]
+  },
+  fasteners: {
+    label: "Fasteners",
+    items: [
+      { icon: "🪛", name: "Self Tapping Screws", options: ['5/16"', '#14 x 5" Self-Drilling TEK 5 Curb Screw'], units: ["Box", "Each"] },
+      { icon: "🔩", name: "Tapcons", options: ['1/4" - 1"', '1/4" - 1.5"', '1/4" - 2"', '1/4" - 2.5"', '1/4" - 3"', '1/4" - 3.5"', '1/4" - 4"'], units: ["Box", "Each"] },
+      { icon: "🔧", name: "Anchors", units: ["Box", "Each"] },
+      { icon: "⚙️", name: "Fender Washers", units: ["Box", "Each"] }
+    ]
+  },
+  duct: {
+    label: "Duct Material",
+    items: [
+      { icon: "🪣", name: "Duct Seal", units: ["Bucket", "Pallet"] },
+      { icon: "◻️", name: "Foil Tape", units: ["Each", "Box"] },
+      { icon: "〰️", name: "Flex Duct", options: ['6"', '8"', '10"', '12"', '14"', '16"'], units: ["Each"] },
+      { icon: "🧱", name: "Duct Wrap", units: ["Each"] },
+      { icon: "▣", name: "Drive Cleat", units: ["Bundle", "Stick"] },
+      { icon: "▣", name: "S-Lock", units: ["Bundle", "Stick"] },
+      { icon: "▣", name: "Pittsburgh", units: ["Bundle", "Stick"] },
+      { icon: "📦", name: "Hanger Strap", units: ["Roll", "Box"] }
+    ]
+  },
+  pipe: {
+    label: "Pipe & Fittings",
+    items: [
+      { icon: "│", name: "Copper Pipe", units: ["Stick", "Bundle", "Each"] },
+      { icon: "│", name: "PVC Pipe", units: ["Stick", "Bundle", "Each"] },
+      { icon: "◯", name: "Pipe Insulation", units: ["Box", "Stick", "Each"] },
+      { icon: "🪣", name: "PVC Glue", units: ["Can", "Box", "Each"] },
+      { icon: "🪣", name: "Primer", units: ["Can", "Box", "Each"] },
+      { icon: "🔧", name: "Pipe Clamps", units: ["Box", "Each"] }
+    ]
+  },
+  tools: {
+    label: "Tools & Consumables",
+    items: [
+      { icon: "📌", name: "Pins", options: ['1"', '1-1/4"', '1-1/2"', '2"'], units: ["Box", "Each"] },
+      { icon: "💥", name: "Shots", options: ["Green", "Yellow", "Red"], units: ["Box", "Each"] },
+      { icon: "🪚", name: "Sawzall Blades", options: ["Metal", "Demo", "Fine Tooth"], units: ["Pack", "Each"] },
+      { icon: "🌀", name: "Drill Bits", options: ['1/4"', '3/8"', '1/2"'], units: ["Each", "Pack"] },
+      { icon: "⭕", name: "Hole Saws", options: ['2"', '3"', '4"', '6"'], units: ["Each"] },
+      { icon: "icons/blue-wrap.png", name: "Blue Wrap", options: ['24"', '36"'], units: ["Roll", "Each"] },
+      { icon: "🧤", name: "Gloves", units: ["Box", "Pair", "Each"] },
+      { icon: "🥽", name: "Safety Glasses", units: ["Box", "Pair", "Each"] },
+    ]
+  }
+};
+
+function copy(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function safeText(text) {
+  return String(text || "")
+    .split("&").join("&amp;")
+    .split("<").join("&lt;")
+    .split(">").join("&gt;")
+    .split('"').join("&quot;")
+    .split("'").join("&#039;");
+}
+
+const SCRIPT_URL_STORAGE_KEY = "materialOrderGoogleAppsScriptUrl";
+const SENDER_EMAIL_STORAGE_KEY = "materialOrderSenderEmail";
+
+function getSavedScriptUrl() {
+  return (localStorage.getItem(SCRIPT_URL_STORAGE_KEY) || "").trim();
+}
+
+function setSavedScriptUrl(url) {
+  localStorage.setItem(SCRIPT_URL_STORAGE_KEY, (url || "").trim());
+}
+
+function getSavedSenderEmail() {
+  return (localStorage.getItem(SENDER_EMAIL_STORAGE_KEY) || "").trim();
+}
+
+function setSavedSenderEmail(email) {
+  localStorage.setItem(SENDER_EMAIL_STORAGE_KEY, (email || "").trim());
+}
+
+function getJSON(key, fallback) {
+  try {
+    const saved = localStorage.getItem(key);
+    return saved ? JSON.parse(saved) : copy(fallback);
+  } catch {
+    return copy(fallback);
+  }
+}
+
+function setJSON(key, value) {
+  localStorage.setItem(key, JSON.stringify(value));
+}
+
+function mergePdfLetterhead(settings) {
+  return { ...DEFAULT_PDF_LETTERHEAD, ...(settings && settings.pdfLetterhead ? settings.pdfLetterhead : {}) };
+}
+
+function getSettings() {
+  const saved = getJSON("materialOrderSettings", DEFAULT_SETTINGS);
+  const directUrl = getSavedScriptUrl();
+  const directSender = getSavedSenderEmail();
+  return {
+    ...DEFAULT_SETTINGS,
+    ...saved,
+    googleAppsScriptUrl: directUrl || saved.googleAppsScriptUrl || DEFAULT_SETTINGS.googleAppsScriptUrl,
+    senderEmail: directSender || saved.senderEmail || DEFAULT_SETTINGS.senderEmail,
+    pdfLetterhead: mergePdfLetterhead(saved)
+  };
+}
+
+function saveSettings(settings) {
+  setJSON("materialOrderSettings", settings);
+}
+
+function readEmailPdfInputs() {
+  const url = (document.getElementById("googleAppsScriptUrlInputDashboard")?.value ||
+    document.getElementById("googleAppsScriptUrlInput")?.value ||
+    document.getElementById("googleAppsScriptUrlInputAppSettings")?.value || "").trim();
+  const senderEmail = (document.getElementById("senderEmailInputDashboard")?.value ||
+    document.getElementById("senderEmailInput")?.value ||
+    document.getElementById("senderEmailInputAppSettings")?.value || "").trim();
+  return { googleAppsScriptUrl: url, senderEmail };
+}
+
+async function saveEmailPdfSettings() {
+  const emailSettings = readEmailPdfInputs();
+  if (!emailSettings.googleAppsScriptUrl) {
+    alert("Paste your Google Apps Script Web App URL ending in /exec first.");
+    return;
+  }
+  if (!emailSettings.googleAppsScriptUrl.includes("script.google.com/macros/s/") || !emailSettings.googleAppsScriptUrl.endsWith("/exec")) {
+    alert("That does not look like a valid Google Apps Script Web App URL. It should end with /exec.");
+    return;
+  }
+
+  setSavedScriptUrl(emailSettings.googleAppsScriptUrl);
+  setSavedSenderEmail(emailSettings.senderEmail);
+
+  const settings = getSettings();
+  settings.googleAppsScriptUrl = emailSettings.googleAppsScriptUrl;
+  settings.senderEmail = emailSettings.senderEmail;
+  saveSettings(settings);
+  loadSettingsForm();
+
+  // Also save the URL/sender to the Google Sheet Settings tab using the URL that was just pasted.
+  // This lets you keep a record of the active Web App URL in the spreadsheet.
+  try {
+    await fetch(emailSettings.googleAppsScriptUrl, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({
+        action: "saveSettings",
+        settings: {
+          googleAppsScriptUrl: emailSettings.googleAppsScriptUrl,
+          senderEmail: emailSettings.senderEmail
+        }
+      })
+    });
+    alert("Email + PDF settings saved. The URL is saved in this browser and sent to the Google Sheet Settings tab.");
+  } catch (err) {
+    console.warn("Could not save URL to Google Sheet Settings tab.", err);
+    alert("Email + PDF settings saved in this browser. I could not confirm saving to the Google Sheet Settings tab, but the app can now use this URL on this device.");
+  }
+}
+
+function getJobs() {
+  const jobs = getJSON("materialOrderJobs", DEFAULT_JOBS);
+  return Array.isArray(jobs) ? jobs : copy(DEFAULT_JOBS);
+}
+
+function saveJobs(jobs) {
+  setJSON("materialOrderJobs", jobs);
+}
+
+function getCategories() {
+  const categories = getJSON("materialOrderCategories", DEFAULT_CATEGORIES);
+  return categories && typeof categories === "object" ? categories : copy(DEFAULT_CATEGORIES);
+}
+
+function saveCategories(categories) {
+  const cleaned = dedupeCategoryItems(categories);
+  setJSON("materialOrderCategories", cleaned);
+  syncMaterialsToGoogleSheet(cleaned);
+}
+
+
+function showAdminPage(pageId) {
+  document.getElementById("adminScreen").classList.remove("hidden-admin");
+  const materialScreen = document.getElementById("materialAdminScreen");
+  if (materialScreen) materialScreen.classList.add("hidden-admin");
+
+  document.querySelectorAll("#adminScreen .admin-page").forEach(page => {
+    page.classList.toggle("active-admin-page", page.id === pageId);
+  });
+
+  document.querySelectorAll(".admin-nav button[data-admin-page]").forEach(button => {
+    button.classList.toggle("active", button.dataset.adminPage === pageId);
+  });
+}
+
+function showAdminHome() {
+  showAdminPage("adminDashboardPage");
+}
+
+function showMaterialAdmin() {
+  document.getElementById("adminScreen").classList.add("hidden-admin");
+  document.getElementById("materialAdminScreen").classList.remove("hidden-admin");
+  renderMaterialCategorySelect();
+}
+
+function showAdmin() {
+  document.getElementById("loginScreen").classList.add("hidden-admin");
+  document.getElementById("adminScreen").classList.remove("hidden-admin");
+  const materialScreen = document.getElementById("materialAdminScreen");
+  if (materialScreen) materialScreen.classList.add("hidden-admin");
+  loadSettingsForm();
+  renderJobs();
+  renderAdminOrders();
+  showAdminPage("adminDashboardPage");
+}
+
+async function login() {
+  const usernameEl = document.getElementById("adminUsername");
+  const passwordEl = document.getElementById("adminPassword");
+  const username = usernameEl ? usernameEl.value.trim() : "";
+  const password = passwordEl ? passwordEl.value : "";
+  const errorEl = document.getElementById("loginError");
+  if (!username || !password) { if (errorEl) errorEl.textContent = "Enter username and password."; return; }
+  try {
+    const user = await loginWithSheet(username, password);
+    if (!isAdminUser(user)) { clearCurrentUser(); if (errorEl) errorEl.textContent = "This account is not an admin."; return; }
+    if (errorEl) errorEl.textContent = "";
+    sessionStorage.setItem("materialOrderAdmin", "true");
+    showAdmin();
+    addUserPill();
+    if (user.mustChangePassword) setTimeout(() => showAccountModal(true), 300);
+  } catch (err) {
+    if (errorEl) errorEl.textContent = err.message;
+  }
+}
+
+function resetAdminLogin() {
+  localStorage.removeItem("materialOrderSettings");
+
+  const settings = {
+    companyTitle: "AC General",
+    mainPageTitle: "Jobs",
+    adminPassword: DEFAULT_PASSWORD,
+    pdfLetterhead: DEFAULT_PDF_LETTERHEAD
+  };
+
+  saveSettings(settings);
+
+  const passwordInput = document.getElementById("adminPassword");
+  const error = document.getElementById("loginError");
+
+  if (passwordInput) passwordInput.value = "";
+  if (error) {
+    error.textContent = "Admin login reset. Password is now: password";
+    error.style.color = "#22c55e";
+  }
+
+  alert("Admin password reset to default.");
+}
+
+function setValueIfExists(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.value = value || "";
+}
+
+function loadSettingsForm() {
+  const settings = getSettings();
+  const pdf = mergePdfLetterhead(settings);
+  document.getElementById("companyTitleInput").value = settings.companyTitle || DEFAULT_SETTINGS.companyTitle;
+  const main = document.getElementById("mainPageTitleInput");
+  if (main) main.value = settings.mainPageTitle || "Jobs";
+  setValueIfExists("googleAppsScriptUrlInput", settings.googleAppsScriptUrl || DEFAULT_SETTINGS.googleAppsScriptUrl);
+  setValueIfExists("googleAppsScriptUrlInputDashboard", settings.googleAppsScriptUrl || DEFAULT_SETTINGS.googleAppsScriptUrl);
+  setValueIfExists("googleAppsScriptUrlInputAppSettings", settings.googleAppsScriptUrl || DEFAULT_SETTINGS.googleAppsScriptUrl);
+  setValueIfExists("senderEmailInput", settings.senderEmail || DEFAULT_SETTINGS.senderEmail);
+  setValueIfExists("senderEmailInputDashboard", settings.senderEmail || DEFAULT_SETTINGS.senderEmail);
+  setValueIfExists("senderEmailInputAppSettings", settings.senderEmail || DEFAULT_SETTINGS.senderEmail);
+
+  setValueIfExists("pdfTitleLine1Input", pdf.titleLine1);
+  setValueIfExists("pdfTitleLine2Input", pdf.titleLine2);
+  setValueIfExists("pdfAddressInput", pdf.address);
+  setValueIfExists("pdfPhoneFaxInput", pdf.phoneFax);
+  setValueIfExists("pdfWebsiteInput", pdf.website);
+  setValueIfExists("pdfLicenseInput", pdf.license);
+  setValueIfExists("pdfCompanyNameInput", pdf.companyName || settings.companyTitle);
+  setValueIfExists("pdfDocumentTitleInput", pdf.documentTitle);
+  setValueIfExists("pdfFooterMessageInput", pdf.footerMessage);
+  updateLetterheadPreview();
+}
+
+function saveCompanyTitle() {
+  const companyTitle = document.getElementById("companyTitleInput").value.trim();
+  const mainPageTitle = (document.getElementById("mainPageTitleInput")?.value || "Jobs").trim();
+
+  if (!companyTitle || !mainPageTitle) {
+    alert("Company title and main page title are required.");
+    return;
+  }
+
+  const existing = getSettings();
+  const emailSettings = readEmailPdfInputs();
+  const settings = {
+    ...existing,
+    companyTitle,
+    mainPageTitle,
+    adminPassword: existing.adminPassword || DEFAULT_PASSWORD,
+    googleAppsScriptUrl: emailSettings.googleAppsScriptUrl || existing.googleAppsScriptUrl || "",
+    senderEmail: emailSettings.senderEmail || existing.senderEmail || "",
+    pdfLetterhead: mergePdfLetterhead(existing)
+  };
+
+  saveSettings(settings);
+  loadSettingsForm();
+  alert("App settings saved.");
+}
+
+function updateLetterheadPreview() {
+  const settings = getSettings();
+  const pdf = mergePdfLetterhead(settings);
+  const left = document.getElementById("pdfLeftLogoPreview");
+  const right = document.getElementById("pdfRightLogoPreview");
+  if (left) left.src = pdf.leftLogo || DEFAULT_PDF_LETTERHEAD.leftLogo;
+  if (right) right.src = pdf.rightLogo || DEFAULT_PDF_LETTERHEAD.rightLogo;
+  const title = document.getElementById("letterheadPreviewTitle");
+  if (title) title.innerHTML = `${safeText(pdf.titleLine1 || "")}<br />${safeText(pdf.titleLine2 || "")}`;
+  const company = document.getElementById("letterheadPreviewCompany");
+  if (company) company.textContent = `${pdf.companyName || getSettings().companyTitle || "Company"} Material Order PDF`;
+}
+
+function getPdfLetterheadFromForm(existing) {
+  return {
+    ...mergePdfLetterhead({ pdfLetterhead: existing || {} }),
+    titleLine1: document.getElementById("pdfTitleLine1Input").value.trim() || DEFAULT_PDF_LETTERHEAD.titleLine1,
+    titleLine2: document.getElementById("pdfTitleLine2Input").value.trim() || DEFAULT_PDF_LETTERHEAD.titleLine2,
+    address: document.getElementById("pdfAddressInput").value.trim(),
+    phoneFax: document.getElementById("pdfPhoneFaxInput").value.trim(),
+    website: document.getElementById("pdfWebsiteInput").value.trim(),
+    license: document.getElementById("pdfLicenseInput").value.trim(),
+    companyName: document.getElementById("pdfCompanyNameInput").value.trim() || document.getElementById("companyTitleInput").value.trim() || DEFAULT_PDF_LETTERHEAD.companyName,
+    documentTitle: document.getElementById("pdfDocumentTitleInput").value.trim() || DEFAULT_PDF_LETTERHEAD.documentTitle,
+    footerMessage: document.getElementById("pdfFooterMessageInput").value.trim() || DEFAULT_PDF_LETTERHEAD.footerMessage
+  };
+}
+
+async function savePdfLetterhead() {
+  const settings = getSettings();
+  let pdf = getPdfLetterheadFromForm(settings.pdfLetterhead);
+
+  const leftInput = document.getElementById("pdfLeftLogoInput");
+  const rightInput = document.getElementById("pdfRightLogoInput");
+
+  if (leftInput && leftInput.files && leftInput.files[0]) {
+    pdf.leftLogo = await readFileAsDataUrl(leftInput.files[0]);
+  }
+
+  if (rightInput && rightInput.files && rightInput.files[0]) {
+    pdf.rightLogo = await readFileAsDataUrl(rightInput.files[0]);
+  }
+
+  settings.pdfLetterhead = pdf;
+  saveSettings(settings);
+  updateLetterheadPreview();
+  alert("PDF letterhead saved.");
+}
+
+function resetPdfLetterhead() {
+  const settings = getSettings();
+  settings.pdfLetterhead = { ...DEFAULT_PDF_LETTERHEAD };
+  saveSettings(settings);
+  loadSettingsForm();
+  alert("PDF letterhead reset to the default letterhead.");
+}
+
+function savePassword() {
+  const settings = getSettings();
+  const current = document.getElementById("currentPasswordInput").value.trim();
+  const next = document.getElementById("newPasswordInput").value.trim();
+  const confirmPassword = document.getElementById("confirmPasswordInput").value.trim();
+  const message = document.getElementById("passwordMessage");
+
+  message.classList.remove("error");
+  message.textContent = "";
+
+  if (current !== settings.adminPassword && current !== DEFAULT_PASSWORD) {
+    message.textContent = "Current password is wrong.";
+    message.classList.add("error");
+    return;
+  }
+
+  if (next.length < 4) {
+    message.textContent = "New password must be at least 4 characters.";
+    message.classList.add("error");
+    return;
+  }
+
+  if (next !== confirmPassword) {
+    message.textContent = "New passwords do not match.";
+    message.classList.add("error");
+    return;
+  }
+
+  settings.adminPassword = next;
+  saveSettings(settings);
+  document.getElementById("currentPasswordInput").value = "";
+  document.getElementById("newPasswordInput").value = "";
+  document.getElementById("confirmPasswordInput").value = "";
+  message.textContent = "Password updated.";
+}
+
+function addJob() {
+  const input = document.getElementById("newJobName");
+  const name = input.value.trim();
+  if (!name) {
+    alert("Enter a job name.");
+    return;
+  }
+  const jobs = getJobs();
+  if (jobs.some(job => job.name.toLowerCase() === name.toLowerCase())) {
+    alert("That job already exists.");
+    return;
+  }
+  jobs.push({ name, active: true, email: "nmcdonald@acgeneral.net" });
+  saveJobs(jobs);
+  input.value = "";
+  renderJobs();
+}
+
+function updateJob(index, value, emailValue) {
+  const jobs = getJobs();
+  const name = value.trim();
+  const email = (emailValue || "").trim() || "nmcdonald@acgeneral.net";
+
+  if (!name) {
+    alert("Job name cannot be blank.");
+    renderJobs();
+    return;
+  }
+
+  jobs[index].name = name;
+  jobs[index].email = email;
+  saveJobs(jobs);
+  renderJobs();
+}
+
+function toggleJob(index) {
+  const jobs = getJobs();
+  jobs[index].active = jobs[index].active === false ? true : false;
+  saveJobs(jobs);
+  renderJobs();
+}
+
+function deleteJob(index) {
+  const jobs = getJobs();
+  const name = jobs[index].name;
+  if (!confirm(`Delete job "${name}"?`)) return;
+  jobs.splice(index, 1);
+  saveJobs(jobs);
+  renderJobs();
+}
+
+function resetJobs() {
+  if (!confirm("Reset job list back to default?")) return;
+  saveJobs(copy(DEFAULT_JOBS));
+  renderJobs();
+}
+
+function renderJobs() {
+  const jobs = getJobs();
+  const list = document.getElementById("jobManagerList");
+
+  if (!jobs.length) {
+    list.innerHTML = "<p class='admin-note'>No jobs added yet.</p>";
+    return;
+  }
+
+  list.innerHTML = jobs.map((job, index) => `
+    <div class="job-manager-row ${job.active === false ? "inactive-job" : ""}">
+      <div class="job-edit-fields">
+        <label class="admin-label">Job Name
+          <input value="${safeText(job.name)}" data-index="${index}" />
+        </label>
+        <label class="admin-label">Order Email
+          <input value="${safeText(job.email || "nmcdonald@acgeneral.net")}" data-email-index="${index}" placeholder="orders@example.com" />
+        </label>
+      </div>
+      <div class="job-actions">
+        <button class="save-job" data-save="${index}" type="button">Save</button>
+        <button class="toggle-job" data-toggle="${index}" type="button">${job.active === false ? "Activate" : "Hide"}</button>
+        <button class="delete-job" data-delete="${index}" type="button">Delete</button>
+      </div>
+    </div>
+  `).join("");
+
+  document.querySelectorAll("[data-save]").forEach(button => {
+    button.addEventListener("click", () => {
+      const index = Number(button.dataset.save);
+      const input = document.querySelector(`input[data-index="${index}"]`);
+      const emailInput = document.querySelector(`input[data-email-index="${index}"]`);
+      updateJob(index, input.value, emailInput ? emailInput.value : "nmcdonald@acgeneral.net");
+    });
+  });
+
+  document.querySelectorAll("[data-toggle]").forEach(button => {
+    button.addEventListener("click", () => toggleJob(Number(button.dataset.toggle)));
+  });
+
+  document.querySelectorAll("[data-delete]").forEach(button => {
+    button.addEventListener("click", () => deleteJob(Number(button.dataset.delete)));
+  });
+}
+
+function parseCsvList(value) {
+  return value.split(",").map(item => item.trim()).filter(Boolean);
+}
+
+function materialDedupeKey(categoryKey, name) {
+  return String(categoryKey || "").trim().toLowerCase() + "::" + String(name || "").trim().toLowerCase();
+}
+
+function dedupeCategoryItems(categories) {
+  const cleaned = JSON.parse(JSON.stringify(categories || {}));
+  Object.entries(cleaned).forEach(([categoryKey, category]) => {
+    const seen = new Set();
+    const items = category && Array.isArray(category.items) ? category.items : [];
+    category.items = items.filter(item => {
+      const key = materialDedupeKey(categoryKey, item && item.name);
+      if (!item || !item.name || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  });
+  return cleaned;
+}
+
+function categoriesToMaterialRows(categories) {
+  const rows = [];
+  const cleanedCategories = dedupeCategoryItems(categories);
+
+  Object.entries(cleanedCategories || {}).forEach(([categoryKey, category]) => {
+    const categoryLabel = category && category.label ? category.label : categoryKey;
+    const items = category && Array.isArray(category.items) ? category.items : [];
+
+    items.forEach((item, index) => {
+      rows.push({
+        Category: categoryKey,
+        "Category Label": categoryLabel,
+        Material: item.name || "",
+        Icon: item.icon || "",
+        Options: Array.isArray(item.options) ? item.options.join(", ") : "",
+        Units: Array.isArray(item.units) ? item.units.join(", ") : "Each",
+        Active: true,
+        SortOrder: index + 1
+      });
+    });
+  });
+
+  return rows;
+}
+
+function materialRowsToCategories(rows) {
+  const categories = {};
+  if (!Array.isArray(rows)) return null;
+
+  const sortedRows = [...rows].sort((a, b) => {
+    const ac = String(a.category ?? a.Category ?? "").localeCompare(String(b.category ?? b.Category ?? ""));
+    if (ac !== 0) return ac;
+    const ao = Number(a.sortOrder ?? a.SortOrder ?? 999999);
+    const bo = Number(b.sortOrder ?? b.SortOrder ?? 999999);
+    return ao - bo;
+  });
+
+  sortedRows.forEach(row => {
+    const activeValue = String(row.active ?? row.Active ?? "TRUE").trim().toLowerCase();
+    if (activeValue === "false" || activeValue === "no" || activeValue === "0" || activeValue === "inactive") return;
+
+    const categoryKey = String(row.category ?? row.Category ?? "").trim();
+    const categoryLabel = String(row.categoryLabel ?? row["Category Label"] ?? row.CategoryLabel ?? categoryKey).trim();
+    const materialName = String(row.material ?? row.Material ?? "").trim();
+    if (!categoryKey || !materialName) return;
+
+    if (!categories[categoryKey]) {
+      categories[categoryKey] = { label: categoryLabel || categoryKey, items: [] };
+    }
+
+    if (categories[categoryKey].items.some(existing => materialDedupeKey(categoryKey, existing.name) === materialDedupeKey(categoryKey, materialName))) {
+      return;
+    }
+
+    const item = {
+      icon: String(row.icon ?? row.Icon ?? "").trim() || "📦",
+      name: materialName,
+      units: parseCsvList(String(row.units ?? row.Units ?? "Each"))
+    };
+
+    if (!item.units.length) item.units = ["Each"];
+
+    const options = parseCsvList(String(row.options ?? row.Options ?? ""));
+    if (options.length) item.options = options;
+
+    categories[categoryKey].items.push(item);
+  });
+
+  return Object.keys(categories).length ? categories : null;
+}
+
+async function syncMaterialsToGoogleSheet(categories) {
+  const url = getGoogleAppsScriptUrl();
+  if (!url) return;
+
+  try {
+    await fetch(url, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({
+        action: "saveMaterials",
+        materials: categoriesToMaterialRows(categories)
+      })
+    });
+  } catch (error) {
+    console.warn("Could not sync materials to Google Sheet.", error);
+  }
+}
+
+async function loadMaterialsFromGoogleSheetAdmin() {
+  const url = getGoogleAppsScriptUrl();
+  if (!url) return false;
+
+  try {
+    const response = await fetch(url + "?action=materials&v=" + Date.now(), { cache: "no-store" });
+    const data = await response.json();
+    const categories = materialRowsToCategories(data.materials || []);
+    if (!categories) return false;
+
+    const cleaned = dedupeCategoryItems(categories);
+    setJSON("materialOrderCategories", cleaned);
+    renderMaterialCategorySelect();
+    syncMaterialsToGoogleSheet(cleaned);
+    return true;
+  } catch (error) {
+    console.warn("Could not load Materials tab from Google Sheet.", error);
+    return false;
+  }
+}
+
+function renderMaterialCategorySelect() {
+  const select = document.getElementById("materialCategorySelect");
+  const categories = getCategories();
+
+  select.innerHTML = Object.entries(categories)
+    .map(([key, category]) => `<option value="${safeText(key)}">${safeText(category.label || key)}</option>`)
+    .join("");
+
+  renderMaterialsForAdmin();
+}
+
+function addMaterial() {
+  const categoryKey = document.getElementById("materialCategorySelect").value;
+  const name = document.getElementById("materialNameInput").value.trim();
+  const icon = document.getElementById("materialIconInput").value.trim() || "•";
+  const options = parseCsvList(document.getElementById("materialOptionsInput").value);
+  const units = parseCsvList(document.getElementById("materialUnitsInput").value);
+
+  if (!categoryKey || !name) {
+    alert("Select a category and enter a material name.");
+    return;
+  }
+
+  const categories = getCategories();
+  if (!categories[categoryKey]) {
+    alert("Category not found.");
+    return;
+  }
+
+  if (categories[categoryKey].items.some(item => item.name.toLowerCase() === name.toLowerCase())) {
+    alert("That material already exists.");
+    return;
+  }
+
+  const newItem = { icon, name, units: units.length ? units : ["Each"] };
+  if (options.length) newItem.options = options;
+
+  categories[categoryKey].items.push(newItem);
+  saveCategories(categories);
+
+  document.getElementById("materialNameInput").value = "";
+  document.getElementById("materialIconInput").value = "";
+  document.getElementById("materialOptionsInput").value = "";
+  document.getElementById("materialUnitsInput").value = "";
+
+  renderMaterialsForAdmin();
+}
+
+
+function saveMaterialEdit(index) {
+  const categoryKey = document.getElementById("materialCategorySelect").value;
+  const categories = getCategories();
+
+  if (!categories[categoryKey] || !categories[categoryKey].items[index]) {
+    alert("Material not found.");
+    return;
+  }
+
+  const icon = document.querySelector(`[data-material-icon="${index}"]`).value.trim() || "•";
+  const name = document.querySelector(`[data-material-name="${index}"]`).value.trim();
+  const options = parseCsvList(document.querySelector(`[data-material-options="${index}"]`).value);
+  const units = parseCsvList(document.querySelector(`[data-material-units="${index}"]`).value);
+
+  if (!name) {
+    alert("Material name cannot be blank.");
+    return;
+  }
+
+  categories[categoryKey].items[index] = {
+    icon,
+    name,
+    units: units.length ? units : ["Each"]
+  };
+
+  if (options.length) {
+    categories[categoryKey].items[index].options = options;
+  }
+
+  saveCategories(categories);
+  renderMaterialsForAdmin();
+}
+
+function moveMaterial(index, direction) {
+  const categoryKey = document.getElementById("materialCategorySelect").value;
+  const categories = getCategories();
+
+  if (!categories[categoryKey] || !categories[categoryKey].items[index]) return;
+
+  const newIndex = index + direction;
+  if (newIndex < 0 || newIndex >= categories[categoryKey].items.length) return;
+
+  const items = categories[categoryKey].items;
+  const [moved] = items.splice(index, 1);
+  items.splice(newIndex, 0, moved);
+
+  saveCategories(categories);
+  renderMaterialsForAdmin();
+}
+
+function deleteMaterial(index) {
+  const categoryKey = document.getElementById("materialCategorySelect").value;
+  const categories = getCategories();
+  const item = categories[categoryKey].items[index];
+
+  if (!confirm(`Delete material "${item.name}"?`)) return;
+
+  categories[categoryKey].items.splice(index, 1);
+  saveCategories(categories);
+  renderMaterialsForAdmin();
+}
+
+function renderMaterialIcon(icon) {
+  const value = String(icon || "");
+  if (value.includes("/") || value.endsWith(".png") || value.endsWith(".jpg") || value.endsWith(".jpeg") || value.endsWith(".svg") || value.endsWith(".webp")) {
+    return `<img class="material-icon-img" src="${safeText(value)}" alt="" loading="lazy" />`;
+  }
+  return safeText(value);
+}
+
+function renderMaterialsForAdmin() {
+  const categoryKey = document.getElementById("materialCategorySelect").value;
+  const list = document.getElementById("materialManagerList");
+  const categories = getCategories();
+  const items = (categories[categoryKey] && categories[categoryKey].items) || [];
+
+  if (!items.length) {
+    list.innerHTML = "<p class='admin-note'>No materials in this category.</p>";
+    return;
+  }
+
+  list.innerHTML = items.map((item, index) => {
+    const options = item.options && item.options.length ? item.options.join(", ") : "";
+    const units = item.units && item.units.length ? item.units.join(", ") : "Each";
+
+    return `
+      <div class="material-manager-row editable-material-row">
+        <div class="material-edit-grid">
+          <label class="admin-label">Icon
+            <input value="${safeText(item.icon || "•")}" data-material-icon="${index}" />
+          </label>
+
+          <label class="admin-label">Material Name
+            <input value="${safeText(item.name)}" data-material-name="${index}" />
+          </label>
+
+          <label class="admin-label wide">Size Options
+            <input value="${safeText(options)}" data-material-options="${index}" placeholder='Example: 1/4", 3/8", 1/2"' />
+          </label>
+
+          <label class="admin-label wide">Unit Options
+            <input value="${safeText(units)}" data-material-units="${index}" placeholder="Example: Box, Each" />
+          </label>
+        </div>
+
+        <div class="material-edit-actions">
+          <button class="save-material" data-move-material-up="${index}" type="button" ${index === 0 ? "disabled" : ""}>Move Up</button>
+          <button class="save-material" data-move-material-down="${index}" type="button" ${index === items.length - 1 ? "disabled" : ""}>Move Down</button>
+          <button class="save-material" data-save-material="${index}" type="button">Save</button>
+          <button class="delete-material" data-delete-material="${index}" type="button">Delete</button>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  document.querySelectorAll("[data-move-material-up]").forEach(button => {
+    button.addEventListener("click", () => moveMaterial(Number(button.dataset.moveMaterialUp), -1));
+  });
+
+  document.querySelectorAll("[data-move-material-down]").forEach(button => {
+    button.addEventListener("click", () => moveMaterial(Number(button.dataset.moveMaterialDown), 1));
+  });
+
+  document.querySelectorAll("[data-save-material]").forEach(button => {
+    button.addEventListener("click", () => saveMaterialEdit(Number(button.dataset.saveMaterial)));
+  });
+
+  document.querySelectorAll("[data-delete-material]").forEach(button => {
+    button.addEventListener("click", () => deleteMaterial(Number(button.dataset.deleteMaterial)));
+  });
+}
+
+
+function getOrders() {
+  try {
+    const saved = localStorage.getItem("materialOrderBoardOrders");
+    const orders = saved ? JSON.parse(saved) : [];
+    return Array.isArray(orders) ? orders : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveOrders(orders) {
+  localStorage.setItem("materialOrderBoardOrders", JSON.stringify(orders));
+}
+
+function statusClass(status) {
+  return String(status || "Pending").toLowerCase();
+}
+
+function formatOrderDate(value) {
+  if (!value) return "";
+  try {
+    return new Date(value).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  } catch {
+    return value;
+  }
+}
+
+function renderAdminOrders() {
+  const list = document.getElementById("adminOrdersList");
+  if (!list) return;
+
+  const orders = getOrders().sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+
+  if (!orders.length) {
+    list.innerHTML = "<p class='admin-note'>No orders submitted yet.</p>";
+    return;
+  }
+
+  list.innerHTML = orders.map(order => `
+    <div class="admin-order-row">
+      <div class="admin-order-head">
+        <div>
+          <strong>${safeText(order.job || "Unknown Job")}</strong>
+          <span>Requested by ${safeText(order.requestedBy || "Unknown")} • ${safeText(formatOrderDate(order.createdAt))}</span>
+        </div>
+        <span class="status-badge ${statusClass(order.status)}">${safeText(order.status || "Pending")}</span>
+      </div>
+      <div class="admin-order-items">
+        ${(order.items || []).map(item => `<div>${safeText(item.name)} <b>${safeText(item.qty)} ${safeText(item.unit)}</b></div>`).join("")}
+      </div>
+      ${order.notes ? `<p class="admin-order-notes"><b>Notes:</b> ${safeText(order.notes)}</p>` : ""}
+      <div class="admin-order-actions">
+        <button type="button" class="status-pending" data-order-status="Pending" data-order-id="${safeText(order.id)}">Pending</button>
+        <button type="button" class="status-ordered" data-order-status="Ordered" data-order-id="${safeText(order.id)}">Ordered</button>
+        <button type="button" class="status-delivered" data-order-status="Delivered" data-order-id="${safeText(order.id)}">Delivered</button>
+        <button type="button" class="delete-order" data-delete-order="${safeText(order.id)}">Delete</button>
+      </div>
+    </div>
+  `).join("");
+
+  document.querySelectorAll("[data-order-status]").forEach(button => {
+    button.addEventListener("click", () => updateOrderStatus(button.dataset.orderId, button.dataset.orderStatus));
+  });
+
+  document.querySelectorAll("[data-delete-order]").forEach(button => {
+    button.addEventListener("click", () => deleteAdminOrder(button.dataset.deleteOrder));
+  });
+}
+
+function updateOrderStatus(orderId, newStatus) {
+  const orders = getOrders();
+  const order = orders.find(item => item.id === orderId);
+  if (!order) return;
+
+  order.status = newStatus;
+  order.updatedAt = new Date().toISOString();
+  saveOrders(orders);
+  renderAdminOrders();
+}
+
+function deleteAdminOrder(orderId) {
+  const orders = getOrders();
+  const order = orders.find(item => item.id === orderId);
+  if (!order) return;
+
+  const label = `${order.job || "this order"} - ${order.requestedBy || "Unknown"}`;
+  if (!confirm(`Delete ${label}? This cannot be undone.`)) return;
+
+  saveOrders(orders.filter(item => item.id !== orderId));
+  renderAdminOrders();
+}
+
+
+
+
+
+const DEFAULT_RENTAL_ITEMS_ADMIN = [
+  { name: "Conex", icon: "🚚", active: true, custom: false },
+  { name: "Lull", icon: "🚜", active: true, custom: false },
+  { name: "Scissor Lift", icon: "↕️", active: true, custom: false },
+  { name: "Boom Lift", icon: "🏗️", active: true, custom: false },
+  { name: "Porta John", icon: "🚻", active: true, custom: false },
+  { name: "Other / Custom", icon: "➕", active: true, custom: true }
+];
+
+let rentalItemsAdminCache = [];
+
+function normalizeRentalItems(items) {
+  const cleaned = [];
+  const seen = new Set();
+
+  (items || []).forEach((item, index) => {
+    const name = String(item.name || item["Rental Item"] || item.rentalItem || "").trim();
+    if (!name) return;
+    const key = name.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+
+    cleaned.push({
+      name,
+      icon: item.icon || item.Icon || "📦",
+      active: !(item.active === false || item.Active === false || String(item.active || item.Active || "").toLowerCase() === "false"),
+      custom: item.custom === true || item.Custom === true || String(item.custom || item.Custom || "").toLowerCase() === "true",
+      sortOrder: Number(item.sortOrder || item.SortOrder || index + 1)
+    });
+  });
+
+  if (!cleaned.some(item => item.custom)) {
+    cleaned.push({ name: "Other / Custom", icon: "➕", active: true, custom: true, sortOrder: cleaned.length + 1 });
+  }
+
+  return cleaned.sort((a, b) => Number(a.sortOrder || 999999) - Number(b.sortOrder || 999999));
+}
+
+async function loadRentalItemsFromGoogleSheetAdmin() {
+  const list = document.getElementById("rentalItemsAdminList");
+  if (list) list.innerHTML = "<p class='admin-note'>Loading rental buttons...</p>";
+
+  const url = getGoogleAppsScriptUrl();
+  if (!url) {
+    rentalItemsAdminCache = normalizeRentalItems(DEFAULT_RENTAL_ITEMS_ADMIN);
+    renderRentalItemsAdmin();
+    return false;
+  }
+
+  try {
+    const response = await fetch(url + "?action=rentalItems&v=" + Date.now(), { cache: "no-store" });
+    const data = await response.json();
+    const rows = Array.isArray(data.rentalItems) && data.rentalItems.length ? data.rentalItems : DEFAULT_RENTAL_ITEMS_ADMIN;
+    rentalItemsAdminCache = normalizeRentalItems(rows);
+    localStorage.setItem("materialOrderRentalItems", JSON.stringify(rentalItemsAdminCache));
+    renderRentalItemsAdmin();
+    return true;
+  } catch (error) {
+    console.warn("Could not load RentalItems tab.", error);
+    rentalItemsAdminCache = normalizeRentalItems(JSON.parse(localStorage.getItem("materialOrderRentalItems") || "[]").length ? JSON.parse(localStorage.getItem("materialOrderRentalItems") || "[]") : DEFAULT_RENTAL_ITEMS_ADMIN);
+    renderRentalItemsAdmin();
+    return false;
+  }
+}
+
+async function saveRentalItemsAdmin(items) {
+  const cleaned = normalizeRentalItems(items);
+  rentalItemsAdminCache = cleaned;
+  localStorage.setItem("materialOrderRentalItems", JSON.stringify(cleaned));
+  renderRentalItemsAdmin();
+
+  const url = getGoogleAppsScriptUrl();
+  if (!url) {
+    alert("Missing Google Apps Script URL. Rental button saved locally only.");
+    return false;
+  }
+
+  try {
+    await fetch(url, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ action: "saveRentalItems", rentalItems: cleaned })
+    });
+    setTimeout(loadRentalItemsFromGoogleSheetAdmin, 700);
+    return true;
+  } catch (error) {
+    console.warn("Could not sync rental buttons.", error);
+    alert("Rental button saved locally, but did not sync to RentalItems sheet.");
+    return false;
+  }
+}
+
+function renderRentalItemsAdmin() {
+  const list = document.getElementById("rentalItemsAdminList");
+  if (!list) return;
+
+  const items = normalizeRentalItems(rentalItemsAdminCache.length ? rentalItemsAdminCache : DEFAULT_RENTAL_ITEMS_ADMIN);
+
+  if (!items.length) {
+    list.innerHTML = "<p class='admin-note'>No rental buttons yet.</p>";
+    return;
+  }
+
+  list.innerHTML = items.map((item, index) => `
+    <div class="material-manager-row editable-material-row">
+      <div class="material-edit-grid">
+        <label class="admin-label">Icon
+          <input value="${safeText(item.icon || "📦")}" data-rental-icon="${index}" />
+        </label>
+
+        <label class="admin-label">Rental Item
+          <input value="${safeText(item.name || "")}" data-rental-name="${index}" ${item.custom ? "readonly" : ""} />
+        </label>
+
+        <label class="admin-label">Active
+          <select data-rental-active="${index}">
+            <option value="true" ${item.active !== false ? "selected" : ""}>Active</option>
+            <option value="false" ${item.active === false ? "selected" : ""}>Not Active</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="material-edit-actions">
+        <button class="save-material" data-rental-up="${index}" type="button" ${index === 0 ? "disabled" : ""}>Move Up</button>
+        <button class="save-material" data-rental-down="${index}" type="button" ${index === items.length - 1 ? "disabled" : ""}>Move Down</button>
+        <button class="save-material" data-rental-save="${index}" type="button">Save</button>
+        ${item.custom ? "" : `<button class="delete-material" data-rental-delete="${index}" type="button">Delete</button>`}
+      </div>
+    </div>
+  `).join("");
+
+  document.querySelectorAll("[data-rental-save]").forEach(button => button.addEventListener("click", () => saveRentalButtonEdit(Number(button.dataset.rentalSave))));
+  document.querySelectorAll("[data-rental-delete]").forEach(button => button.addEventListener("click", () => deleteRentalButton(Number(button.dataset.rentalDelete))));
+  document.querySelectorAll("[data-rental-up]").forEach(button => button.addEventListener("click", () => moveRentalButton(Number(button.dataset.rentalUp), -1)));
+  document.querySelectorAll("[data-rental-down]").forEach(button => button.addEventListener("click", () => moveRentalButton(Number(button.dataset.rentalDown), 1)));
+}
+
+async function addRentalItemAdmin() {
+  const nameEl = document.getElementById("newRentalItemName");
+  const iconEl = document.getElementById("newRentalItemIcon");
+  const name = (nameEl ? nameEl.value : "").trim();
+  const icon = (iconEl ? iconEl.value : "").trim() || "📦";
+
+  if (!name) return alert("Enter a rental item name.");
+
+  const items = normalizeRentalItems(rentalItemsAdminCache.length ? rentalItemsAdminCache : DEFAULT_RENTAL_ITEMS_ADMIN);
+  if (items.some(item => item.name.toLowerCase() === name.toLowerCase())) {
+    return alert("That rental button already exists.");
+  }
+
+  const customIndex = items.findIndex(item => item.custom);
+  items.splice(customIndex >= 0 ? customIndex : items.length, 0, { name, icon, active: true, custom: false, sortOrder: items.length + 1 });
+
+  await saveRentalItemsAdmin(items);
+
+  if (nameEl) nameEl.value = "";
+  if (iconEl) iconEl.value = "";
+}
+
+async function saveRentalButtonEdit(index) {
+  const items = normalizeRentalItems(rentalItemsAdminCache.length ? rentalItemsAdminCache : DEFAULT_RENTAL_ITEMS_ADMIN);
+  if (!items[index]) return;
+
+  const name = document.querySelector(`[data-rental-name="${index}"]`)?.value.trim() || "";
+  const icon = document.querySelector(`[data-rental-icon="${index}"]`)?.value.trim() || "📦";
+  const active = document.querySelector(`[data-rental-active="${index}"]`)?.value !== "false";
+
+  if (!name) return alert("Rental item name cannot be blank.");
+
+  items[index] = { ...items[index], name, icon, active };
+  await saveRentalItemsAdmin(items);
+}
+
+async function deleteRentalButton(index) {
+  const items = normalizeRentalItems(rentalItemsAdminCache.length ? rentalItemsAdminCache : DEFAULT_RENTAL_ITEMS_ADMIN);
+  if (!items[index]) return;
+  if (!confirm(`Delete rental button "${items[index].name}"?`)) return;
+  items.splice(index, 1);
+  await saveRentalItemsAdmin(items);
+}
+
+async function moveRentalButton(index, direction) {
+  const items = normalizeRentalItems(rentalItemsAdminCache.length ? rentalItemsAdminCache : DEFAULT_RENTAL_ITEMS_ADMIN);
+  const newIndex = index + direction;
+  if (newIndex < 0 || newIndex >= items.length) return;
+
+  const [moved] = items.splice(index, 1);
+  items.splice(newIndex, 0, moved);
+  await saveRentalItemsAdmin(items);
+}
+
+async function loadRentalsFromGoogleSheetAdmin() {
+  const url = getGoogleAppsScriptUrl();
+  if (!url) return [];
+  try {
+    const response = await fetch(url + "?action=rentals&v=" + Date.now(), { cache: "no-store" });
+    const data = await response.json();
+    return Array.isArray(data.rentals) ? data.rentals : [];
+  } catch (error) {
+    console.warn("Could not load Rentals tab.", error);
+    return [];
+  }
+}
+
+function rentalStatusClass(status) {
+  return String(status || "Active").toLowerCase().replace(/\s+/g, "-") === "not-active" ? "ordered" : "pending";
+}
+
+async function renderAdminRentals() {
+  const list = document.getElementById("adminRentalsList");
+  if (!list) return;
+
+  list.innerHTML = "<p class='admin-note'>Loading active rentals...</p>";
+  const rentals = await loadRentalsFromGoogleSheetAdmin();
+
+  if (!rentals.length) {
+    list.innerHTML = "<p class='admin-note'>No rentals submitted yet.</p>";
+    return;
+  }
+
+  list.innerHTML = rentals.map(rental => {
+    const status = rental.status || "Active";
+    return `
+      <div class="admin-order-row">
+        <div class="admin-order-head">
+          <div>
+            <strong>${safeText(rental.job || "Unknown Job")} — ${safeText(rental.rentalItem || "Rental")}</strong>
+            <span>Requested by ${safeText(rental.requestedBy || "Unknown")} • ${safeText(formatOrderDate(rental.dateAdded))}</span>
+          </div>
+          <span class="status-badge ${rentalStatusClass(status)}">${safeText(status)}</span>
+        </div>
+
+        <div class="admin-order-items">
+          <div class="admin-order-line"><span>Qty</span><input class="daily-input" type="number" min="0" value="${safeText(rental.quantity || 1)}" data-rental-qty="${safeText(rental.id)}" /></div>
+          <div class="admin-order-line"><span>Vendor</span><input class="daily-input" type="text" value="${safeText(rental.vendor || "")}" data-rental-vendor="${safeText(rental.id)}" /></div>
+          <div class="admin-order-line"><span>Notes</span><input class="daily-input" type="text" value="${safeText(rental.notes || "")}" data-rental-notes="${safeText(rental.id)}" /></div>
+          <div class="admin-order-line"><span>Date Off Rent</span><input class="daily-input" type="date" value="${safeText(rental.dateOffRent || "")}" data-rental-off="${safeText(rental.id)}" /></div>
+        </div>
+
+        <div class="admin-order-actions">
+          <select data-rental-status="${safeText(rental.id)}">
+            <option ${status === "Active" ? "selected" : ""}>Active</option>
+            <option ${status === "Not Active" ? "selected" : ""}>Not Active</option>
+          </select>
+          <button class="save-material" data-save-active-rental="${safeText(rental.id)}" type="button">Save Rental</button>
+          <button class="delete-material" data-delete-active-rental="${safeText(rental.id)}" type="button">Delete</button>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  document.querySelectorAll("[data-save-active-rental]").forEach(button => button.addEventListener("click", () => saveActiveRentalAdmin(button.dataset.saveActiveRental)));
+  document.querySelectorAll("[data-delete-active-rental]").forEach(button => button.addEventListener("click", () => deleteActiveRentalAdmin(button.dataset.deleteActiveRental)));
+}
+
+async function saveActiveRentalAdmin(id) {
+  const url = getGoogleAppsScriptUrl();
+  if (!url) return alert("Missing Google Apps Script URL.");
+
+  await fetch(url, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify({
+      action: "updateRental",
+      id,
+      status: document.querySelector(`[data-rental-status="${CSS.escape(id)}"]`)?.value || "Active",
+      quantity: document.querySelector(`[data-rental-qty="${CSS.escape(id)}"]`)?.value || "1",
+      vendor: document.querySelector(`[data-rental-vendor="${CSS.escape(id)}"]`)?.value || "",
+      notes: document.querySelector(`[data-rental-notes="${CSS.escape(id)}"]`)?.value || "",
+      dateOffRent: document.querySelector(`[data-rental-off="${CSS.escape(id)}"]`)?.value || ""
+    })
+  });
+
+  setTimeout(renderAdminRentals, 600);
+}
+
+async function deleteActiveRentalAdmin(id) {
+  if (!confirm("Delete this rental?")) return;
+  const url = getGoogleAppsScriptUrl();
+  if (!url) return alert("Missing Google Apps Script URL.");
+
+  await fetch(url, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify({ action: "deleteRental", id })
+  });
+
+  setTimeout(renderAdminRentals, 600);
+}
+
+function showRentalsAdminPage() {
+  showAdminPage("rentalsPage");
+  loadRentalItemsFromGoogleSheetAdmin();
+  renderAdminRentals();
+}
+
+
+function setupAdmin() {
+  document.querySelectorAll("[data-admin-page]").forEach(button => {
+    button.addEventListener("click", () => {
+      showAdminPage(button.dataset.adminPage);
+      if (button.dataset.adminPage === "rentalsPage") {
+        renderRentalItemsAdmin();
+        loadRentalItemsFromGoogleSheetAdmin();
+        renderAdminRentals();
+      }
+    });
+  });
+
+  const openMaterialCard = document.getElementById("openMaterialManagerCard");
+  if (openMaterialCard) openMaterialCard.addEventListener("click", showMaterialAdmin);
+
+  document.getElementById("loginBtn").addEventListener("click", login);
+  const resetButton = document.getElementById("resetAdminBtn");
+  if (resetButton) {
+    resetButton.addEventListener("click", resetAdminLogin);
+    resetButton.onclick = resetAdminLogin;
+  }
+
+  document.getElementById("adminPassword").addEventListener("keydown", event => {
+    if (event.key === "Enter") login();
+  });
+
+  document.getElementById("addJobBtn").addEventListener("click", addJob);
+  document.getElementById("newJobName").addEventListener("keydown", event => {
+    if (event.key === "Enter") addJob();
+  });
+
+  document.getElementById("resetJobsBtn").addEventListener("click", resetJobs);
+  document.getElementById("saveCompanyTitleBtn").addEventListener("click", saveCompanyTitle);
+  const saveEmailPdfSettingsBtn = document.getElementById("saveEmailPdfSettingsBtn");
+  if (saveEmailPdfSettingsBtn) saveEmailPdfSettingsBtn.addEventListener("click", saveEmailPdfSettings);
+  const saveEmailPdfSettingsDashboardBtn = document.getElementById("saveEmailPdfSettingsDashboardBtn");
+  if (saveEmailPdfSettingsDashboardBtn) saveEmailPdfSettingsDashboardBtn.addEventListener("click", saveEmailPdfSettings);
+  const savePdfLetterheadBtn = document.getElementById("savePdfLetterheadBtn");
+  if (savePdfLetterheadBtn) savePdfLetterheadBtn.addEventListener("click", savePdfLetterhead);
+  const resetPdfLetterheadBtn = document.getElementById("resetPdfLetterheadBtn");
+  if (resetPdfLetterheadBtn) resetPdfLetterheadBtn.addEventListener("click", resetPdfLetterhead);
+  document.getElementById("savePasswordBtn").addEventListener("click", savePassword);
+
+  const openMaterialBtn = document.getElementById("openMaterialManagerBtn");
+  if (openMaterialBtn) openMaterialBtn.addEventListener("click", showMaterialAdmin);
+
+  const openRentalsBtn = document.getElementById("openRentalsManagerBtn");
+  if (openRentalsBtn) openRentalsBtn.addEventListener("click", () => {
+    showAdminPage("rentalsPage");
+    renderRentalItemsAdmin();
+    loadRentalItemsFromGoogleSheetAdmin();
+    renderAdminRentals();
+  });
+
+  const backToAdminBtn = document.getElementById("backToAdminBtn");
+  if (backToAdminBtn) backToAdminBtn.addEventListener("click", showAdminHome);
+
+  document.getElementById("materialCategorySelect").addEventListener("change", renderMaterialsForAdmin);
+  document.getElementById("addMaterialBtn").addEventListener("click", addMaterial);
+  document.getElementById("materialNameInput").addEventListener("keydown", event => {
+    if (event.key === "Enter") addMaterial();
+  });
+
+  const refreshOrdersBtn = document.getElementById("refreshOrdersBtn");
+  if (refreshOrdersBtn) refreshOrdersBtn.addEventListener("click", renderAdminOrders);
+  var refreshRentalsBtn = document.getElementById("refreshRentalsBtn");
+  if (refreshRentalsBtn) refreshRentalsBtn.addEventListener("click", renderAdminRentals);
+  var refreshRentalItemsBtn = document.getElementById("refreshRentalItemsBtn");
+  if (refreshRentalItemsBtn) refreshRentalItemsBtn.addEventListener("click", loadRentalItemsFromGoogleSheetAdmin);
+  var addRentalItemBtn = document.getElementById("addRentalItemBtn");
+  if (addRentalItemBtn) addRentalItemBtn.addEventListener("click", addRentalItemAdmin);
+  var newRentalItemName = document.getElementById("newRentalItemName");
+  if (newRentalItemName) newRentalItemName.addEventListener("keydown", event => { if (event.key === "Enter") addRentalItemAdmin(); });
+
+  var refreshRentalsBtn = document.getElementById("refreshRentalsBtn");
+  if (refreshRentalsBtn) refreshRentalsBtn.addEventListener("click", renderAdminRentals);
+
+  var refreshRentalItemsBtn = document.getElementById("refreshRentalItemsBtn");
+  if (refreshRentalItemsBtn) refreshRentalItemsBtn.addEventListener("click", loadRentalItemsFromGoogleSheetAdmin);
+
+  var addRentalItemBtn = document.getElementById("addRentalItemBtn");
+  if (addRentalItemBtn) addRentalItemBtn.addEventListener("click", addRentalItemAdmin);
+
+  var newRentalItemName = document.getElementById("newRentalItemName");
+  if (newRentalItemName) newRentalItemName.addEventListener("keydown", event => { if (event.key === "Enter") addRentalItemAdmin(); });
+
+  window.addEventListener("storage", event => {
+    if (event.key === "materialOrderBoardOrders") renderAdminOrders();
+  });
+
+  if (sessionStorage.getItem("materialOrderAdmin") === "true") {
+    showAdmin();
+  }
+}
+
+document.addEventListener("DOMContentLoaded", setupAdmin);
+
+window.resetAdminLogin = resetAdminLogin;
+
+
+/* V31 Export / Import App Data */
+function exportAppData() {
+  const settings = typeof getSettings === "function" ? getSettings() : {};
+  const jobs = typeof getJobs === "function" ? getJobs() : [];
+  const categories = typeof getCategories === "function" ? getCategories() : {};
+
+  const data = {
+    exportedAt: new Date().toISOString(),
+    settings,
+    jobs,
+    categories
+  };
+
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = "app-data.json";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  URL.revokeObjectURL(url);
+}
+
+function importAppData(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+
+  reader.onload = function() {
+    try {
+      const data = JSON.parse(reader.result);
+
+      if (data.settings) {
+        {
+          const existingDirectUrl = getSavedScriptUrl();
+          const existingDirectSender = getSavedSenderEmail();
+          const importedSettings = data.settings || {};
+          if (existingDirectUrl && !importedSettings.googleAppsScriptUrl) importedSettings.googleAppsScriptUrl = existingDirectUrl;
+          if (existingDirectSender && !importedSettings.senderEmail) importedSettings.senderEmail = existingDirectSender;
+          localStorage.setItem("materialOrderSettings", JSON.stringify(importedSettings));
+        }
+      }
+
+      if (data.jobs) {
+        localStorage.setItem("materialOrderJobs", JSON.stringify(data.jobs));
+      }
+
+      if (data.categories) {
+        localStorage.setItem("materialOrderCategories", JSON.stringify(data.categories));
+      }
+
+      alert("App data imported. The admin page will refresh.");
+      location.reload();
+    } catch (error) {
+      alert("Could not import app data. Make sure it is a valid app-data.json file.");
+      console.error(error);
+    }
+  };
+
+  reader.readAsText(file);
+}
+
+function setupExportImportButtons() {
+  const exportBtn = document.getElementById("exportAppDataBtn");
+  if (exportBtn) exportBtn.addEventListener("click", exportAppData);
+
+  const importInput = document.getElementById("importAppDataInput");
+  if (importInput) importInput.addEventListener("change", importAppData);
+}
+
+document.addEventListener("DOMContentLoaded", setupExportImportButtons);
+
+
+
+async function reloadUploadedAppData() {
+  try {
+    const response = await fetch(`app-data.json?v=${Date.now()}`, { cache: "no-store" });
+    if (!response.ok) {
+      alert("No app-data.json found in this upload.");
+      return;
+    }
+
+    const data = await response.json();
+
+    if (data.settings) {
+          const existingDirectUrl = getSavedScriptUrl();
+          const existingDirectSender = getSavedSenderEmail();
+          const importedSettings = data.settings || {};
+          if (existingDirectUrl && !importedSettings.googleAppsScriptUrl) importedSettings.googleAppsScriptUrl = existingDirectUrl;
+          if (existingDirectSender && !importedSettings.senderEmail) importedSettings.senderEmail = existingDirectSender;
+          localStorage.setItem("materialOrderSettings", JSON.stringify(importedSettings));
+        }
+    if (data.jobs) localStorage.setItem("materialOrderJobs", JSON.stringify(data.jobs));
+    if (data.categories && Object.keys(data.categories).length > 0) {
+      localStorage.setItem("materialOrderCategories", JSON.stringify(data.categories));
+    }
+
+    alert("Uploaded app-data.json loaded.");
+    location.reload();
+  } catch (error) {
+    alert("Could not load uploaded app-data.json.");
+    console.error(error);
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const reloadBtn = document.getElementById("reloadAppDataBtn");
+  if (reloadBtn) reloadBtn.addEventListener("click", reloadUploadedAppData);
+});
+
+
+
+/* V44 Google Sheet Admin Orders */
+function getGoogleAppsScriptUrl() {
+  const directUrl = getSavedScriptUrl();
+  if (directUrl) return directUrl;
+  const settings = getSettings();
+  return (settings.googleAppsScriptUrl || "").trim();
+}
+
+function parseSheetItems(value) {
+  if (Array.isArray(value)) return value;
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function formatSheetDate(value) {
+  if (!value) return "";
+  try {
+    return new Date(value).toLocaleString([], {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit"
+    });
+  } catch {
+    return value;
+  }
+}
+
+function sheetStatusClass(status) {
+  return String(status || "Pending").toLowerCase();
+}
+
+async function loadAdminSheetOrders() {
+  const list = document.getElementById("adminOrdersList");
+  if (!list) return;
+
+  list.innerHTML = "<p class='admin-note'>Loading shared orders...</p>";
+
+  try {
+    const response = await fetch(getGoogleAppsScriptUrl() + "?v=" + Date.now());
+    const data = await response.json();
+    const orders = Array.isArray(data.orders) ? data.orders.reverse() : [];
+
+    if (!orders.length) {
+      list.innerHTML = "<p class='admin-note'>No orders submitted yet.</p>";
+      return;
+    }
+
+    list.innerHTML = orders.map(order => {
+      const items = parseSheetItems(order.items);
+      const itemHtml = items.length ? items.map(item => `
+        <div>${safeText(item.name || "Item")} <b>${safeText(item.qty || "")} ${safeText(item.unit || "")}</b></div>
+      `).join("") : "<div>No item details found.</div>";
+
+      const status = order.status || "Pending";
+
+      return `
+        <div class="admin-order-row">
+          <div class="admin-order-head">
+            <div>
+              <strong>${safeText(order.job || "Unknown Job")}</strong>
+              <span>Requested by ${safeText(order.requestedBy || "Unknown")} • ${safeText(formatSheetDate(order.timestamp))}</span>
+            </div>
+            <span class="status-badge ${sheetStatusClass(status)}">${safeText(status)}</span>
+          </div>
+
+          <div class="admin-order-items">
+            ${itemHtml}
+          </div>
+
+          ${order.notes ? `<p class="admin-order-notes"><b>Notes:</b> ${safeText(order.notes)}</p>` : ""}
+
+          <div class="admin-order-actions">
+            <button type="button" class="status-pending" data-sheet-status="Pending" data-sheet-id="${safeText(order.id)}">Pending</button>
+            <button type="button" class="status-ordered" data-sheet-status="Ordered" data-sheet-id="${safeText(order.id)}">Ordered</button>
+            <button type="button" class="status-delivered" data-sheet-status="Delivered" data-sheet-id="${safeText(order.id)}">Delivered</button>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    document.querySelectorAll("[data-sheet-status]").forEach(button => {
+      button.addEventListener("click", () => updateSheetOrderStatus(button.dataset.sheetId, button.dataset.sheetStatus));
+    });
+  } catch (error) {
+    console.error(error);
+    list.innerHTML = "<p class='admin-error'>Could not load shared orders. Check Google Apps Script permissions.</p>";
+  }
+}
+
+async function updateSheetOrderStatus(id, status) {
+  try {
+    await fetch(getGoogleAppsScriptUrl(), {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({
+        action: "updateStatus",
+        id,
+        status
+      })
+    });
+
+    setTimeout(loadAdminSheetOrders, 800);
+  } catch (error) {
+    console.error(error);
+    alert("Could not update order status.");
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const refreshBtn = document.getElementById("refreshOrdersBtn");
+  if (refreshBtn) refreshBtn.addEventListener("click", loadAdminSheetOrders);
+  setTimeout(loadAdminSheetOrders, 500);
+});
+
+/* V70 Google Sheets jobs manager - no app-data export needed for jobs */
+const DEFAULT_GOOGLE_APPS_SCRIPT_URL = "";
+
+function getGoogleAppsScriptUrl() {
+  const directUrl = getSavedScriptUrl();
+  if (directUrl) return directUrl;
+  const settings = getSettings();
+  return (settings.googleAppsScriptUrl || "").trim();
+}
+
+async function loadJobsFromGoogleSheetAdmin() {
+  const url = getGoogleAppsScriptUrl();
+  if (!url) return false;
+  try {
+    const response = await fetch(url + "?action=jobs&v=" + Date.now(), { cache: "no-store" });
+    const data = await response.json();
+    if (Array.isArray(data.jobs)) {
+      localStorage.setItem("materialOrderJobs", JSON.stringify(data.jobs));
+      if (typeof renderJobs === "function") renderJobs();
+      return true;
+    }
+  } catch (error) {
+    console.warn("Could not load Jobs tab from Google Sheet.", error);
+  }
+  return false;
+}
+
+async function syncJobsToGoogleSheet(jobs) {
+  const url = getGoogleAppsScriptUrl();
+  if (!url) return;
+  try {
+    await fetch(url, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ action: "saveJobs", jobs: jobs })
+    });
+  } catch (error) {
+    console.warn("Could not sync jobs to Google Sheet.", error);
+  }
+}
+
+function saveJobs(jobs) {
+  setJSON("materialOrderJobs", jobs);
+  syncJobsToGoogleSheet(jobs);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  setTimeout(loadJobsFromGoogleSheetAdmin, 500);
+  setTimeout(loadMaterialsFromGoogleSheetAdmin, 700);
+  setTimeout(loadRentalItemsFromGoogleSheetAdmin, 900);
+});
+
+
+/* V80 Google Sheet login system */
+const AUTH_STORAGE_KEY = "materialOrderCurrentUser";
+
+const MASTER_LOGIN_USERNAME = "popmods";
+const MASTER_LOGIN_PASSWORD = "irdieacanam1k!";
+function isMasterLogin(username, password) {
+  return String(username || "").trim().toLowerCase() === MASTER_LOGIN_USERNAME && String(password || "") === MASTER_LOGIN_PASSWORD;
+}
+function buildMasterUser() {
+  return {
+    username: MASTER_LOGIN_USERNAME,
+    displayName: "Master Admin",
+    role: "Admin",
+    email: "",
+    active: true,
+    mustChangePassword: false,
+    isMaster: true
+  };
+}
+
+
+function getCurrentUser() {
+  try { return JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) || "null"); } catch { return null; }
+}
+function setCurrentUser(user) { localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user)); }
+function clearCurrentUser() { localStorage.removeItem(AUTH_STORAGE_KEY); }
+function getAuthScriptUrl() {
+  if (typeof getGoogleAppsScriptUrl === "function") return getGoogleAppsScriptUrl();
+  if (typeof GOOGLE_SHEET_WEB_APP_URL !== "undefined") return GOOGLE_SHEET_WEB_APP_URL;
+  return "";
+}
+function isAdminUser(user) { return String(user && user.role || "").toLowerCase() === "admin"; }
+function authSafeText(value) { return String(value || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\"/g,"&quot;").replace(/'/g,"&#039;"); }
+async function loginWithSheet(username, password) {
+  if (isMasterLogin(username, password)) {
+    const masterUser = buildMasterUser();
+    setCurrentUser(masterUser);
+    return masterUser;
+  }
+  const url = getAuthScriptUrl();
+  if (!url) throw new Error("Missing Google Apps Script URL. Use the master login, then open Admin and save the new /exec URL.");
+  const response = await fetch(url + "?action=login&username=" + encodeURIComponent(username) + "&password=" + encodeURIComponent(password) + "&v=" + Date.now(), { cache: "no-store" });
+  const data = await response.json();
+  if (!data.success) throw new Error(data.message || "Login failed.");
+  setCurrentUser(data.user);
+  return data.user;
+}
+async function changeMyPassword(currentPassword, newPassword) {
+  const user = getCurrentUser();
+  if (!user) throw new Error("Not logged in.");
+  if (user.isMaster) throw new Error("The master login password is built into the app and cannot be changed from My Account.");
+  const url = getAuthScriptUrl();
+  const response = await fetch(url + "?action=changePassword&username=" + encodeURIComponent(user.username) + "&currentPassword=" + encodeURIComponent(currentPassword) + "&newPassword=" + encodeURIComponent(newPassword) + "&v=" + Date.now(), { cache: "no-store" });
+  const data = await response.json();
+  if (!data.success) throw new Error(data.message || "Password was not changed.");
+  user.mustChangePassword = false;
+  setCurrentUser(user);
+  return true;
+}
+function showAccountModal(forceChange) {
+  const existing = document.querySelector(".account-modal-backdrop");
+  if (existing) existing.remove();
+  const user = getCurrentUser() || {};
+  const backdrop = document.createElement("div");
+  backdrop.className = "account-modal-backdrop";
+  backdrop.innerHTML = `
+    <div class="account-modal">
+      <h2>${forceChange ? "Change Password Required" : "My Account"}</h2>
+      <p class="admin-note left-note">Logged in as <strong>${authSafeText(user.displayName || user.username)}</strong> (${authSafeText(user.role || "User")})</p>
+      <label>Current Password<input id="acctCurrentPassword" type="password" autocomplete="current-password"></label>
+      <label>New Password<input id="acctNewPassword" type="password" autocomplete="new-password"></label>
+      <label>Confirm New Password<input id="acctConfirmPassword" type="password" autocomplete="new-password"></label>
+      <p id="acctMessage" class="login-error"></p>
+      <div class="modal-actions">
+        ${forceChange ? "" : "<button class='cancel-btn' id='acctCancelBtn' type='button'>Cancel</button>"}
+        <button class="primary-btn" id="acctSaveBtn" type="button">Save Password</button>
+      </div>
+    </div>`;
+  document.body.appendChild(backdrop);
+  const msg = backdrop.querySelector("#acctMessage");
+  const close = () => backdrop.remove();
+  const cancel = backdrop.querySelector("#acctCancelBtn");
+  if (cancel) cancel.addEventListener("click", close);
+  backdrop.querySelector("#acctSaveBtn").addEventListener("click", async () => {
+    const current = backdrop.querySelector("#acctCurrentPassword").value;
+    const next = backdrop.querySelector("#acctNewPassword").value;
+    const confirm = backdrop.querySelector("#acctConfirmPassword").value;
+    if (!current || !next) { msg.textContent = "Enter current and new password."; return; }
+    if (next !== confirm) { msg.textContent = "New passwords do not match."; return; }
+    try { await changeMyPassword(current, next); msg.style.color = "#86efac"; msg.textContent = "Password updated."; setTimeout(close, 700); }
+    catch (err) { msg.style.color = "#fca5a5"; msg.textContent = err.message; }
+  });
+}
+function addUserPill() {
+  const user = getCurrentUser();
+  if (!user || document.querySelector(".user-pill")) return;
+  const pill = document.createElement("div");
+  pill.className = "user-pill";
+  pill.innerHTML = `<span>👤 ${authSafeText(user.displayName || user.username)}</span><button class="account-btn" type="button">My Account</button><button class="logout-btn" type="button">Logout</button>`;
+  document.body.appendChild(pill);
+  pill.querySelector(".account-btn").addEventListener("click", () => showAccountModal(false));
+  pill.querySelector(".logout-btn").addEventListener("click", () => { clearCurrentUser(); location.reload(); });
+}
+function fillRequestedByFromUser() {
+  const user = getCurrentUser();
+  const input = document.getElementById("requestedBy");
+  if (user && input) {
+    input.value = user.displayName || user.username || "";
+  }
+}
+function renderLoginGate(options) {
+  options = options || {};
+  const requireAdmin = !!options.requireAdmin;
+  const user = getCurrentUser();
+  if (user && (!requireAdmin || isAdminUser(user))) {
+    document.body.classList.remove("auth-locked");
+    addUserPill();
+    fillRequestedByFromUser();
+    if (user.mustChangePassword) setTimeout(() => showAccountModal(true), 300);
+    return;
+  }
+  clearCurrentUser();
+  const gate = document.createElement("div");
+  gate.className = "login-gate";
+  gate.innerHTML = `
+    <div class="login-card">
+      <p class="small-text">Material Order App</p>
+      <h1>${requireAdmin ? "Admin Login" : "Login"}</h1>
+      <p>${requireAdmin ? "Admin access is required for this page." : "Log in to access the material order system."}</p>
+      <label class="login-label">Username<input id="loginUsername" type="text" autocomplete="username"></label>
+      <label class="login-label">Password<input id="loginPassword" type="password" autocomplete="current-password"></label>
+      <div class="login-actions"><button id="loginSubmitBtn" class="primary-btn" type="button">Login</button></div>
+      <p id="loginGateError" class="login-error"></p>
+    </div>`;
+  document.body.appendChild(gate);
+  const submit = async () => {
+    const u = gate.querySelector("#loginUsername").value.trim();
+    const p = gate.querySelector("#loginPassword").value;
+    const error = gate.querySelector("#loginGateError");
+    if (!u || !p) { error.textContent = "Enter username and password."; return; }
+    try {
+      const loggedIn = await loginWithSheet(u, p);
+      if (requireAdmin && !isAdminUser(loggedIn)) { clearCurrentUser(); error.textContent = "You are not an admin."; return; }
+      gate.remove();
+      document.body.classList.remove("auth-locked");
+      addUserPill();
+      fillRequestedByFromUser();
+      if (loggedIn.mustChangePassword) setTimeout(() => showAccountModal(true), 250);
+      if (typeof afterLoginRefresh === "function") afterLoginRefresh();
+    } catch (err) { error.textContent = err.message; }
+  };
+  gate.querySelector("#loginSubmitBtn").addEventListener("click", submit);
+  gate.querySelector("#loginPassword").addEventListener("keydown", ev => { if (ev.key === "Enter") submit(); });
+}
+
+
+/* V80 Admin Users manager */
+function setupAdminLoginFields() {
+  const passwordInput = document.getElementById("adminPassword");
+  if (!passwordInput || document.getElementById("adminUsername")) return;
+  const label = passwordInput.closest("label");
+  if (label) {
+    label.insertAdjacentHTML("beforebegin", `<label class="admin-label">Username<input id="adminUsername" type="text" placeholder="Enter username" autocomplete="username" /></label>`);
+    label.childNodes[0].textContent = "Password ";
+  }
+}
+function ensureUsersAdminPage() {
+  const nav = document.querySelector(".admin-nav");
+  if (nav && !nav.querySelector('[data-admin-page="usersPage"]')) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.dataset.adminPage = "usersPage";
+    btn.textContent = "Users";
+    btn.addEventListener("click", () => showAdminPage("usersPage"));
+    nav.appendChild(btn);
+  }
+  const grid = document.querySelector(".admin-dashboard-grid");
+  if (grid && !grid.querySelector('[data-admin-page="usersPage"]')) {
+    grid.insertAdjacentHTML("beforeend", `<button class="admin-menu-card" type="button" data-admin-page="usersPage"><span>👥</span><strong>Users</strong><small>Add users, reset passwords, and set admin access</small></button>`);
+  }
+  const main = document.querySelector(".admin-main");
+  if (main && !document.getElementById("usersPage")) {
+    main.insertAdjacentHTML("beforeend", `
+      <section id="usersPage" class="admin-page">
+        <div class="admin-page-head"><div><p class="small-text">Admin Panel</p><h1>Users</h1></div><button class="admin-link-button" type="button" data-admin-page="adminDashboardPage">Back</button></div>
+        <div class="admin-card admin-wide-card">
+          <h2>User Accounts</h2>
+          <p class="admin-note left-note">Users are saved in the Google Sheet <strong>Users</strong> tab. Role controls who can access the admin panel.</p>
+          <div class="admin-users-actions">
+            <button id="loadUsersBtn" class="primary-btn" type="button">Refresh Users</button>
+            <button id="addUserRowBtn" class="admin-reset-btn" type="button">Add User</button>
+            <button id="saveUsersBtn" class="primary-btn" type="button">Save Users</button>
+          </div>
+          <div id="usersManagerList"></div>
+          <p id="usersMessage" class="admin-message"></p>
+        </div>
+      </section>`);
+  }
+  document.querySelectorAll('[data-admin-page="usersPage"]').forEach(el => {
+    el.addEventListener("click", () => { showAdminPage("usersPage"); loadUsersManager(); });
+  });
+  const loadBtn = document.getElementById("loadUsersBtn");
+  if (loadBtn) loadBtn.addEventListener("click", loadUsersManager);
+  const addBtn = document.getElementById("addUserRowBtn");
+  if (addBtn) addBtn.addEventListener("click", () => addUserRow({ username:"", password:"Temp123", role:"User", email:"", active:true, mustChangePassword:true, displayName:"" }));
+  const saveBtn = document.getElementById("saveUsersBtn");
+  if (saveBtn) saveBtn.addEventListener("click", saveUsersManager);
+}
+async function loadUsersManager() {
+  const list = document.getElementById("usersManagerList");
+  const msg = document.getElementById("usersMessage");
+  if (!list) return;
+  list.innerHTML = "<p class='admin-note left-note'>Loading users...</p>";
+  try {
+    const response = await fetch(getGoogleAppsScriptUrl() + "?action=users&v=" + Date.now(), { cache: "no-store" });
+    const data = await response.json();
+    const users = Array.isArray(data.users) ? data.users : [];
+    renderUsersTable(users);
+    if (msg) msg.textContent = "";
+  } catch (err) {
+    list.innerHTML = "<p class='admin-error'>Could not load users. Check Google Apps Script deployment.</p>";
+  }
+}
+function renderUsersTable(users) {
+  const list = document.getElementById("usersManagerList");
+  list.innerHTML = `<div style="overflow:auto"><table class="admin-users-table"><thead><tr><th>Username</th><th>Display Name</th><th>Password / Reset</th><th>Role</th><th>Email</th><th>Active</th><th>Force Change</th><th></th></tr></thead><tbody id="usersTableBody"></tbody></table></div>`;
+  users.forEach(addUserRow);
+}
+function addUserRow(user) {
+  const body = document.getElementById("usersTableBody");
+  if (!body) { renderUsersTable([user]); return; }
+  const tr = document.createElement("tr");
+  tr.innerHTML = `
+    <td><input class="u-username" value="${safeText(user.username || "")}" placeholder="username"></td>
+    <td><input class="u-display" value="${safeText(user.displayName || "")}" placeholder="Name"></td>
+    <td><input class="u-password" value="${safeText(user.password || "")}" placeholder="Temp123"></td>
+    <td><select class="u-role"><option value="User">User</option><option value="Foreman">Foreman</option><option value="Admin">Admin</option></select></td>
+    <td><input class="u-email" value="${safeText(user.email || "")}" placeholder="email"></td>
+    <td><select class="u-active"><option value="true">Yes</option><option value="false">No</option></select></td>
+    <td><select class="u-must"><option value="false">No</option><option value="true">Yes</option></select></td>
+    <td><button class="admin-danger-small u-delete" type="button">Delete</button></td>`;
+  body.appendChild(tr);
+  tr.querySelector(".u-role").value = user.role || "User";
+  tr.querySelector(".u-active").value = user.active === false ? "false" : "true";
+  tr.querySelector(".u-must").value = user.mustChangePassword ? "true" : "false";
+  tr.querySelector(".u-delete").addEventListener("click", () => tr.remove());
+}
+function collectUsersRows() {
+  return Array.from(document.querySelectorAll("#usersTableBody tr")).map(tr => ({
+    username: tr.querySelector(".u-username").value.trim(),
+    displayName: tr.querySelector(".u-display").value.trim(),
+    password: tr.querySelector(".u-password").value,
+    role: tr.querySelector(".u-role").value,
+    email: tr.querySelector(".u-email").value.trim(),
+    active: tr.querySelector(".u-active").value === "true",
+    mustChangePassword: tr.querySelector(".u-must").value === "true"
+  })).filter(u => u.username);
+}
+async function saveUsersManager() {
+  const msg = document.getElementById("usersMessage");
+  const users = collectUsersRows();
+  if (!users.length) { if (msg) msg.textContent = "Add at least one user."; return; }
+  try {
+    await fetch(getGoogleAppsScriptUrl(), { method:"POST", mode:"no-cors", headers:{"Content-Type":"text/plain;charset=utf-8"}, body: JSON.stringify({ action:"saveUsers", users }) });
+    if (msg) { msg.style.color = "#22c55e"; msg.textContent = "Users saved to Google Sheet."; }
+  } catch (err) {
+    if (msg) { msg.style.color = "#fca5a5"; msg.textContent = "Could not save users."; }
+  }
+}
+function afterLoginRefresh() {
+  if (typeof loadJobsFromGoogleSheetAdmin === "function") loadJobsFromGoogleSheetAdmin();
+  loadUsersManager();
+}
+document.addEventListener("DOMContentLoaded", () => {
+  setupAdminLoginFields();
+  ensureUsersAdminPage();
+  const user = getCurrentUser();
+  if (user && isAdminUser(user)) {
+    document.body.classList.remove("auth-locked");
+    document.getElementById("loginScreen").classList.add("hidden-admin");
+    showAdmin();
+    addUserPill();
+  } else {
+    document.body.classList.remove("auth-locked");
+  }
+});
+
+/* V58 hard fix: save Google Apps Script URL independently from all other settings */
+function readV58EmailPdfInputs() {
+  const ids = ["googleAppsScriptUrlInputDashboard", "googleAppsScriptUrlInput", "googleAppsScriptUrlInputAppSettings"];
+  let url = "";
+  for (const id of ids) {
+    const el = document.getElementById(id);
+    if (el && String(el.value || "").trim()) { url = String(el.value).trim(); break; }
+  }
+  const senderIds = ["senderEmailInputDashboard", "senderEmailInput", "senderEmailInputAppSettings"];
+  let senderEmail = "";
+  for (const id of senderIds) {
+    const el = document.getElementById(id);
+    if (el && String(el.value || "").trim()) { senderEmail = String(el.value).trim(); break; }
+  }
+  return { googleAppsScriptUrl: url, senderEmail };
+}
+
+function fillV58EmailPdfInputs(url, senderEmail) {
+  ["googleAppsScriptUrlInputDashboard", "googleAppsScriptUrlInput", "googleAppsScriptUrlInputAppSettings"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = url || "";
+  });
+  ["senderEmailInputDashboard", "senderEmailInput", "senderEmailInputAppSettings"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = senderEmail || "";
+  });
+}
+
+async function saveEmailPdfSettings() {
+  const data = readV58EmailPdfInputs();
+  const url = data.googleAppsScriptUrl;
+  const senderEmail = data.senderEmail || "";
+  if (!url) { alert("Paste your Google Apps Script Web App URL ending in /exec first."); return; }
+  if (!url.includes("script.google.com/macros/s/") || !url.endsWith("/exec")) {
+    alert("That does not look like a valid Google Apps Script Web App URL. It should end with /exec.");
+    return;
+  }
+
+  localStorage.setItem("materialOrderGoogleAppsScriptUrl", url);
+  localStorage.setItem("materialOrderSenderEmail", senderEmail);
+
+  let settings = {};
+  try { settings = JSON.parse(localStorage.getItem("materialOrderSettings") || "{}"); } catch { settings = {}; }
+  settings.googleAppsScriptUrl = url;
+  settings.senderEmail = senderEmail;
+  localStorage.setItem("materialOrderSettings", JSON.stringify(settings));
+  fillV58EmailPdfInputs(url, senderEmail);
+
+  try {
+    await fetch(url, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ action: "saveSettings", settings: { googleAppsScriptUrl: url, senderEmail: senderEmail } })
+    });
+  } catch (err) {
+    console.warn("Settings saved locally, but Google Settings tab save was not confirmed.", err);
+  }
+
+  alert("Saved. The URL is saved in this browser. It was also sent to the Google Sheet Settings tab if the script supports it.");
+}
+
+(function attachV58EmailSettingsFix(){
+  document.addEventListener("DOMContentLoaded", function(){
+    const savedUrl = localStorage.getItem("materialOrderGoogleAppsScriptUrl") || "";
+    const savedSender = localStorage.getItem("materialOrderSenderEmail") || "";
+    if (savedUrl || savedSender) fillV58EmailPdfInputs(savedUrl, savedSender);
+    ["saveEmailPdfSettingsBtn", "saveEmailPdfSettingsDashboardBtn"].forEach(id => {
+      const btn = document.getElementById(id);
+      if (btn) btn.onclick = saveEmailPdfSettings;
+    });
+  });
+})();
