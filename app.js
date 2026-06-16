@@ -1297,7 +1297,7 @@ function startDailyReport() {
   const photoInput = document.getElementById("dailyReportPhotos");
   const photoList = document.getElementById("dailyPhotoList");
 
-  if (selectedJob) selectedJob.textContent = currentSelectedJob || "Selected Job";
+  if (selectedJob) selectedJob.textContent = currentSelectedJob || "All Jobs";
   if (submittedBy) submittedBy.textContent = getLoggedInRequesterName() || "Logged-in user";
   if (dateTime) dateTime.textContent = new Date().toLocaleString();
   if (photoInput) photoInput.value = "";
