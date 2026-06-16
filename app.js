@@ -1457,6 +1457,32 @@ async function submitDailyReport() {
 let manpowerEmployees = [];
 let manpowerJobs = [];
 let draggedManpowerEmployee = "";
+let manpowerAutoScrollTimer = null;
+let manpowerLastDragY = 0;
+
+function handleManpowerAutoScroll(event) {
+  manpowerLastDragY = event.clientY || 0;
+  const edgeSize = 120;
+  const speed = 18;
+
+  if (manpowerAutoScrollTimer) return;
+
+  manpowerAutoScrollTimer = setInterval(() => {
+    if (manpowerLastDragY < edgeSize) {
+      window.scrollBy(0, -speed);
+    } else if (window.innerHeight - manpowerLastDragY < edgeSize) {
+      window.scrollBy(0, speed);
+    }
+  }, 16);
+}
+
+function stopManpowerAutoScroll() {
+  if (manpowerAutoScrollTimer) {
+    clearInterval(manpowerAutoScrollTimer);
+    manpowerAutoScrollTimer = null;
+  }
+}
+
 
 function canManageManpower() {
   const user = typeof getCurrentUser === "function" ? getCurrentUser() : null;
@@ -1633,17 +1659,21 @@ function renderManpowerBoard() {
       draggedManpowerEmployee = card.dataset.manpowerEmployee;
       event.dataTransfer.setData("text/plain", draggedManpowerEmployee);
     });
+    card.addEventListener("drag", handleManpowerAutoScroll);
+    card.addEventListener("dragend", stopManpowerAutoScroll);
   });
 
   document.querySelectorAll(".manpower-dropzone").forEach(zone => {
     zone.addEventListener("dragover", event => {
       event.preventDefault();
+      handleManpowerAutoScroll(event);
       zone.classList.add("drag-over");
     });
     zone.addEventListener("dragleave", () => zone.classList.remove("drag-over"));
     zone.addEventListener("drop", event => {
       event.preventDefault();
       zone.classList.remove("drag-over");
+      stopManpowerAutoScroll();
       const employeeName = event.dataTransfer.getData("text/plain") || draggedManpowerEmployee;
       moveManpowerEmployee(employeeName, zone.dataset.manpowerJob);
     });
@@ -1676,11 +1706,7 @@ function setupApp() {
 
   const submitRentalBtn = document.getElementById("submitRentalBtn");
   if (submitRentalBtn) submitRentalBtn.addEventListener("click", submitRental);
-
-  const manpowerChoiceBtn = document.getElementById("manpowerChoiceBtn");
-  if (manpowerChoiceBtn) manpowerChoiceBtn.addEventListener("click", startManpowerBoard);
-
-  const bottomManpowerBtn = document.getElementById("bottomManpowerBtn");
+const bottomManpowerBtn = document.getElementById("bottomManpowerBtn");
   if (bottomManpowerBtn) bottomManpowerBtn.addEventListener("click", openManpowerFromBottom);
 
   const addManpowerEmployeeBtn = document.getElementById("addManpowerEmployeeBtn");

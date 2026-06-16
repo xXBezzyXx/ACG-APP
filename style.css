@@ -1387,3 +1387,86 @@ textarea#notes {
 .manpower-card strong,.manpower-card small{display:block}
 .manpower-card small{color:#b7c0d1}
 .manpower-card button{border:0;border-radius:10px;background:rgba(239,68,68,.24);color:#fecaca;padding:8px 10px;font-weight:900}
+
+
+/* V84 Manpower updates */
+.manpower-board {
+  grid-template-columns: repeat(3, minmax(245px, 1fr)) !important;
+}
+@media (max-width: 1050px) {
+  .manpower-board {
+    grid-template-columns: repeat(2, minmax(245px, 1fr)) !important;
+  }
+}
+@media (max-width: 720px) {
+  .manpower-board {
+    grid-template-columns: 1fr !important;
+  }
+}
+.manpower-dropzone {
+  min-height: 220px;
+}
+
+
+/* V85 - Orange manpower admin buttons */
+.manpower-admin button,
+#refreshManpowerBtn,
+#addEmployeeBtn{
+  background:#f97316 !important;
+  color:#fff !important;
+  border:none !important;
+  border-radius:10px;
+  font-weight:600;
+  cursor:pointer;
+}
+
+.manpower-admin button:hover,
+#refreshManpowerBtn:hover,
+#addEmployeeBtn:hover{
+  background:#ea580c !important;
+}
+
+
+/* V86 Force Add Employee button orange */
+#addEmployeeBtn{
+  background:#f97316 !important;
+  color:#ffffff !important;
+  border:none !important;
+  border-radius:12px !important;
+  padding:12px 20px !important;
+  font-weight:600 !important;
+  cursor:pointer !important;
+}
+
+#addEmployeeBtn:hover{
+  background:#ea580c !important;
+}
+
+
+/* V87 Force every Add Employee button orange */
+#addEmployeeBtn,
+#addManpowerEmployeeBtn,
+#adminAddManpowerEmployeeBtn,
+button#addEmployeeBtn,
+button#addManpowerEmployeeBtn,
+button#adminAddManpowerEmployeeBtn {
+  background: #f97316 !important;
+  background-color: #f97316 !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 12px !important;
+  padding: 12px 20px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  box-shadow: none !important;
+}
+
+#addEmployeeBtn:hover,
+#addManpowerEmployeeBtn:hover,
+#adminAddManpowerEmployeeBtn:hover,
+button#addEmployeeBtn:hover,
+button#addManpowerEmployeeBtn:hover,
+button#adminAddManpowerEmployeeBtn:hover {
+  background: #ea580c !important;
+  background-color: #ea580c !important;
+}
