@@ -1628,7 +1628,20 @@ function renderManpowerBoard() {
   const unassignedEl = document.getElementById("manpowerUnassignedCount");
   const activeJobsEl = document.getElementById("manpowerActiveJobCount");
   const unassignedCount = manpowerEmployees.filter(emp => (emp.assignedTo || "Unassigned") === "Unassigned").length;
-  const activeJobCount = new Set(manpowerEmployees.map(emp => emp.assignedTo || "Unassigned").filter(name => name && !["Unassigned", "Shop", "Vacation"].includes(name))).size;
+  const activeJobCount = new Set(
+  manpowerEmployees
+    .map(emp => (emp.assignedTo || "Unassigned").trim())
+    .filter(name =>
+      name &&
+      ![
+        "Unassigned",
+        "Shop",
+        "Vacation",
+        "Office",
+        "Warehouse"
+      ].includes(name)
+    )
+).size;
 
   if (totalOld) totalOld.textContent = `${manpowerEmployees.length} total • ${unassignedCount} unassigned • ${activeJobCount} active jobs`;
   if (totalEmployeesEl) totalEmployeesEl.textContent = String(manpowerEmployees.length);
