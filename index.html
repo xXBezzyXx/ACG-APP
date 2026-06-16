@@ -71,9 +71,23 @@
     <section id="manpowerScreen" class="screen">
       <header class="top-bar center"><button class="back-btn" onclick="showScreen('jobActionScreen')" type="button">‹</button><h2>Manpower Board</h2><span></span></header>
 
-      <div class="daily-auto-grid">
-        <div class="daily-auto-box"><span>Selected Job</span><strong id="manpowerSelectedJob">Selected Job</strong></div>
-        <div class="daily-auto-box"><span>Total Employees</span><strong id="manpowerTotalCount">0</strong></div>
+      <div class="manpower-summary-grid">
+        <div class="manpower-summary-card manpower-view-card">
+          <span>View</span>
+          <strong id="manpowerSelectedJob">All Jobs</strong>
+        </div>
+        <div class="manpower-summary-card manpower-count-card">
+          <div><span>Total Employees</span><strong>Total Employees</strong></div>
+          <b id="manpowerTotalEmployees" class="manpower-summary-badge">0</b>
+        </div>
+        <div class="manpower-summary-card manpower-count-card">
+          <div><span>Unassigned</span><strong>Unassigned</strong></div>
+          <b id="manpowerUnassignedCount" class="manpower-summary-badge">0</b>
+        </div>
+        <div class="manpower-summary-card manpower-count-card">
+          <div><span>Active Jobs</span><strong>Active Jobs</strong></div>
+          <b id="manpowerActiveJobCount" class="manpower-summary-badge">0</b>
+        </div>
       </div>
 
       <div id="manpowerAdminTools" class="daily-form-card" style="display:none;">
@@ -165,6 +179,6 @@
       <a href="admin.html" class="nav-btn"><span>⚙</span>Admin</a>
     </nav>
   </div>
-  <script src="app.js"></script> <!-- force update v95 -->
+  <script src="app.js"></script>
 </body>
 </html>
