@@ -1774,3 +1774,9 @@ button#adminAddManpowerEmployeeBtn:hover {
     min-width: 0 !important;
   }
 }
+
+
+/* V93 role permissions helper */
+.role-hidden {
+  display: none !important;
+}

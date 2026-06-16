@@ -910,6 +910,7 @@ function renderAdminOrders() {
   if (!list) return;
 
   const orders = getOrders().sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+  const showOrderControls = canManageOrders();
 
   if (!orders.length) {
     list.innerHTML = "<p class='admin-note'>No orders submitted yet.</p>";
@@ -929,25 +930,30 @@ function renderAdminOrders() {
         ${(order.items || []).map(item => `<div>${safeText(item.name)} <b>${safeText(item.qty)} ${safeText(item.unit)}</b></div>`).join("")}
       </div>
       ${order.notes ? `<p class="admin-order-notes"><b>Notes:</b> ${safeText(order.notes)}</p>` : ""}
-      <div class="admin-order-actions">
-        <button type="button" class="status-pending" data-order-status="Pending" data-order-id="${safeText(order.id)}">Pending</button>
-        <button type="button" class="status-ordered" data-order-status="Ordered" data-order-id="${safeText(order.id)}">Ordered</button>
-        <button type="button" class="status-delivered" data-order-status="Delivered" data-order-id="${safeText(order.id)}">Delivered</button>
-        <button type="button" class="delete-order" data-delete-order="${safeText(order.id)}">Delete</button>
-      </div>
+      ${showOrderControls ? `
+        <div class="admin-order-actions">
+          <button type="button" class="status-pending" data-order-status="Pending" data-order-id="${safeText(order.id)}">Pending</button>
+          <button type="button" class="status-ordered" data-order-status="Ordered" data-order-id="${safeText(order.id)}">Ordered</button>
+          <button type="button" class="status-delivered" data-order-status="Delivered" data-order-id="${safeText(order.id)}">Delivered</button>
+          <button type="button" class="delete-order" data-delete-order="${safeText(order.id)}">Delete</button>
+        </div>
+      ` : ""}
     </div>
   `).join("");
 
-  document.querySelectorAll("[data-order-status]").forEach(button => {
-    button.addEventListener("click", () => updateOrderStatus(button.dataset.orderId, button.dataset.orderStatus));
-  });
+  if (showOrderControls) {
+    document.querySelectorAll("[data-order-status]").forEach(button => {
+      button.addEventListener("click", () => updateOrderStatus(button.dataset.orderId, button.dataset.orderStatus));
+    });
 
-  document.querySelectorAll("[data-delete-order]").forEach(button => {
-    button.addEventListener("click", () => deleteAdminOrder(button.dataset.deleteOrder));
-  });
+    document.querySelectorAll("[data-delete-order]").forEach(button => {
+      button.addEventListener("click", () => deleteAdminOrder(button.dataset.deleteOrder));
+    });
+  }
 }
 
 function updateOrderStatus(orderId, newStatus) {
+  if (!canManageOrders()) return alert("You do not have permission to change order status.");
   const orders = getOrders();
   const order = orders.find(item => item.id === orderId);
   if (!order) return;
@@ -959,6 +965,7 @@ function updateOrderStatus(orderId, newStatus) {
 }
 
 function deleteAdminOrder(orderId) {
+  if (!canManageOrders()) return alert("You do not have permission to delete orders.");
   const orders = getOrders();
   const order = orders.find(item => item.id === orderId);
   if (!order) return;
@@ -1412,6 +1419,33 @@ function showManpowerAdminPage() {
 }
 
 
+
+/* V93 Role setup */
+const ALLOWED_APP_ROLES = ["Admin", "Operations Manager", "Manpower Manager", "User"];
+
+function normalizeUserRole(role) {
+  const value = String(role || "User").trim().toLowerCase();
+  if (value === "admin") return "Admin";
+  if (value === "operations manager" || value === "operations" || value === "operation manager") return "Operations Manager";
+  if (value === "manpower manager" || value === "manpower") return "Manpower Manager";
+  return "User";
+}
+
+function currentUserRole() {
+  const user = typeof getCurrentUser === "function" ? getCurrentUser() : null;
+  return normalizeUserRole(user && user.role);
+}
+
+function canManageOrders() {
+  const role = currentUserRole();
+  return role === "Admin" || role === "Operations Manager";
+}
+
+function roleOptionsHtml(selectedRole) {
+  const normalized = normalizeUserRole(selectedRole);
+  return ALLOWED_APP_ROLES.map(role => `<option value="${role}" ${role === normalized ? "selected" : ""}>${role}</option>`).join("");
+}
+
 function setupAdmin() {
   document.querySelectorAll("[data-admin-page]").forEach(button => {
     button.addEventListener("click", () => {
@@ -1843,7 +1877,7 @@ function getAuthScriptUrl() {
   if (typeof GOOGLE_SHEET_WEB_APP_URL !== "undefined") return GOOGLE_SHEET_WEB_APP_URL;
   return "";
 }
-function isAdminUser(user) { return String(user && user.role || "").toLowerCase() === "admin"; }
+function isAdminUser(user) { const role = normalizeUserRole(user && user.role); return role === "Admin" || role === "Operations Manager"; }
 function authSafeText(value) { return String(value || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\"/g,"&quot;").replace(/'/g,"&#039;"); }
 async function loginWithSheet(username, password) {
   if (isMasterLogin(username, password)) {
@@ -2048,13 +2082,13 @@ function addUserRow(user) {
     <td><input class="u-username" value="${safeText(user.username || "")}" placeholder="username"></td>
     <td><input class="u-display" value="${safeText(user.displayName || "")}" placeholder="Name"></td>
     <td><input class="u-password" value="${safeText(user.password || "")}" placeholder="Temp123"></td>
-    <td><select class="u-role"><option value="User">User</option><option value="Foreman">Foreman</option><option value="Admin">Admin</option></select></td>
+    <td><select class="u-role">${roleOptionsHtml(user.role)}</select></td>
     <td><input class="u-email" value="${safeText(user.email || "")}" placeholder="email"></td>
     <td><select class="u-active"><option value="true">Yes</option><option value="false">No</option></select></td>
     <td><select class="u-must"><option value="false">No</option><option value="true">Yes</option></select></td>
     <td><button class="admin-danger-small u-delete" type="button">Delete</button></td>`;
   body.appendChild(tr);
-  tr.querySelector(".u-role").value = user.role || "User";
+  tr.querySelector(".u-role").value = normalizeUserRole(user.role);
   tr.querySelector(".u-active").value = user.active === false ? "false" : "true";
   tr.querySelector(".u-must").value = user.mustChangePassword ? "true" : "false";
   tr.querySelector(".u-delete").addEventListener("click", () => tr.remove());
@@ -2064,7 +2098,7 @@ function collectUsersRows() {
     username: tr.querySelector(".u-username").value.trim(),
     displayName: tr.querySelector(".u-display").value.trim(),
     password: tr.querySelector(".u-password").value,
-    role: tr.querySelector(".u-role").value,
+    role: normalizeUserRole(tr.querySelector(".u-role").value),
     email: tr.querySelector(".u-email").value.trim(),
     active: tr.querySelector(".u-active").value === "true",
     mustChangePassword: tr.querySelector(".u-must").value === "true"

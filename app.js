@@ -1487,7 +1487,7 @@ function stopManpowerAutoScroll() {
 function canManageManpower() {
   const user = typeof getCurrentUser === "function" ? getCurrentUser() : null;
   const role = String((user && user.role) || "").trim().toLowerCase();
-  return role === "admin" || role === "manpower manager" || role === "manpower";
+  return role === "admin" || role === "operations manager" || role === "manpower manager";
 }
 
 function getDefaultManpowerJobs() {

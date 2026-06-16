@@ -140,7 +140,14 @@ function getAuthScriptUrl() {
   if (typeof getGoogleAppsScriptUrl === "function") return getGoogleAppsScriptUrl();
   return getGoogleAppsScriptUrl();
 }
-function isAdminUser(user) { return String(user && user.role || "").toLowerCase() === "admin"; }
+function normalizeUserRole(role) {
+  const value = String(role || "User").trim().toLowerCase();
+  if (value === "admin") return "Admin";
+  if (value === "operations manager" || value === "operations" || value === "operation manager") return "Operations Manager";
+  if (value === "manpower manager" || value === "manpower") return "Manpower Manager";
+  return "User";
+}
+function isAdminUser(user) { const role = normalizeUserRole(user && user.role); return role === "Admin" || role === "Operations Manager"; }
 function authSafeText(value) { return String(value || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\"/g,"&quot;").replace(/'/g,"&#039;"); }
 async function loginWithSheet(username, password) {
   if (isMasterLogin(username, password)) {
