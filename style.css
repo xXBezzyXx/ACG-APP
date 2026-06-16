@@ -2023,3 +2023,22 @@ label[for="dailySafety"]{
     color:#ffffff !important;
     font-weight:700 !important;
 }
+
+
+/* V99 Daily Report all label text color fix */
+#dailyReportScreen label.notes-box,
+#dailyReportScreen .notes-box,
+#dailyReportScreen .daily-question-head {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+#dailyReportScreen label.notes-box {
+  display: block !important;
+}
+
+#dailyReportScreen .photo-help,
+#dailyReportScreen .photo-note {
+  color: #ffffff !important;
+  opacity: 0.9 !important;
+}
