@@ -28,6 +28,7 @@
         <button id="dailyReportChoiceBtn" class="action-choice-card" type="button"><span>📝</span><strong>Daily Report</strong><small>Manpower, work performed, issues, photos</small></button>
         <button id="materialOrderChoiceBtn" class="action-choice-card" type="button"><span>📦</span><strong>Material Order</strong><small>Request materials and email PDF</small></button>
         <button id="rentalChoiceBtn" class="action-choice-card" type="button"><span>🚜</span><strong>Job Site Rentals</strong><small>Track conex, lull, lifts, and rental quantity</small></button>
+        <button id="manpowerChoiceBtn" class="action-choice-card" type="button"><span>👷</span><strong>Manpower</strong><small>Drag employees to this job or other jobs</small></button>
       </div>
     </section>
 
@@ -65,6 +66,34 @@
 
         <button id="submitRentalBtn" class="submit-btn" type="button">Submit Rentals</button>
       </div>
+    </section>
+
+
+    <section id="manpowerScreen" class="screen">
+      <header class="top-bar center"><button class="back-btn" onclick="showScreen('jobActionScreen')" type="button">‹</button><h2>Manpower Board</h2><span></span></header>
+
+      <div class="daily-auto-grid">
+        <div class="daily-auto-box"><span>Selected Job</span><strong id="manpowerSelectedJob">Selected Job</strong></div>
+        <div class="daily-auto-box"><span>Total Employees</span><strong id="manpowerTotalCount">0</strong></div>
+      </div>
+
+      <div id="manpowerAdminTools" class="daily-form-card" style="display:none;">
+        <h3>Add Employee</h3>
+        <label class="daily-label">Employee Name
+          <input id="manpowerEmployeeName" class="daily-input" type="text" placeholder="Example: Mike" />
+        </label>
+        <label class="daily-label">Position / Trade
+          <input id="manpowerEmployeePosition" class="daily-input" type="text" placeholder="Example: Foreman, Mechanic, Helper" />
+        </label>
+        <button id="addManpowerEmployeeBtn" class="submit-btn" type="button">Add Employee</button>
+        <p class="send-note">Only Admin or Manpower Manager roles can add or move employees.</p>
+      </div>
+
+      <div class="manpower-board-toolbar">
+        <button id="refreshManpowerBtn" class="submit-btn" type="button">Refresh Manpower</button>
+      </div>
+
+      <div id="manpowerBoard" class="manpower-board"></div>
     </section>
 
     <section id="dailyReportScreen" class="screen">
@@ -133,6 +162,7 @@
     <nav class="bottom-nav">
       <button onclick="showScreen('jobsScreen')" class="nav-btn active" data-screen="jobsScreen" type="button"><span>▣</span>Jobs</button>
       <a href="order-board.html" class="nav-btn"><span>▤</span>Orders</a>
+      <button id="bottomManpowerBtn" onclick="openManpowerFromBottom()" class="nav-btn" type="button"><span>👷</span>Manpower</button>
       <a href="admin.html" class="nav-btn"><span>⚙</span>Admin</a>
     </nav>
   </div>

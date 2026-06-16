@@ -1274,6 +1274,144 @@ function showRentalsAdminPage() {
 }
 
 
+
+/* V81 Admin Manpower */
+let adminManpowerEmployees = [];
+
+function normalizeAdminManpowerEmployees(rows) {
+  return (rows || []).map(row => ({
+    name: row.name || row.Employee || "",
+    position: row.position || row.Position || "",
+    assignedTo: row.assignedTo || row["Assigned To"] || "Unassigned",
+    active: row.active === false ? false : true
+  })).filter(row => row.name);
+}
+
+async function loadAdminManpowerEmployees() {
+  const list = document.getElementById("adminManpowerEmployeeList");
+  if (list) list.innerHTML = "<p class='admin-note'>Loading employees...</p>";
+
+  const url = getGoogleAppsScriptUrl();
+  if (!url) {
+    adminManpowerEmployees = [];
+    renderAdminManpowerEmployees();
+    return;
+  }
+
+  try {
+    const response = await fetch(url + "?action=manpowerBoard&v=" + Date.now(), { cache: "no-store" });
+    const data = await response.json();
+    adminManpowerEmployees = normalizeAdminManpowerEmployees(data.employees || []);
+  } catch (error) {
+    console.warn("Could not load manpower employees.", error);
+    adminManpowerEmployees = [];
+  }
+
+  renderAdminManpowerEmployees();
+}
+
+function renderAdminManpowerEmployees() {
+  const list = document.getElementById("adminManpowerEmployeeList");
+  if (!list) return;
+
+  if (!adminManpowerEmployees.length) {
+    list.innerHTML = "<p class='admin-note'>No employees added yet.</p>";
+    return;
+  }
+
+  list.innerHTML = adminManpowerEmployees.map((emp, index) => `
+    <div class="material-manager-row editable-material-row">
+      <div class="material-edit-grid">
+        <label class="admin-label">Employee
+          <input value="${safeText(emp.name || "")}" data-admin-mp-name="${index}" />
+        </label>
+        <label class="admin-label">Position
+          <input value="${safeText(emp.position || "")}" data-admin-mp-position="${index}" />
+        </label>
+        <label class="admin-label">Assigned To
+          <input value="${safeText(emp.assignedTo || "Unassigned")}" data-admin-mp-assigned="${index}" />
+        </label>
+      </div>
+      <div class="material-edit-actions">
+        <button class="save-material" data-save-admin-mp="${index}" type="button">Save</button>
+        <button class="delete-material" data-delete-admin-mp="${index}" type="button">Delete</button>
+      </div>
+    </div>
+  `).join("");
+
+  document.querySelectorAll("[data-save-admin-mp]").forEach(button => button.addEventListener("click", () => saveAdminManpowerEmployee(Number(button.dataset.saveAdminMp))));
+  document.querySelectorAll("[data-delete-admin-mp]").forEach(button => button.addEventListener("click", () => deleteAdminManpowerEmployee(Number(button.dataset.deleteAdminMp))));
+}
+
+async function saveAdminManpowerToSheet() {
+  const url = getGoogleAppsScriptUrl();
+  if (!url) return alert("Missing Google Apps Script URL.");
+
+  const jobs = [];
+  adminManpowerEmployees.forEach(emp => {
+    if (emp.assignedTo && !jobs.some(job => String(job.name).toLowerCase() === String(emp.assignedTo).toLowerCase())) {
+      jobs.push({ name: emp.assignedTo, locked: false });
+    }
+  });
+
+  await fetch(url, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify({
+      action: "saveManpowerBoard",
+      employees: adminManpowerEmployees,
+      jobs: jobs
+    })
+  });
+}
+
+async function addAdminManpowerEmployee() {
+  const nameEl = document.getElementById("adminManpowerEmployeeName");
+  const posEl = document.getElementById("adminManpowerEmployeePosition");
+  const name = (nameEl ? nameEl.value : "").trim();
+  const position = (posEl ? posEl.value : "").trim();
+
+  if (!name) return alert("Enter employee name.");
+  if (adminManpowerEmployees.some(emp => String(emp.name || "").toLowerCase() === name.toLowerCase())) {
+    return alert("Employee already exists.");
+  }
+
+  adminManpowerEmployees.push({ name, position, assignedTo: "Unassigned", active: true });
+  if (nameEl) nameEl.value = "";
+  if (posEl) posEl.value = "";
+
+  renderAdminManpowerEmployees();
+  await saveAdminManpowerToSheet();
+  setTimeout(loadAdminManpowerEmployees, 800);
+}
+
+async function saveAdminManpowerEmployee(index) {
+  if (!adminManpowerEmployees[index]) return;
+
+  adminManpowerEmployees[index].name = document.querySelector(`[data-admin-mp-name="${index}"]`)?.value.trim() || "";
+  adminManpowerEmployees[index].position = document.querySelector(`[data-admin-mp-position="${index}"]`)?.value.trim() || "";
+  adminManpowerEmployees[index].assignedTo = document.querySelector(`[data-admin-mp-assigned="${index}"]`)?.value.trim() || "Unassigned";
+
+  adminManpowerEmployees = adminManpowerEmployees.filter(emp => emp.name);
+  renderAdminManpowerEmployees();
+  await saveAdminManpowerToSheet();
+}
+
+async function deleteAdminManpowerEmployee(index) {
+  if (!adminManpowerEmployees[index]) return;
+  if (!confirm("Delete employee " + adminManpowerEmployees[index].name + "?")) return;
+  adminManpowerEmployees.splice(index, 1);
+  renderAdminManpowerEmployees();
+  await saveAdminManpowerToSheet();
+}
+
+function showManpowerAdminPage() {
+  showAdminPage("manpowerAdminPage");
+  loadAdminManpowerEmployees();
+}
+
+
 function setupAdmin() {
   document.querySelectorAll("[data-admin-page]").forEach(button => {
     button.addEventListener("click", () => {
@@ -1336,6 +1474,15 @@ function setupAdmin() {
   document.getElementById("materialNameInput").addEventListener("keydown", event => {
     if (event.key === "Enter") addMaterial();
   });
+
+  const adminAddManpowerEmployeeBtn = document.getElementById("adminAddManpowerEmployeeBtn");
+  if (adminAddManpowerEmployeeBtn) adminAddManpowerEmployeeBtn.addEventListener("click", addAdminManpowerEmployee);
+
+  const adminRefreshManpowerBtn = document.getElementById("adminRefreshManpowerBtn");
+  if (adminRefreshManpowerBtn) adminRefreshManpowerBtn.addEventListener("click", loadAdminManpowerEmployees);
+
+  const adminManpowerEmployeeName = document.getElementById("adminManpowerEmployeeName");
+  if (adminManpowerEmployeeName) adminManpowerEmployeeName.addEventListener("keydown", event => { if (event.key === "Enter") addAdminManpowerEmployee(); });
 
   const refreshOrdersBtn = document.getElementById("refreshOrdersBtn");
   if (refreshOrdersBtn) refreshOrdersBtn.addEventListener("click", renderAdminOrders);

@@ -1450,6 +1450,214 @@ async function submitDailyReport() {
   if (btn) { btn.disabled = false; btn.innerHTML = originalText; }
 }
 
+
+
+
+/* V83 Manpower Board - Option B */
+let manpowerEmployees = [];
+let manpowerJobs = [];
+let draggedManpowerEmployee = "";
+
+function canManageManpower() {
+  const user = typeof getCurrentUser === "function" ? getCurrentUser() : null;
+  const role = String((user && user.role) || "").trim().toLowerCase();
+  return role === "admin" || role === "manpower manager" || role === "manpower";
+}
+
+function getDefaultManpowerJobs() {
+  const activeJobs = typeof getActiveJobs === "function" ? getActiveJobs() : [];
+  const jobObjects = activeJobs.map(name => ({ name, locked: false }));
+  return [
+    { name: "Unassigned", locked: true },
+    { name: "Shop", locked: true },
+    { name: "Vacation", locked: true },
+    ...jobObjects
+  ];
+}
+
+function mergeManpowerJobs(sheetJobs) {
+  const seen = new Set();
+  const merged = [];
+
+  [...(sheetJobs || []), ...getDefaultManpowerJobs()].forEach(job => {
+    const name = String(job.name || job.Job || "").trim();
+    if (!name) return;
+    const key = name.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    merged.push({
+      name,
+      locked: job.locked === true || String(job.locked || job.Locked || "").toLowerCase() === "true"
+    });
+  });
+
+  return merged;
+}
+
+async function loadManpowerBoard() {
+  const url = typeof getGoogleAppsScriptUrl === "function" ? getGoogleAppsScriptUrl() : "";
+  manpowerJobs = getDefaultManpowerJobs();
+
+  if (!url) {
+    renderManpowerBoard();
+    return;
+  }
+
+  try {
+    const response = await fetch(url + "?action=manpowerBoard&v=" + Date.now(), { cache: "no-store" });
+    const data = await response.json();
+
+    if (Array.isArray(data.jobs) && data.jobs.length) manpowerJobs = mergeManpowerJobs(data.jobs);
+    if (Array.isArray(data.employees)) manpowerEmployees = data.employees;
+  } catch (error) {
+    console.warn("Could not load Manpower board.", error);
+  }
+
+  renderManpowerBoard();
+}
+
+async function saveManpowerBoard() {
+  const url = typeof getGoogleAppsScriptUrl === "function" ? getGoogleAppsScriptUrl() : "";
+  if (!url) return;
+
+  try {
+    await fetch(url, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({
+        action: "saveManpowerBoard",
+        employees: manpowerEmployees,
+        jobs: mergeManpowerJobs(manpowerJobs)
+      })
+    });
+  } catch (error) {
+    console.warn("Could not save Manpower board.", error);
+  }
+}
+
+function openManpowerFromBottom() {
+  currentSelectedJob = "";
+  startManpowerBoard();
+}
+
+function startManpowerBoard() {
+  const selectedJob = document.getElementById("manpowerSelectedJob");
+  if (selectedJob) selectedJob.textContent = currentSelectedJob || "All Jobs";
+
+  const tools = document.getElementById("manpowerAdminTools");
+  if (tools) tools.style.display = canManageManpower() ? "block" : "none";
+
+  showScreen("manpowerScreen");
+  loadManpowerBoard();
+}
+
+function addManpowerEmployeeFromApp() {
+  if (!canManageManpower()) return alert("You do not have permission to add employees.");
+
+  const nameEl = document.getElementById("manpowerEmployeeName");
+  const posEl = document.getElementById("manpowerEmployeePosition");
+  const name = (nameEl ? nameEl.value : "").trim();
+  const position = (posEl ? posEl.value : "").trim();
+
+  if (!name) return alert("Enter employee name.");
+  if (manpowerEmployees.some(emp => String(emp.name || "").toLowerCase() === name.toLowerCase())) {
+    return alert("Employee already exists.");
+  }
+
+  manpowerEmployees.push({ name, position, assignedTo: "Unassigned", active: true });
+  if (nameEl) nameEl.value = "";
+  if (posEl) posEl.value = "";
+
+  renderManpowerBoard();
+  saveManpowerBoard();
+}
+
+function moveManpowerEmployee(employeeName, jobName) {
+  if (!canManageManpower()) return alert("You do not have permission to move employees.");
+
+  const employee = manpowerEmployees.find(emp => emp.name === employeeName);
+  if (!employee) return;
+
+  employee.assignedTo = jobName; // Option B: this saves to Employees sheet Assigned To
+  renderManpowerBoard();
+  saveManpowerBoard();
+}
+
+function removeManpowerEmployee(employeeName) {
+  if (!canManageManpower()) return alert("You do not have permission to remove employees.");
+  if (!confirm("Remove " + employeeName + "?")) return;
+
+  manpowerEmployees = manpowerEmployees.filter(emp => emp.name !== employeeName);
+  renderManpowerBoard();
+  saveManpowerBoard();
+}
+
+function renderManpowerBoard() {
+  const board = document.getElementById("manpowerBoard");
+  if (!board) return;
+
+  const total = document.getElementById("manpowerTotalCount");
+  if (total) total.textContent = String(manpowerEmployees.length);
+
+  const canManage = canManageManpower();
+  const jobs = mergeManpowerJobs(manpowerJobs.length ? manpowerJobs : getDefaultManpowerJobs());
+
+  board.innerHTML = jobs.map(job => {
+    const assigned = manpowerEmployees.filter(emp => (emp.assignedTo || "Unassigned") === job.name);
+    return `
+      <div class="manpower-column">
+        <div class="manpower-column-head">
+          <h3>${safeText(job.name)}</h3>
+          <span>${assigned.length}</span>
+        </div>
+        <div class="manpower-dropzone" data-manpower-job="${safeText(job.name)}">
+          ${assigned.map(emp => `
+            <div class="manpower-card" draggable="${canManage ? "true" : "false"}" data-manpower-employee="${safeText(emp.name)}">
+              <div>
+                <strong>${safeText(emp.name)}</strong>
+                <small>${safeText(emp.position || "")}</small>
+              </div>
+              ${canManage ? `<button data-remove-manpower="${safeText(emp.name)}" type="button">×</button>` : ""}
+            </div>
+          `).join("") || "<p class='send-note'>Drop employees here</p>"}
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  if (!canManage) return;
+
+  document.querySelectorAll(".manpower-card").forEach(card => {
+    card.addEventListener("dragstart", event => {
+      draggedManpowerEmployee = card.dataset.manpowerEmployee;
+      event.dataTransfer.setData("text/plain", draggedManpowerEmployee);
+    });
+  });
+
+  document.querySelectorAll(".manpower-dropzone").forEach(zone => {
+    zone.addEventListener("dragover", event => {
+      event.preventDefault();
+      zone.classList.add("drag-over");
+    });
+    zone.addEventListener("dragleave", () => zone.classList.remove("drag-over"));
+    zone.addEventListener("drop", event => {
+      event.preventDefault();
+      zone.classList.remove("drag-over");
+      const employeeName = event.dataTransfer.getData("text/plain") || draggedManpowerEmployee;
+      moveManpowerEmployee(employeeName, zone.dataset.manpowerJob);
+    });
+  });
+
+  document.querySelectorAll("[data-remove-manpower]").forEach(button => {
+    button.addEventListener("click", event => {
+      event.stopPropagation();
+      removeManpowerEmployee(button.dataset.removeManpower);
+    });
+  });
+}
+
+
 function setupApp() {
   const jobSearch = document.getElementById("jobSearch");
   if (jobSearch) jobSearch.addEventListener("input", renderJobs);
@@ -1468,6 +1676,18 @@ function setupApp() {
 
   const submitRentalBtn = document.getElementById("submitRentalBtn");
   if (submitRentalBtn) submitRentalBtn.addEventListener("click", submitRental);
+
+  const manpowerChoiceBtn = document.getElementById("manpowerChoiceBtn");
+  if (manpowerChoiceBtn) manpowerChoiceBtn.addEventListener("click", startManpowerBoard);
+
+  const bottomManpowerBtn = document.getElementById("bottomManpowerBtn");
+  if (bottomManpowerBtn) bottomManpowerBtn.addEventListener("click", openManpowerFromBottom);
+
+  const addManpowerEmployeeBtn = document.getElementById("addManpowerEmployeeBtn");
+  if (addManpowerEmployeeBtn) addManpowerEmployeeBtn.addEventListener("click", addManpowerEmployeeFromApp);
+
+  const refreshManpowerBtn = document.getElementById("refreshManpowerBtn");
+  if (refreshManpowerBtn) refreshManpowerBtn.addEventListener("click", loadManpowerBoard);
 
   const dailyChoiceBtn = document.getElementById("dailyReportChoiceBtn");
   if (dailyChoiceBtn) dailyChoiceBtn.addEventListener("click", startDailyReport);
