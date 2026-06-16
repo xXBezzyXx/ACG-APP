@@ -2012,3 +2012,14 @@ button#adminAddManpowerEmployeeBtn:hover {
 .order-board-actions .delete-order {
   background: #ef4444;
 }
+
+
+/* V98 Daily Report label color fix */
+.daily-label,
+.daily-report-form .daily-label,
+.daily-report-form label,
+label[for="dailyDelays"],
+label[for="dailySafety"]{
+    color:#ffffff !important;
+    font-weight:700 !important;
+}
