@@ -1978,3 +1978,37 @@ button#adminAddManpowerEmployeeBtn:hover {
   color: #fff;
   background: rgba(249,115,22,.16);
 }
+
+
+/* V97 Order Board status controls */
+.order-board-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+  align-items: center;
+}
+
+.order-board-actions button {
+  border: 0;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-weight: 900;
+  color: #fff;
+}
+
+.order-board-actions .status-pending {
+  background: #f59e0b;
+}
+
+.order-board-actions .status-ordered {
+  background: #16a34a;
+}
+
+.order-board-actions .status-delivered {
+  background: #64748b;
+}
+
+.order-board-actions .delete-order {
+  background: #ef4444;
+}

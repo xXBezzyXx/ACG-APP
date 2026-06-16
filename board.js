@@ -97,6 +97,7 @@ async function loadOrders() {
     const response = await fetch(getGoogleAppsScriptUrl() + "?v=" + Date.now());
     const data = await response.json();
     const orders = Array.isArray(data.orders) ? data.orders.reverse() : [];
+    const canManage = canManageRentalBoard();
 
     if (debug) debug.textContent = "Shared orders found: " + orders.length;
 
@@ -127,13 +128,33 @@ async function loadOrders() {
           <div class="order-meta">
             <span><strong>Requested By:</strong> ${safeText(order.requestedBy || "Unknown")}</span>
             <span><strong>Status:</strong> ${safeText(order.status || "Pending")}</span>
+            ${order.orderNumber ? `<span><strong>Order #:</strong> ${safeText(order.orderNumber)}</span>` : ""}
           </div>
 
           <div class="order-items">${itemHtml}</div>
           ${order.notes ? `<div class="order-notes"><strong>Notes:</strong> ${safeText(order.notes)}</div>` : ""}
+
+          ${canManage ? `
+            <div class="order-board-actions">
+              <button type="button" class="status-pending" data-order-status="Pending" data-order-id="${safeText(order.id)}">Pending</button>
+              <button type="button" class="status-ordered" data-order-status="Ordered" data-order-id="${safeText(order.id)}">Ordered</button>
+              <button type="button" class="status-delivered" data-order-status="Delivered" data-order-id="${safeText(order.id)}">Delivered</button>
+              <button type="button" class="delete-order" data-delete-order="${safeText(order.id)}">Delete</button>
+            </div>
+          ` : ""}
         </div>
       `;
     }).join("");
+
+    if (canManage) {
+      document.querySelectorAll("[data-order-status]").forEach(button => {
+        button.addEventListener("click", () => updateOrderBoardStatus(button.dataset.orderId, button.dataset.orderStatus));
+      });
+
+      document.querySelectorAll("[data-delete-order]").forEach(button => {
+        button.addEventListener("click", () => deleteOrderBoardItem(button.dataset.deleteOrder));
+      });
+    }
   } catch (error) {
     console.error(error);
     if (debug) debug.textContent = "";
@@ -141,6 +162,39 @@ async function loadOrders() {
   }
 }
 
+async function updateOrderBoardStatus(id, status) {
+  if (!canManageRentalBoard()) return alert("You do not have permission to update orders.");
+
+  await fetch(getGoogleAppsScriptUrl(), {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify({
+      action: "updateStatus",
+      id,
+      status
+    })
+  });
+
+  setTimeout(loadOrders, 700);
+}
+
+async function deleteOrderBoardItem(id) {
+  if (!canManageRentalBoard()) return alert("You do not have permission to delete orders.");
+  if (!confirm("Delete this order?")) return;
+
+  await fetch(getGoogleAppsScriptUrl(), {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify({
+      action: "deleteOrder",
+      id
+    })
+  });
+
+  setTimeout(loadOrders, 700);
+}
 
 async function loadRentalsBoard() {
   const list = document.getElementById("rentalBoardList");
