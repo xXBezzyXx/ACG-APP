@@ -1623,8 +1623,17 @@ function renderManpowerBoard() {
   const board = document.getElementById("manpowerBoard");
   if (!board) return;
 
-  const total = document.getElementById("manpowerTotalCount");
-  if (total) total.textContent = String(manpowerEmployees.length);
+  const totalOld = document.getElementById("manpowerTotalCount");
+  const totalEmployeesEl = document.getElementById("manpowerTotalEmployees");
+  const unassignedEl = document.getElementById("manpowerUnassignedCount");
+  const activeJobsEl = document.getElementById("manpowerActiveJobCount");
+  const unassignedCount = manpowerEmployees.filter(emp => (emp.assignedTo || "Unassigned") === "Unassigned").length;
+  const activeJobCount = new Set(manpowerEmployees.map(emp => emp.assignedTo || "Unassigned").filter(name => name && !["Unassigned", "Shop", "Vacation"].includes(name))).size;
+
+  if (totalOld) totalOld.textContent = `${manpowerEmployees.length} total • ${unassignedCount} unassigned • ${activeJobCount} active jobs`;
+  if (totalEmployeesEl) totalEmployeesEl.textContent = `${manpowerEmployees.length} Total Employees`;
+  if (unassignedEl) unassignedEl.textContent = `${unassignedCount} Unassigned`;
+  if (activeJobsEl) activeJobsEl.textContent = `${activeJobCount} Active Jobs`;
 
   const canManage = canManageManpower();
   const jobs = mergeManpowerJobs(manpowerJobs.length ? manpowerJobs : getDefaultManpowerJobs());

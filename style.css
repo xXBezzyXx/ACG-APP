@@ -1470,3 +1470,307 @@ button#adminAddManpowerEmployeeBtn:hover {
   background: #ea580c !important;
   background-color: #ea580c !important;
 }
+
+
+/* V88 Full Screen Manpower Board */
+#manpowerScreen {
+  max-width: none !important;
+  width: 100vw !important;
+  margin-left: calc(50% - 50vw) !important;
+  margin-right: calc(50% - 50vw) !important;
+  padding-left: clamp(12px, 2vw, 28px) !important;
+  padding-right: clamp(12px, 2vw, 28px) !important;
+  padding-bottom: 110px !important;
+}
+
+#manpowerScreen .top-bar,
+#manpowerScreen .daily-auto-grid,
+#manpowerScreen .daily-form-card,
+#manpowerScreen .manpower-board-toolbar {
+  max-width: none !important;
+  width: 100% !important;
+}
+
+#manpowerScreen .daily-auto-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
+}
+
+.manpower-board {
+  width: 100% !important;
+  max-width: none !important;
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
+  gap: 16px !important;
+  align-items: start !important;
+}
+
+.manpower-column {
+  min-width: 0 !important;
+  min-height: 260px !important;
+}
+
+.manpower-dropzone {
+  min-height: 240px !important;
+  max-height: calc(100vh - 340px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
+.manpower-column-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  backdrop-filter: blur(10px);
+}
+
+/* Larger computer screens can fit more jobs across */
+@media (min-width: 1500px) {
+  .manpower-board {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
+  }
+}
+
+@media (min-width: 1900px) {
+  .manpower-board {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)) !important;
+  }
+}
+
+/* Tablets */
+@media (max-width: 1050px) {
+  #manpowerScreen {
+    width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  .manpower-board {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)) !important;
+  }
+
+  .manpower-dropzone {
+    max-height: none;
+  }
+}
+
+/* Phones only show what fits cleanly */
+@media (max-width: 720px) {
+  #manpowerScreen {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+
+  .manpower-board {
+    grid-template-columns: 1fr !important;
+  }
+
+  .manpower-column {
+    min-height: 180px !important;
+  }
+
+  .manpower-dropzone {
+    max-height: none !important;
+    min-height: 120px !important;
+  }
+}
+
+
+/* V89 Manpower compact top summary + no inner job scroll */
+#manpowerScreen .daily-auto-grid {
+  display: none !important;
+}
+
+.manpower-summary-grid {
+  display: grid !important;
+  grid-template-columns: repeat(4, auto) !important;
+  justify-content: start !important;
+  align-items: center !important;
+  gap: 10px !important;
+  margin: 12px 0 18px !important;
+  width: auto !important;
+  max-width: 100% !important;
+}
+
+.manpower-summary-card {
+  background: rgba(255,255,255,.95) !important;
+  color: #07101f !important;
+  border-radius: 14px !important;
+  padding: 10px 14px !important;
+  min-width: 150px !important;
+  box-shadow: 0 10px 24px rgba(0,0,0,.18) !important;
+}
+
+.manpower-summary-card span {
+  display: block !important;
+  color: #64748b !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  text-transform: uppercase !important;
+  letter-spacing: .05em !important;
+  margin-bottom: 4px !important;
+}
+
+.manpower-summary-card strong {
+  color: #07101f !important;
+  font-size: 15px !important;
+  font-weight: 900 !important;
+}
+
+/* Let full page scroll naturally, not each job card */
+.manpower-dropzone {
+  max-height: none !important;
+  overflow: visible !important;
+  min-height: 160px !important;
+  scrollbar-width: auto !important;
+}
+
+.manpower-column {
+  overflow: visible !important;
+}
+
+.manpower-column-head {
+  position: static !important;
+}
+
+/* Phone/tablet compact summary */
+@media (max-width: 900px) {
+  .manpower-summary-grid {
+    grid-template-columns: repeat(2, minmax(140px, 1fr)) !important;
+  }
+
+  .manpower-summary-card {
+    min-width: 0 !important;
+  }
+}
+
+@media (max-width: 520px) {
+  .manpower-summary-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+
+/* V90 Manpower add employee form compact */
+#manpowerAdminTools {
+  max-width: 720px !important;
+  width: 720px !important;
+  margin: 10px 0 18px !important;
+  padding: 16px !important;
+}
+
+#manpowerAdminTools .daily-input {
+  max-width: 100% !important;
+}
+
+#manpowerAdminTools .send-note {
+  text-align: left !important;
+  margin-top: 12px !important;
+}
+
+.manpower-board-toolbar {
+  max-width: 220px !important;
+  width: auto !important;
+  margin: 10px 0 18px !important;
+}
+
+#refreshManpowerBtn {
+  width: auto !important;
+}
+
+/* Keep it phone friendly */
+@media (max-width: 780px) {
+  #manpowerAdminTools {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  .manpower-board-toolbar {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  #refreshManpowerBtn {
+    width: 100% !important;
+  }
+}
+
+
+/* V91 Force Add Employee form to 1/4 screen width */
+#manpowerAdminTools{
+    width: 450px !important;
+    max-width: 450px !important;
+    min-width: 450px !important;
+    display:block !important;
+}
+
+#manpowerAdminTools input,
+#manpowerAdminTools .daily-input{
+    width:100% !important;
+    max-width:100% !important;
+}
+
+#manpowerAdminTools .send-note{
+    width:100% !important;
+    text-align:left !important;
+}
+
+@media (max-width: 768px){
+    #manpowerAdminTools{
+        width:100% !important;
+        max-width:100% !important;
+        min-width:0 !important;
+    }
+}
+
+
+/* V92 HARD OVERRIDE - Manpower Add Employee form width */
+#manpowerScreen #manpowerAdminTools.daily-form-card,
+#manpowerScreen #manpowerAdminTools {
+  width: 450px !important;
+  max-width: 450px !important;
+  min-width: 450px !important;
+  margin-left: 0 !important;
+  margin-right: auto !important;
+  display: block !important;
+  justify-self: start !important;
+  align-self: start !important;
+}
+
+#manpowerScreen #manpowerAdminTools .daily-label,
+#manpowerScreen #manpowerAdminTools label {
+  width: 100% !important;
+  max-width: 100% !important;
+  display: block !important;
+}
+
+#manpowerScreen #manpowerAdminTools .daily-input,
+#manpowerScreen #manpowerAdminTools input {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  display: block !important;
+  box-sizing: border-box !important;
+}
+
+#manpowerScreen #manpowerAdminTools #addManpowerEmployeeBtn {
+  width: auto !important;
+  max-width: max-content !important;
+}
+
+#manpowerScreen #manpowerAdminTools .send-note {
+  width: 100% !important;
+  max-width: 100% !important;
+  text-align: left !important;
+  margin-left: 0 !important;
+}
+
+/* Keep phone/tablet full width */
+@media (max-width: 768px) {
+  #manpowerScreen #manpowerAdminTools.daily-form-card,
+  #manpowerScreen #manpowerAdminTools {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+}
