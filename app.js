@@ -1631,9 +1631,9 @@ function renderManpowerBoard() {
   const activeJobCount = new Set(manpowerEmployees.map(emp => emp.assignedTo || "Unassigned").filter(name => name && !["Unassigned", "Shop", "Vacation"].includes(name))).size;
 
   if (totalOld) totalOld.textContent = `${manpowerEmployees.length} total • ${unassignedCount} unassigned • ${activeJobCount} active jobs`;
-  if (totalEmployeesEl) totalEmployeesEl.textContent = `${manpowerEmployees.length} Total Employees`;
-  if (unassignedEl) unassignedEl.textContent = `${unassignedCount} Unassigned`;
-  if (activeJobsEl) activeJobsEl.textContent = `${activeJobCount} Active Jobs`;
+  if (totalEmployeesEl) totalEmployeesEl.textContent = String(manpowerEmployees.length);
+  if (unassignedEl) unassignedEl.textContent = String(unassignedCount);
+  if (activeJobsEl) activeJobsEl.textContent = String(activeJobCount);
 
   const canManage = canManageManpower();
   const jobs = mergeManpowerJobs(manpowerJobs.length ? manpowerJobs : getDefaultManpowerJobs());
