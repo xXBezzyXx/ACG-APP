@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Order Board</title>
+  <title>Rental Board</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body class="auth-locked">
   <div class="app">
     <header class="top-bar">
       <div>
-        <p class="small-text">Shared Orders</p>
-        <h1>Order Board</h1>
+        <p class="small-text">Job Site Rentals</p>
+        <h1>Rental Board</h1>
       </div>
       <a class="admin-link app-top-btn" href="index.html">App</a>
     </header>
@@ -19,17 +19,18 @@
     <main>
       <div class="admin-card">
         <div class="admin-card-head">
-          <h2>Orders</h2>
-          <button id="refreshOrdersBtn" class="primary-btn" type="button">Refresh</button>
+          <h2>Rentals</h2>
+          <button id="refreshRentalsBoardBtn" class="primary-btn" type="button">Refresh</button>
         </div>
-        <p id="orderDebug" class="admin-note"></p>
-        <div id="orderBoardList"></div>
+        <p id="rentalDebug" class="admin-note"></p>
+        <div id="rentalBoardList"></div>
       </div>
     </main>
+
     <nav class="bottom-nav">
       <a href="index.html" class="nav-btn"><span>▣</span>Jobs</a>
-      <a href="order-board.html" class="nav-btn active"><span>▤</span>Orders</a>
-      <a href="rental-board.html" class="nav-btn"><span>🚜</span>Rentals</a>
+      <a href="order-board.html" class="nav-btn"><span>▤</span>Orders</a>
+      <a href="rental-board.html" class="nav-btn active"><span>🚜</span>Rentals</a>
       <a href="index.html#manpower" class="nav-btn" onclick="localStorage.setItem('openManpowerOnLoad','true')"><span>👷</span>Manpower</a>
       <a href="admin.html" class="nav-btn"><span>⚙</span>Admin</a>
     </nav>

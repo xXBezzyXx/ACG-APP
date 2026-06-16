@@ -48,6 +48,44 @@ function priorityClass(priority) {
   return "priority-normal";
 }
 
+function currentBoardRole() {
+  const user = typeof getCurrentUser === "function" ? getCurrentUser() : null;
+  const role = String((user && user.role) || "User").trim().toLowerCase();
+  if (role === "admin") return "Admin";
+  if (role === "operations manager" || role === "operations") return "Operations Manager";
+  if (role === "manpower manager" || role === "manpower") return "Manpower Manager";
+  return "User";
+}
+
+function canManageRentalBoard() {
+  const role = currentBoardRole();
+  return role === "Admin" || role === "Operations Manager";
+}
+
+function rentalStatusClass(status) {
+  const value = String(status || "Requested").toLowerCase().replace(/\s+/g, "-");
+  if (value === "called-off" || value === "not-active") return "delivered";
+  if (value === "rented" || value === "active") return "ordered";
+  return "pending";
+}
+
+function normalizeRentalStatus(status) {
+  const value = String(status || "Requested").trim();
+  if (value.toLowerCase() === "active") return "Rented";
+  if (value.toLowerCase() === "not active") return "Called Off";
+  return value || "Requested";
+}
+
+function formatRentalDate(value) {
+  if (!value) return "";
+  try {
+    return new Date(value).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" });
+  } catch {
+    return value;
+  }
+}
+
+
 async function loadOrders() {
   const list = document.getElementById("orderBoardList");
   const debug = document.getElementById("orderDebug");
@@ -103,10 +141,126 @@ async function loadOrders() {
   }
 }
 
+
+async function loadRentalsBoard() {
+  const list = document.getElementById("rentalBoardList");
+  const debug = document.getElementById("rentalDebug");
+  if (!list) return;
+
+  list.innerHTML = "<p class='admin-note'>Loading rental requests...</p>";
+
+  try {
+    const response = await fetch(getGoogleAppsScriptUrl() + "?action=rentals&v=" + Date.now(), { cache: "no-store" });
+    const data = await response.json();
+    const rentals = Array.isArray(data.rentals) ? data.rentals.reverse() : [];
+    const canManage = canManageRentalBoard();
+
+    if (debug) debug.textContent = "Rental requests found: " + rentals.length;
+
+    if (!rentals.length) {
+      list.innerHTML = "<p class='admin-note'>No rental requests submitted yet.</p>";
+      return;
+    }
+
+    list.innerHTML = rentals.map(rental => {
+      const status = normalizeRentalStatus(rental.status);
+      const offDate = rental.dateOffRent || "";
+      return `
+        <div class="order-card rental-board-card">
+          <div class="order-card-head">
+            <div>
+              <h3>${safeText(rental.job || "Unknown Job")}</h3>
+              <span>${safeText(formatDate(rental.dateAdded || rental.timestamp))}</span>
+            </div>
+            <span class="status-badge ${rentalStatusClass(status)}">${safeText(status)}</span>
+          </div>
+
+          <div class="order-meta">
+            <span><strong>Rental Equipment:</strong> ${safeText(rental.rentalItem || "Rental")}</span>
+            <span><strong>Qty:</strong> ${safeText(rental.quantity || 1)}</span>
+            <span><strong>Requested By:</strong> ${safeText(rental.requestedBy || "Unknown")}</span>
+            ${rental.vendor ? `<span><strong>Vendor:</strong> ${safeText(rental.vendor)}</span>` : ""}
+            ${offDate ? `<span><strong>Called Off:</strong> ${safeText(formatRentalDate(offDate))}</span>` : ""}
+          </div>
+
+          ${rental.notes ? `<div class="order-notes"><strong>Notes:</strong> ${safeText(rental.notes)}</div>` : ""}
+
+          ${canManage ? `
+            <div class="rental-board-actions">
+              <button type="button" class="status-pending" data-rental-status="Requested" data-rental-id="${safeText(rental.id)}">Requested</button>
+              <button type="button" class="status-ordered" data-rental-status="Rented" data-rental-id="${safeText(rental.id)}">Rented</button>
+              <button type="button" class="status-delivered" data-rental-status="Called Off" data-rental-id="${safeText(rental.id)}">Called Off</button>
+              <label class="rental-off-date">Off Date <input type="date" value="${safeText(offDate)}" data-rental-off-date="${safeText(rental.id)}"></label>
+              <button type="button" class="delete-order" data-delete-rental="${safeText(rental.id)}">Delete</button>
+            </div>
+          ` : ""}
+        </div>
+      `;
+    }).join("");
+
+    if (canManage) {
+      document.querySelectorAll("[data-rental-status]").forEach(button => {
+        button.addEventListener("click", () => updateRentalBoardStatus(button.dataset.rentalId, button.dataset.rentalStatus));
+      });
+      document.querySelectorAll("[data-delete-rental]").forEach(button => {
+        button.addEventListener("click", () => deleteRentalBoardItem(button.dataset.deleteRental));
+      });
+    }
+  } catch (error) {
+    console.error(error);
+    if (debug) debug.textContent = "";
+    list.innerHTML = "<p class='admin-error'>Could not load rental requests. Check Apps Script deployment permissions.</p>";
+  }
+}
+
+async function updateRentalBoardStatus(id, status) {
+  if (!canManageRentalBoard()) return alert("You do not have permission to update rentals.");
+
+  const offInput = document.querySelector(`[data-rental-off-date="${CSS.escape(id)}"]`);
+  const dateOffRent = status === "Called Off" ? (offInput && offInput.value ? offInput.value : new Date().toISOString().slice(0,10)) : (offInput ? offInput.value : "");
+
+  await fetch(getGoogleAppsScriptUrl(), {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify({
+      action: "updateRental",
+      id,
+      status,
+      quantity: 1,
+      vendor: "",
+      notes: "",
+      dateOffRent
+    })
+  });
+
+  setTimeout(loadRentalsBoard, 700);
+}
+
+async function deleteRentalBoardItem(id) {
+  if (!canManageRentalBoard()) return alert("You do not have permission to delete rentals.");
+  if (!confirm("Delete this rental request?")) return;
+
+  await fetch(getGoogleAppsScriptUrl(), {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify({ action: "deleteRental", id })
+  });
+
+  setTimeout(loadRentalsBoard, 700);
+}
+
+
 document.addEventListener("DOMContentLoaded", () => {
   const btn = document.getElementById("refreshOrdersBtn");
   if (btn) btn.addEventListener("click", loadOrders);
-  loadOrders();
+
+  const rentalBtn = document.getElementById("refreshRentalsBoardBtn");
+  if (rentalBtn) rentalBtn.addEventListener("click", loadRentalsBoard);
+
+  if (document.getElementById("orderBoardList")) loadOrders();
+  if (document.getElementById("rentalBoardList")) loadRentalsBoard();
 });
 
 
@@ -272,4 +426,115 @@ function renderLoginGate(options) {
 }
 
 function afterLoginRefresh() { if (typeof loadOrders === "function") loadOrders(); }
+
+async function loadRentalsBoard() {
+  const list = document.getElementById("rentalBoardList");
+  const debug = document.getElementById("rentalDebug");
+  if (!list) return;
+
+  list.innerHTML = "<p class='admin-note'>Loading rental requests...</p>";
+
+  try {
+    const response = await fetch(getGoogleAppsScriptUrl() + "?action=rentals&v=" + Date.now(), { cache: "no-store" });
+    const data = await response.json();
+    const rentals = Array.isArray(data.rentals) ? data.rentals.reverse() : [];
+    const canManage = canManageRentalBoard();
+
+    if (debug) debug.textContent = "Rental requests found: " + rentals.length;
+
+    if (!rentals.length) {
+      list.innerHTML = "<p class='admin-note'>No rental requests submitted yet.</p>";
+      return;
+    }
+
+    list.innerHTML = rentals.map(rental => {
+      const status = normalizeRentalStatus(rental.status);
+      const offDate = rental.dateOffRent || "";
+      return `
+        <div class="order-card rental-board-card">
+          <div class="order-card-head">
+            <div>
+              <h3>${safeText(rental.job || "Unknown Job")}</h3>
+              <span>${safeText(formatDate(rental.dateAdded || rental.timestamp))}</span>
+            </div>
+            <span class="status-badge ${rentalStatusClass(status)}">${safeText(status)}</span>
+          </div>
+
+          <div class="order-meta">
+            <span><strong>Rental Equipment:</strong> ${safeText(rental.rentalItem || "Rental")}</span>
+            <span><strong>Qty:</strong> ${safeText(rental.quantity || 1)}</span>
+            <span><strong>Requested By:</strong> ${safeText(rental.requestedBy || "Unknown")}</span>
+            ${rental.vendor ? `<span><strong>Vendor:</strong> ${safeText(rental.vendor)}</span>` : ""}
+            ${offDate ? `<span><strong>Called Off:</strong> ${safeText(formatRentalDate(offDate))}</span>` : ""}
+          </div>
+
+          ${rental.notes ? `<div class="order-notes"><strong>Notes:</strong> ${safeText(rental.notes)}</div>` : ""}
+
+          ${canManage ? `
+            <div class="rental-board-actions">
+              <button type="button" class="status-pending" data-rental-status="Requested" data-rental-id="${safeText(rental.id)}">Requested</button>
+              <button type="button" class="status-ordered" data-rental-status="Rented" data-rental-id="${safeText(rental.id)}">Rented</button>
+              <button type="button" class="status-delivered" data-rental-status="Called Off" data-rental-id="${safeText(rental.id)}">Called Off</button>
+              <label class="rental-off-date">Off Date <input type="date" value="${safeText(offDate)}" data-rental-off-date="${safeText(rental.id)}"></label>
+              <button type="button" class="delete-order" data-delete-rental="${safeText(rental.id)}">Delete</button>
+            </div>
+          ` : ""}
+        </div>
+      `;
+    }).join("");
+
+    if (canManage) {
+      document.querySelectorAll("[data-rental-status]").forEach(button => {
+        button.addEventListener("click", () => updateRentalBoardStatus(button.dataset.rentalId, button.dataset.rentalStatus));
+      });
+      document.querySelectorAll("[data-delete-rental]").forEach(button => {
+        button.addEventListener("click", () => deleteRentalBoardItem(button.dataset.deleteRental));
+      });
+    }
+  } catch (error) {
+    console.error(error);
+    if (debug) debug.textContent = "";
+    list.innerHTML = "<p class='admin-error'>Could not load rental requests. Check Apps Script deployment permissions.</p>";
+  }
+}
+
+async function updateRentalBoardStatus(id, status) {
+  if (!canManageRentalBoard()) return alert("You do not have permission to update rentals.");
+
+  const offInput = document.querySelector(`[data-rental-off-date="${CSS.escape(id)}"]`);
+  const dateOffRent = status === "Called Off" ? (offInput && offInput.value ? offInput.value : new Date().toISOString().slice(0,10)) : (offInput ? offInput.value : "");
+
+  await fetch(getGoogleAppsScriptUrl(), {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify({
+      action: "updateRental",
+      id,
+      status,
+      quantity: 1,
+      vendor: "",
+      notes: "",
+      dateOffRent
+    })
+  });
+
+  setTimeout(loadRentalsBoard, 700);
+}
+
+async function deleteRentalBoardItem(id) {
+  if (!canManageRentalBoard()) return alert("You do not have permission to delete rentals.");
+  if (!confirm("Delete this rental request?")) return;
+
+  await fetch(getGoogleAppsScriptUrl(), {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify({ action: "deleteRental", id })
+  });
+
+  setTimeout(loadRentalsBoard, 700);
+}
+
+
 document.addEventListener("DOMContentLoaded", () => { renderLoginGate({ requireAdmin: false }); });
