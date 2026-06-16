@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin - Material Orders</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body class="auth-locked">
+  <div class="app admin-app admin-desktop-app">
+    <section id="loginScreen" class="admin-panel admin-login-panel">
+      <header class="top-bar">
+        <div>
+          <p class="small-text">Admin Login</p>
+          <h1>Admin Panel</h1>
+        </div>
+      </header>
+
+      <div class="admin-card admin-login-card">
+        <label class="admin-label">Password
+          <input id="adminPassword" type="password" placeholder="Enter password" />
+        </label>
+        <button id="loginBtn" class="primary-btn" type="button">Login</button>
+        <button id="resetAdminBtn" class="admin-reset-btn" type="button">Reset Admin Login</button>
+        <p id="loginError" class="admin-error"></p>
+      </div>
+    </section>
+
+    <section id="adminScreen" class="admin-panel hidden-admin">
+      <div class="admin-layout">
+        <aside class="admin-sidebar">
+          <div class="admin-brand">
+            <p class="small-text">Material Order App • Email/PDF Settings Visible</p>
+            <h1>Admin</h1>
+          </div>
+          <nav class="admin-nav">
+            <button type="button" data-admin-page="adminDashboardPage">Dashboard</button>
+            <button type="button" data-admin-page="appSettingsPage">App Settings</button>
+            <button type="button" data-admin-page="emailPdfPage">Email / PDF Sending</button>
+            <button type="button" data-admin-page="dailyReportsPage">Daily Reports</button>
+            <button type="button" data-admin-page="rentalsPage">Rentals</button>
+            <button type="button" data-admin-page="manpowerAdminPage">Manpower</button>
+            <button type="button" data-admin-page="pdfLetterheadPage">PDF Letterhead</button>
+            <button type="button" data-admin-page="jobsPage">Jobs</button>
+            <button type="button" data-admin-page="ordersAdminPage">Orders</button>
+            <button type="button" data-admin-page="dataToolsPage">Import / Export</button>
+            <button type="button" data-admin-page="passwordPage">Password</button>
+            <button id="openMaterialManagerBtn" type="button">Materials</button>
+          </nav>
+          <a class="admin-link admin-sidebar-link" href="index.html">Open App</a>
+        </aside>
+
+        <main class="admin-main">
+          <section id="adminDashboardPage" class="admin-page active-admin-page">
+            <div class="admin-page-head">
+              <div>
+                <p class="small-text">Admin Dashboard</p>
+                <h1>Control Center</h1><p class="admin-note left-note">Email / PDF Sending has been added. Use that page or App Settings to paste your Google Apps Script /exec URL.</p>
+              </div>
+              <a class="admin-link" href="index.html">Open App</a>
+            </div>
+
+            <div class="admin-card admin-wide-card must-see-email-settings" style="border:2px solid #f97316; box-shadow:0 0 0 3px rgba(249,115,22,.18), 0 18px 35px rgba(0,0,0,.22);">
+              <h2>📧 Email + PDF Sending Setup</h2>
+              <p class="admin-note left-note">Paste your Google Apps Script Web App URL here. It must end with <strong>/exec</strong>. This is required before the app can email the branded PDF automatically.</p>
+              <label class="admin-label">Google Apps Script Web App URL
+                <input id="googleAppsScriptUrlInputDashboard" type="url" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off" />
+              </label>
+              <label class="admin-label">Sender Email / Gmail Alias
+                <input id="senderEmailInputDashboard" type="email" placeholder="Example: orders@yourcompany.com" />
+              </label>
+              <p class="admin-note left-note">This email must be a verified Gmail send-as alias on the Google account running the Apps Script. Leave blank to send from the script owner.</p>
+              <button id="saveEmailPdfSettingsDashboardBtn" class="primary-btn" type="button">Save Email + PDF Settings</button>
+            </div>
+
+            <div class="admin-dashboard-grid">
+              <button class="admin-menu-card" type="button" data-admin-page="appSettingsPage">
+                <span>⚙️</span><strong>App Settings</strong><small>Company title and home page heading</small>
+              </button>
+              <button class="admin-menu-card" type="button" data-admin-page="emailPdfPage">
+                <span>📧</span><strong>Email / PDF Sending</strong><small>Paste Google Apps Script /exec URL and sender alias</small>
+              </button>
+              <button class="admin-menu-card" type="button" data-admin-page="dailyReportsPage">
+                <span>📝</span><strong>Daily Reports</strong><small>Set CC email for daily report PDFs</small>
+              </button>
+              <button class="admin-menu-card" type="button" data-admin-page="pdfLetterheadPage">
+                <span>📄</span><strong>PDF Letterhead</strong><small>Logos, company info, and PDF title</small>
+              </button>
+              <button class="admin-menu-card" type="button" data-admin-page="jobsPage">
+                <span>🏗️</span><strong>Jobs</strong><small>Add, edit, delete, and activate jobs</small>
+              </button>
+              <button class="admin-menu-card" id="openMaterialManagerCard" type="button">
+                <span>📦</span><strong>Materials</strong><small>Add and edit material categories</small>
+              </button>
+              <button class="admin-menu-card" type="button" data-admin-page="ordersAdminPage">
+                <span>🧾</span><strong>Orders</strong><small>Review local submitted orders</small>
+              </button>
+              <button class="admin-menu-card" type="button" data-admin-page="dataToolsPage">
+                <span>⬇️</span><strong>Import / Export</strong><small>Move app data between computers</small>
+              </button>
+              <button class="admin-menu-card" type="button" data-admin-page="passwordPage">
+                <span>🔐</span><strong>Password</strong><small>Change the admin password</small>
+              </button>
+            </div>
+          </section>
+
+          <section id="appSettingsPage" class="admin-page">
+            <div class="admin-page-head"><div><p class="small-text">Admin Panel</p><h1>App Settings</h1></div><button class="admin-link-button" type="button" data-admin-page="adminDashboardPage">Back</button></div>
+            <div class="admin-card admin-wide-card">
+              <h2>Company / App Settings</h2>
+              <label class="admin-label">Company / App Title
+                <input id="companyTitleInput" type="text" placeholder="Example: Company Name" />
+              </label>
+              <label class="admin-label">Main Page Heading
+                <input id="mainPageTitleInput" type="text" placeholder="Example: Jobs" />
+              </label>
+
+              <hr class="admin-divider" />
+              <h2>Email + PDF Sending</h2>
+              <p class="admin-note left-note">Paste your Google Apps Script Web App URL here. It must end in <strong>/exec</strong>.</p>
+              <label class="admin-label">Google Apps Script Web App URL
+                <input id="googleAppsScriptUrlInputAppSettings" type="url" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off" />
+              </label>
+              <label class="admin-label">Sender Email / Gmail Alias
+                <input id="senderEmailInputAppSettings" type="email" placeholder="Example: orders@yourcompany.com" />
+              </label>
+              <p class="admin-note left-note">This email must be a verified Gmail send-as alias on the Google account running the Apps Script. Leave blank to send from the script owner.</p>
+              <button id="saveCompanyTitleBtn" class="primary-btn" type="button">Save App Settings</button>
+            </div>
+          </section>
+
+          <section id="emailPdfPage" class="admin-page">
+            <div class="admin-page-head"><div><p class="small-text">Admin Panel</p><h1>Email / PDF Sending</h1></div><button class="admin-link-button" type="button" data-admin-page="adminDashboardPage">Back</button></div>
+            <div class="admin-card admin-wide-card email-settings-card">
+              <h2>Google Apps Script Connection</h2>
+              <p class="admin-note left-note">Paste your Google Apps Script Web App URL here. It must be the Web App URL that ends in <strong>/exec</strong>. This is what sends the email and attaches the branded PDF automatically.</p>
+              <label class="admin-label">Google Apps Script Web App URL
+                <input id="googleAppsScriptUrlInput" type="url" placeholder="https://script.google.com/macros/s/PASTE-YOUR-WEB-APP-ID-HERE/exec" autocomplete="off" />
+              </label>
+              <label class="admin-label">Sender Email / Gmail Alias
+                <input id="senderEmailInput" type="email" placeholder="Example: orders@yourcompany.com" />
+              </label>
+              <p class="admin-note left-note">This email must be a verified Gmail send-as alias on the Google account running the Apps Script. Leave blank to send from the script owner.</p>
+              <button id="saveEmailPdfSettingsBtn" class="primary-btn" type="button">Save Email / PDF Settings</button>
+            </div>
+          </section>
+
+
+          <section id="dailyReportsPage" class="admin-page">
+            <div class="admin-page-head"><div><p class="small-text">Admin Panel</p><h1>Daily Reports</h1></div><button class="admin-link-button" type="button" data-admin-page="adminDashboardPage">Back</button></div>
+            <div class="admin-card admin-wide-card">
+              <h2>Daily Report Email Settings</h2>
+              <p class="admin-note left-note">Enter the lead superintendent or office email to CC on every Daily Report PDF email. Leave blank if no CC is needed.</p>
+              <label class="admin-label">Daily Report CC Email
+                <input id="dailyReportCcEmailInput" type="email" placeholder="Example: superintendent@company.com" autocomplete="off" />
+              </label>
+              <button id="saveDailyReportSettingsBtn" class="primary-btn" type="button">Save Daily Report Settings</button>
+              <p id="dailyReportSettingsMessage" class="admin-message"></p>
+            </div>
+          </section>
+
+          <section id="pdfLetterheadPage" class="admin-page">
+            <div class="admin-page-head"><div><p class="small-text">Admin Panel</p><h1>PDF Letterhead</h1></div><button class="admin-link-button" type="button" data-admin-page="adminDashboardPage">Back</button></div>
+            <div class="admin-card admin-wide-card">
+              <p class="admin-note left-note">This controls the branded PDF attached to material order emails. Edit this page only in the admin panel.</p>
+              <div class="letterhead-preview">
+                <img id="pdfLeftLogoPreview" alt="Left logo preview" />
+                <div class="letterhead-preview-center">
+                  <strong id="letterheadPreviewTitle">Commercial Mechanical<br />Industrial Refrigeration</strong>
+                  <span id="letterheadPreviewCompany">Material Order PDF</span>
+                </div>
+                <img id="pdfRightLogoPreview" alt="Right logo preview" />
+              </div>
+              <div class="admin-two-col">
+                <label class="admin-label">Left Logo
+                  <input id="pdfLeftLogoInput" type="file" accept="image/png,image/jpeg,image/webp" />
+                </label>
+                <label class="admin-label">Right Logo
+                  <input id="pdfRightLogoInput" type="file" accept="image/png,image/jpeg,image/webp" />
+                </label>
+              </div>
+              <div class="material-edit-grid">
+                <label class="admin-label">Header Line 1<input id="pdfTitleLine1Input" type="text" placeholder="Commercial Mechanical" /></label>
+                <label class="admin-label">Header Line 2<input id="pdfTitleLine2Input" type="text" placeholder="Industrial Refrigeration" /></label>
+                <label class="admin-label wide">Address<input id="pdfAddressInput" type="text" placeholder="401 Agmac Avenue, Jacksonville, FL 32254" /></label>
+                <label class="admin-label wide">Phone / Fax<input id="pdfPhoneFaxInput" type="text" placeholder="Phone (904) 783-4200  Fax (904) 781-0806" /></label>
+                <label class="admin-label">Website<input id="pdfWebsiteInput" type="text" placeholder="acgeneral.net" /></label>
+                <label class="admin-label">License<input id="pdfLicenseInput" type="text" placeholder="CMC1250807" /></label>
+                <label class="admin-label wide">PDF Company Name<input id="pdfCompanyNameInput" type="text" placeholder="Example: Company Name" /></label>
+                <label class="admin-label wide">Document Title<input id="pdfDocumentTitleInput" type="text" placeholder="MATERIAL PROCUREMENT REQUEST" /></label>
+                <label class="admin-label wide">Footer Message<input id="pdfFooterMessageInput" type="text" placeholder="Thank you for using the Material Order App!" /></label>
+              </div>
+              <div class="admin-button-row">
+                <button id="savePdfLetterheadBtn" class="primary-btn" type="button">Save PDF Letterhead</button>
+                <button id="resetPdfLetterheadBtn" class="admin-reset-btn" type="button">Reset Letterhead</button>
+              </div>
+            </div>
+          </section>
+
+          <section id="jobsPage" class="admin-page">
+            <div class="admin-page-head"><div><p class="small-text">Admin Panel</p><h1>Jobs</h1></div><button class="admin-link-button" type="button" data-admin-page="adminDashboardPage">Back</button></div>
+            <div class="admin-grid-2">
+              <div class="admin-card">
+                <h2>Add Job</h2>
+                <label class="admin-label">Job Name<input id="newJobName" type="text" placeholder="Example: UF Jax Bay Street" /></label>
+                <button id="addJobBtn" class="primary-btn" type="button">Add Job</button>
+              </div>
+              <div class="admin-card">
+                <div class="admin-card-head"><h2>Job List</h2><button id="resetJobsBtn" class="admin-danger-small" type="button">Reset</button></div>
+                <div id="jobManagerList" class="job-manager-list"></div>
+              </div>
+            </div>
+          </section>
+<section id="ordersAdminPage" class="admin-page">
+            <div class="admin-page-head"><div><p class="small-text">Admin Panel</p><h1>Orders</h1></div><button class="admin-link-button" type="button" data-admin-page="adminDashboardPage">Back</button></div>
+            <div class="admin-card admin-wide-card">
+              <div class="admin-card-head"><h2>Local Orders</h2><button id="refreshOrdersBtn" class="admin-danger-small refresh-orders" type="button">Refresh</button></div>
+              <p class="admin-note left-note">Only the admin panel can change order status or delete orders.</p>
+              <div id="adminOrdersList" class="admin-orders-list"></div>
+            </div>
+          </section>
+
+          <section id="dataToolsPage" class="admin-page">
+            <div class="admin-page-head"><div><p class="small-text">Admin Panel</p><h1>Import / Export</h1></div><button class="admin-link-button" type="button" data-admin-page="adminDashboardPage">Back</button></div>
+            <div class="admin-card admin-wide-card">
+              <h2>Export / Import App Data</h2>
+              <p class="admin-note left-note">Use this when you make local admin changes and want those changes to move with your upload.</p>
+              <div class="admin-button-row">
+                <button id="exportAppDataBtn" class="primary-btn" type="button">Export App Data</button>
+                <button id="reloadAppDataBtn" class="admin-reset-btn" type="button">Reload Uploaded App Data</button>
+              </div>
+              <label class="admin-label import-label">Import App Data
+                <input id="importAppDataInput" type="file" accept=".json,application/json" />
+              </label>
+              <p class="admin-note left-note">After exporting, put the downloaded <strong>app-data.json</strong> file in the same folder as index.html before uploading.</p>
+            </div>
+          </section>
+
+          <section id="passwordPage" class="admin-page">
+            <div class="admin-page-head"><div><p class="small-text">Admin Panel</p><h1>Password</h1></div><button class="admin-link-button" type="button" data-admin-page="adminDashboardPage">Back</button></div>
+            <div class="admin-card admin-wide-card">
+              <h2>Change Admin Password</h2>
+              <label class="admin-label">Current Password<input id="currentPasswordInput" type="password" placeholder="Current password" /></label>
+              <label class="admin-label">New Password<input id="newPasswordInput" type="password" placeholder="New password" /></label>
+              <label class="admin-label">Confirm New Password<input id="confirmPasswordInput" type="password" placeholder="Confirm new password" /></label>
+              <button id="savePasswordBtn" class="primary-btn" type="button">Save New Password</button>
+              <p id="passwordMessage" class="admin-message"></p>
+            </div>
+          </section>
+        
+          <section id="rentalsPage" class="admin-page">
+            <div class="admin-page-head">
+              <div>
+                <p class="small-text">Admin Panel</p>
+                <h1>Rentals</h1>
+              </div>
+              <button class="admin-link-button" type="button" data-admin-page="adminDashboardPage">Back</button>
+            </div>
+
+            <div class="admin-grid-2">
+              <div class="admin-card">
+                <h2>Add Rental Button</h2>
+                <label class="admin-label">Rental Item
+                  <input id="newRentalItemName" type="text" placeholder="Example: Conex, Lull, Scissor Lift" />
+                </label>
+                <label class="admin-label">Icon
+                  <input id="newRentalItemIcon" type="text" placeholder="Example: 🚜 or icons/lull.png" />
+                </label>
+                <button id="addRentalItemBtn" class="primary-btn" type="button">Add Rental Button</button>
+                <p class="admin-note left-note">Works like Materials. Add a rental button here and it saves to the RentalItems sheet.</p>
+              </div>
+
+              <div class="admin-card">
+                <div class="admin-card-head">
+                  <h2>Rental Button List</h2>
+                  <button id="refreshRentalItemsBtn" class="admin-danger-small refresh-orders" type="button">Refresh</button>
+                </div>
+                <p class="admin-note left-note">Edit icons, rename buttons, move them up/down, or mark them Active / Not Active.</p>
+                <div id="rentalItemsAdminList" class="job-manager-list"></div>
+              </div>
+            </div>
+
+            <div class="admin-card admin-wide-card">
+              <div class="admin-card-head">
+                <h2>Active Job Site Rentals</h2>
+                <button id="refreshRentalsBtn" class="admin-danger-small refresh-orders" type="button">Refresh</button>
+              </div>
+              <p class="admin-note left-note">These are rentals submitted from the field by job.</p>
+              <div id="adminRentalsList" class="admin-orders-list"></div>
+            </div>
+          </section>
+
+
+          <section id="manpowerAdminPage" class="admin-page">
+            <div class="admin-page-head">
+              <div><p class="small-text">Admin Panel</p><h1>Manpower</h1></div>
+              <button class="admin-link-button" type="button" data-admin-page="adminDashboardPage">Back</button>
+            </div>
+
+            <div class="admin-grid-2">
+              <div class="admin-card">
+                <h2>Add Employee</h2>
+                <label class="admin-label">Employee Name
+                  <input id="adminManpowerEmployeeName" type="text" placeholder="Example: Mike" />
+                </label>
+                <label class="admin-label">Position / Trade
+                  <input id="adminManpowerEmployeePosition" type="text" placeholder="Example: Foreman, Mechanic, Helper" />
+                </label>
+                <button id="adminAddManpowerEmployeeBtn" class="primary-btn" type="button">Add Employee</button>
+              </div>
+
+              <div class="admin-card">
+                <div class="admin-card-head">
+                  <h2>Employee List</h2>
+                  <button id="adminRefreshManpowerBtn" class="admin-danger-small refresh-orders" type="button">Refresh</button>
+                </div>
+                <p class="admin-note left-note">Employees added here save to the Employees sheet and show on the Manpower board.</p>
+                <div id="adminManpowerEmployeeList" class="job-manager-list"></div>
+              </div>
+            </div>
+
+            <div class="admin-card admin-wide-card">
+              <h2>Permission</h2>
+              <p class="admin-note left-note">Users with role <strong>Admin</strong> or <strong>Manpower Manager</strong> can add and move employees. Regular users can view the board only.</p>
+            </div>
+          </section>
+
+</main>
+      </div>
+    </section>
+
+    <section id="materialAdminScreen" class="admin-panel hidden-admin">
+      <div class="admin-layout">
+        <aside class="admin-sidebar">
+          <div class="admin-brand"><p class="small-text">Material Order App • Email/PDF Settings Visible</p><h1>Admin</h1></div>
+          <nav class="admin-nav"><button id="backToAdminBtn" type="button">Dashboard</button></nav>
+          <a class="admin-link admin-sidebar-link" href="index.html">Open App</a>
+        </aside>
+        <main class="admin-main">
+          <div class="admin-page-head"><div><p class="small-text">Admin Panel</p><h1>Materials</h1></div><button class="admin-link-button" type="button" onclick="showAdminHome()">Back</button></div>
+          <div class="admin-grid-2">
+            <div class="admin-card">
+              <h2>Add Material</h2>
+              <label class="admin-label">Category<select id="materialCategorySelect"></select></label>
+              <label class="admin-label">Material Name<input id="materialNameInput" type="text" placeholder="Example: Cable Ties" /></label>
+              <label class="admin-label">Icon / Emoji<input id="materialIconInput" type="text" placeholder="Example: 🔩" /></label>
+              <label class="admin-label">Size Options<input id="materialOptionsInput" type="text" placeholder='Example: 1/4&quot;, 3/8&quot;, 1/2&quot;' /></label>
+              <label class="admin-label">Unit Options<input id="materialUnitsInput" type="text" placeholder="Example: Box, Each" /></label>
+              <button id="addMaterialBtn" class="primary-btn" type="button">Add Material</button>
+            </div>
+            <div class="admin-card">
+              <div class="admin-card-head"><h2>Materials In Category</h2></div>
+              <p class="admin-note left-note">Edit a material below and click Save. Use commas for sizes and units.</p>
+              <div id="materialManagerList" class="material-manager-list"></div>
+            </div>
+          </div>
+        
+          <section id="rentalsPage" class="admin-page">
+            <div class="admin-page-head">
+              <div>
+                <p class="small-text">Admin Panel</p>
+                <h1>Rentals</h1>
+              </div>
+              <button class="admin-link-button" type="button" data-admin-page="adminDashboardPage">Back</button>
+            </div>
+
+            <div class="admin-grid-2">
+              <div class="admin-card">
+                <h2>Add Rental Button</h2>
+                <label class="admin-label">Rental Item
+                  <input id="newRentalItemName" type="text" placeholder="Example: Conex, Lull, Scissor Lift" />
+                </label>
+                <label class="admin-label">Icon
+                  <input id="newRentalItemIcon" type="text" placeholder="Example: 🚜 or icons/lull.png" />
+                </label>
+                <button id="addRentalItemBtn" class="primary-btn" type="button">Add Rental Button</button>
+                <p class="admin-note left-note">Works like Materials. Add a rental button here and it saves to the RentalItems sheet.</p>
+              </div>
+
+              <div class="admin-card">
+                <div class="admin-card-head">
+                  <h2>Rental Button List</h2>
+                  <button id="refreshRentalItemsBtn" class="admin-danger-small refresh-orders" type="button">Refresh</button>
+                </div>
+                <p class="admin-note left-note">Edit icons, rename buttons, move them up/down, or mark them Active / Not Active.</p>
+                <div id="rentalItemsAdminList" class="job-manager-list"></div>
+              </div>
+            </div>
+
+            <div class="admin-card admin-wide-card">
+              <div class="admin-card-head">
+                <h2>Active Job Site Rentals</h2>
+                <button id="refreshRentalsBtn" class="admin-danger-small refresh-orders" type="button">Refresh</button>
+              </div>
+              <p class="admin-note left-note">These are rentals submitted from the field by job.</p>
+              <div id="adminRentalsList" class="admin-orders-list"></div>
+            </div>
+          </section>
+
+
+          <section id="manpowerAdminPage" class="admin-page">
+            <div class="admin-page-head">
+              <div><p class="small-text">Admin Panel</p><h1>Manpower</h1></div>
+              <button class="admin-link-button" type="button" data-admin-page="adminDashboardPage">Back</button>
+            </div>
+
+            <div class="admin-grid-2">
+              <div class="admin-card">
+                <h2>Add Employee</h2>
+                <label class="admin-label">Employee Name
+                  <input id="adminManpowerEmployeeName" type="text" placeholder="Example: Mike" />
+                </label>
+                <label class="admin-label">Position / Trade
+                  <input id="adminManpowerEmployeePosition" type="text" placeholder="Example: Foreman, Mechanic, Helper" />
+                </label>
+                <button id="adminAddManpowerEmployeeBtn" class="primary-btn" type="button">Add Employee</button>
+              </div>
+
+              <div class="admin-card">
+                <div class="admin-card-head">
+                  <h2>Employee List</h2>
+                  <button id="adminRefreshManpowerBtn" class="admin-danger-small refresh-orders" type="button">Refresh</button>
+                </div>
+                <p class="admin-note left-note">Employees added here save to the Employees sheet and show on the Manpower board.</p>
+                <div id="adminManpowerEmployeeList" class="job-manager-list"></div>
+              </div>
+            </div>
+
+            <div class="admin-card admin-wide-card">
+              <h2>Permission</h2>
+              <p class="admin-note left-note">Users with role <strong>Admin</strong> or <strong>Manpower Manager</strong> can add and move employees. Regular users can view the board only.</p>
+            </div>
+          </section>
+
+</main>
+      </div>
+    </section>
+  </div>
+  <script src="admin.js"></script>
+
+<!-- V59 URL HARD SAVE FIX: keeps Apps Script URL in browser storage and mirrors to Google Settings tab -->
+<script>
+(function(){
+  const URL_KEY = "materialOrderGoogleAppsScriptUrl";
+  const SENDER_KEY = "materialOrderSenderEmail";
+  const DAILY_CC_KEY = "materialOrderDailyReportCcEmail";
+  const SETTINGS_KEY = "materialOrderSettings";
+  const urlIds = ["googleAppsScriptUrlInputDashboard", "googleAppsScriptUrlInput", "googleAppsScriptUrlInputAppSettings"];
+  const senderIds = ["senderEmailInputDashboard", "senderEmailInput", "senderEmailInputAppSettings"];
+  const btnIds = ["saveEmailPdfSettingsDashboardBtn", "saveEmailPdfSettingsBtn"];
+  const dailyCcIds = ["dailyReportCcEmailInput"];
+
+  function getValue(ids){
+    for (const id of ids) {
+      const el = document.getElementById(id);
+      if (el && String(el.value || "").trim()) return String(el.value || "").trim();
+    }
+    return "";
+  }
+  function setValue(ids, value){
+    ids.forEach(id => { const el = document.getElementById(id); if (el) el.value = value || ""; });
+  }
+  function getSavedUrl(){
+    try { return localStorage.getItem(URL_KEY) || ""; } catch { return ""; }
+  }
+  function getSavedSender(){
+    try { return localStorage.getItem(SENDER_KEY) || ""; } catch { return ""; }
+  }
+  function getSavedDailyCc(){
+    try { return localStorage.getItem(DAILY_CC_KEY) || ""; } catch { return ""; }
+  }
+  function saveLocal(url, sender){
+    localStorage.setItem(URL_KEY, url);
+    localStorage.setItem(SENDER_KEY, sender || "");
+    let settings = {};
+    try { settings = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}"); } catch { settings = {}; }
+    settings.googleAppsScriptUrl = url;
+    settings.senderEmail = sender || "";
+    if (getSavedDailyCc()) settings.dailyReportCcEmail = getSavedDailyCc();
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  }
+  async function saveUrl(e){
+    if (e) { e.preventDefault(); e.stopPropagation(); if (e.stopImmediatePropagation) e.stopImmediatePropagation(); }
+    const url = getValue(urlIds);
+    const sender = getValue(senderIds);
+    if (!url) { alert("Paste your Google Apps Script Web App URL ending in /exec first."); return false; }
+    if (!url.includes("script.google.com/macros/s/") || !url.endsWith("/exec")) {
+      alert("That does not look like a valid Google Apps Script Web App URL. It should end with /exec.");
+      return false;
+    }
+    saveLocal(url, sender);
+    setValue(urlIds, url);
+    setValue(senderIds, sender);
+
+    // Mirror it to the Google Settings tab. This is best-effort because Apps Script CORS returns opaque response.
+    try {
+      await fetch(url, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action: "saveSettings", settings: { googleAppsScriptUrl: url, senderEmail: sender } })
+      });
+    } catch (err) { console.warn("Could not mirror URL to Google Settings tab", err); }
+
+    alert("Saved. Your Google Script URL is saved in this browser and sent to the Settings tab.");
+    return false;
+  }
+  function fillFromStorage(){
+    let url = getSavedUrl();
+    let sender = getSavedSender();
+    if (!url) {
+      try {
+        const settings = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}");
+        url = settings.googleAppsScriptUrl || "";
+        sender = sender || settings.senderEmail || "";
+      } catch {}
+    }
+    if (url) setValue(urlIds, url);
+    if (sender) setValue(senderIds, sender);
+    let cc = getSavedDailyCc();
+    if (!cc) {
+      try { const settings = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}"); cc = settings.dailyReportCcEmail || ""; } catch {}
+    }
+    setValue(dailyCcIds, cc || "");
+  }
+  async function saveDailyReportSettings(e){
+    if (e) { e.preventDefault(); e.stopPropagation(); if (e.stopImmediatePropagation) e.stopImmediatePropagation(); }
+    const cc = getValue(dailyCcIds);
+    localStorage.setItem(DAILY_CC_KEY, cc || "");
+    let settings = {};
+    try { settings = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}"); } catch { settings = {}; }
+    settings.dailyReportCcEmail = cc || "";
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+
+    const url = getSavedUrl() || settings.googleAppsScriptUrl || "";
+    if (url) {
+      try {
+        await fetch(url, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ action: "saveSettings", settings: { dailyReportCcEmail: cc || "" } })
+        });
+      } catch (err) { console.warn("Could not save Daily Report CC to Google Settings tab", err); }
+    }
+
+    setValue(dailyCcIds, cc);
+    const msg = document.getElementById("dailyReportSettingsMessage");
+    if (msg) msg.textContent = "Daily Report settings saved.";
+    alert("Daily Report settings saved.");
+    return false;
+  }
+  window.materialOrderSaveScriptUrlNow = saveUrl;
+  window.materialOrderFillScriptUrlNow = fillFromStorage;
+  document.addEventListener("DOMContentLoaded", function(){
+    fillFromStorage();
+    // Run again after the main admin.js loads its forms and may overwrite fields.
+    setTimeout(fillFromStorage, 250);
+    setTimeout(fillFromStorage, 1000);
+    btnIds.forEach(id => {
+      const btn = document.getElementById(id);
+      if (btn) btn.addEventListener("click", saveUrl, true);
+    });
+    const dailyBtn = document.getElementById("saveDailyReportSettingsBtn");
+    if (dailyBtn) dailyBtn.addEventListener("click", saveDailyReportSettings, true);
+    // Keep fields filled when navigating between admin pages.
+    document.querySelectorAll("[data-admin-page]").forEach(btn => btn.addEventListener("click", () => setTimeout(fillFromStorage, 100), true));
+  });
+})();
+</script>
+
+</body>
+</html>
