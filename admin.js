@@ -273,7 +273,7 @@ function showAdminHome() {
 function showMaterialAdmin() {
   document.getElementById("adminScreen").classList.add("hidden-admin");
   document.getElementById("materialAdminScreen").classList.remove("hidden-admin");
-  renderMaterialCategorySelect();
+  refreshMaterialCategorySelectAdmin();
 }
 
 function showAdmin() {
@@ -719,29 +719,83 @@ async function loadMaterialsFromGoogleSheetAdmin() {
   }
 }
 
+
+async function loadMaterialCategoriesDirectAdmin() {
+  const url = getGoogleAppsScriptUrl();
+  if (!url) return getCategories();
+
+  try {
+    const response = await fetch(url + "?action=materialCategories&v=" + Date.now(), { cache: "no-store" });
+    const data = await response.json();
+    const rows = data.materialCategories || [];
+
+    if (Array.isArray(rows) && rows.length) {
+      const currentCategories = getCategories();
+      const nextCategories = {};
+
+      rows
+        .filter(row => {
+          const activeValue = String(row.active ?? row.Active ?? "TRUE").trim().toLowerCase();
+          return !(activeValue === "false" || activeValue === "no" || activeValue === "0" || activeValue === "inactive");
+        })
+        .sort((a, b) => Number(a.sortOrder ?? a.SortOrder ?? 999999) - Number(b.sortOrder ?? b.SortOrder ?? 999999))
+        .forEach(row => {
+          const key = String(row.category ?? row.Category ?? "").trim();
+          const label = String(row.categoryLabel ?? row["Category Label"] ?? row.CategoryLabel ?? key).trim();
+          if (!key) return;
+          nextCategories[key] = {
+            label: label || key,
+            items: currentCategories[key] && Array.isArray(currentCategories[key].items) ? currentCategories[key].items : []
+          };
+        });
+
+      if (Object.keys(nextCategories).length) {
+        localStorage.setItem("materialOrderCategories", JSON.stringify(nextCategories));
+        return nextCategories;
+      }
+    }
+  } catch (error) {
+    console.warn("Could not load MaterialCategories directly.", error);
+  }
+
+  return getCategories();
+}
+
+async function refreshMaterialCategorySelectAdmin(preferredKey) {
+  await loadMaterialCategoriesDirectAdmin();
+  renderMaterialCategorySelect(preferredKey);
+}
+
+
 function renderMaterialCategorySelect(preferredKey) {
   const select = document.getElementById("materialCategorySelect");
   if (!select) return;
 
   const categories = getCategories();
-  const entries = sortAdminCategoryEntries(categories);
+  const entries = sortAdminCategoryEntries(categories).filter(([key]) => !!key);
   const previousValue = preferredKey || select.value || "hanging";
 
+  if (!entries.length) {
+    select.innerHTML = `<option value="">No categories found - check MaterialCategories sheet</option>`;
+    const list = document.getElementById("materialManagerList");
+    if (list) list.innerHTML = "<p class='admin-note'>No categories found. Check the MaterialCategories sheet or refresh.</p>";
+    return;
+  }
+
   select.innerHTML = entries
-    .map(([key, category]) => `<option value="${safeText(key)}">${safeText(category.label || key)}</option>`)
+    .map(([key, category]) => `<option value="${safeText(key)}">${safeText((category && category.label) || key)}</option>`)
     .join("");
 
   if (previousValue && categories[previousValue]) {
     select.value = previousValue;
-  } else if (entries.length) {
+  } else {
     select.value = entries[0][0];
   }
 
   renderMaterialsForAdmin();
 }
 
-
-function addMaterialCategory() {
+async function addMaterialCategory() {
   const nameEl = document.getElementById("newMaterialCategoryName");
   const keyEl = document.getElementById("newMaterialCategoryKey");
   const label = nameEl ? nameEl.value.trim() : "";
@@ -758,6 +812,7 @@ function addMaterialCategory() {
     return;
   }
 
+  await loadMaterialCategoriesDirectAdmin();
   const categories = getCategories();
 
   if (categories[key]) {
@@ -768,29 +823,29 @@ function addMaterialCategory() {
 
   categories[key] = { label, items: [] };
   localStorage.setItem("materialOrderCategories", JSON.stringify(categories));
-  syncMaterialCategoriesToGoogleSheet(categories);
+
+  // Write only the category list to the MaterialCategories sheet.
+  await syncMaterialCategoriesToGoogleSheet(categories);
 
   if (nameEl) nameEl.value = "";
   if (keyEl) keyEl.value = "";
 
-  renderMaterialCategorySelect(key);
-
-  const select = document.getElementById("materialCategorySelect");
-  if (select) {
-    select.value = key;
-    renderMaterialsForAdmin();
-  }
-
-  alert("Category added to MaterialCategories. You can now add materials to it.");
+  await refreshMaterialCategorySelectAdmin(key);
+  alert("Category added to MaterialCategories.");
 }
 
-function addMaterial() {
+async function addMaterial() {
   const categorySelect = document.getElementById("materialCategorySelect");
-  const categoryKey = categorySelect ? categorySelect.value : "";
+  let categoryKey = categorySelect ? categorySelect.value : "";
   const name = document.getElementById("materialNameInput").value.trim();
   const icon = document.getElementById("materialIconInput").value.trim() || "•";
   const options = parseCsvList(document.getElementById("materialOptionsInput").value);
   const units = parseCsvList(document.getElementById("materialUnitsInput").value);
+
+  if (!categoryKey) {
+    await refreshMaterialCategorySelectAdmin();
+    categoryKey = categorySelect ? categorySelect.value : "";
+  }
 
   if (!categoryKey || !name) {
     alert("Select a category and enter a material name.");
@@ -799,7 +854,7 @@ function addMaterial() {
 
   const categories = getCategories();
   if (!categories[categoryKey]) {
-    alert("Category not found.");
+    alert("Category not found. Refresh Materials or check the MaterialCategories sheet.");
     return;
   }
 
@@ -821,7 +876,6 @@ function addMaterial() {
 
   renderMaterialsForAdmin();
 }
-
 
 function saveMaterialEdit(index) {
   const categoryKey = document.getElementById("materialCategorySelect").value;
@@ -1583,7 +1637,7 @@ function setupAdmin() {
   if (materialCategorySelect) materialCategorySelect.addEventListener("change", renderMaterialsForAdmin);
 
   const addMaterialCategoryBtn = document.getElementById("addMaterialCategoryBtn");
-  if (addMaterialCategoryBtn) addMaterialCategoryBtn.addEventListener("click", addMaterialCategory);
+  if (addMaterialCategoryBtn) addMaterialCategoryBtn.addEventListener("click", () => addMaterialCategory());
 
   const newMaterialCategoryName = document.getElementById("newMaterialCategoryName");
   if (newMaterialCategoryName) newMaterialCategoryName.addEventListener("keydown", event => {
@@ -1591,7 +1645,7 @@ function setupAdmin() {
   });
 
   const addMaterialBtn = document.getElementById("addMaterialBtn");
-  if (addMaterialBtn) addMaterialBtn.addEventListener("click", addMaterial);
+  if (addMaterialBtn) addMaterialBtn.addEventListener("click", () => addMaterial());
 
   const materialNameInput = document.getElementById("materialNameInput");
   if (materialNameInput) materialNameInput.addEventListener("keydown", event => {
