@@ -250,6 +250,17 @@
           <div class="admin-page-head"><div><p class="small-text">Admin Panel</p><h1>Materials</h1></div><button class="admin-link-button" type="button" onclick="showAdminHome()">Back</button></div>
           <div class="admin-grid-2">
             <div class="admin-card">
+              <div class="admin-card-head">
+                <h2>Material Categories</h2>
+                <button id="refreshMaterialCategoriesBtn" class="admin-danger-small refresh-orders" type="button">Refresh</button>
+              </div>
+              <p class="admin-note left-note">Loading categories from the MaterialCategories sheet. Click a category below to add material to it.</p>
+              <div id="materialCategoriesAdminList" class="job-manager-list">
+                <p class="admin-note">Loading categories...</p>
+              </div>
+            </div>
+
+            <div class="admin-card">
               <h2>Add Category</h2>
               <label class="admin-label">Category Name<input id="newMaterialCategoryName" type="text" placeholder="Example: Sheet Metal" /></label>
               <label class="admin-label">Category Key <small style="color:#94a3b8;">Optional</small><input id="newMaterialCategoryKey" type="text" placeholder="Example: sheetMetal" /></label>
@@ -259,7 +270,7 @@
               <hr class="admin-soft-divider" />
 
               <h2>Add Material</h2>
-              <label class="admin-label">Category<select id="materialCategorySelect" class="admin-select-light"></select></label><button id="refreshMaterialCategoriesBtn" class="admin-danger-small refresh-orders" type="button" >Refresh Categories</button>
+              <label class="admin-label">Category<select id="materialCategorySelect" class="admin-select-light"></select></label>
               <label class="admin-label">Material Name<input id="materialNameInput" type="text" placeholder="Example: Cable Ties" /></label>
               <label class="admin-label">Icon / Emoji<input id="materialIconInput" type="text" placeholder="Example: 🔩" /></label>
               <label class="admin-label">Size Options<input id="materialOptionsInput" type="text" placeholder='Example: 1/4&quot;, 3/8&quot;, 1/2&quot;' /></label>

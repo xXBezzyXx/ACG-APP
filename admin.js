@@ -270,10 +270,133 @@ function showAdminHome() {
   showAdminPage("adminDashboardPage");
 }
 
+
+let adminMaterialCategories = [];
+
+function normalizeMaterialCategoryRowsAdmin(rows) {
+  return (rows || [])
+    .filter(row => {
+      const activeValue = String(row.active ?? row.Active ?? "TRUE").trim().toLowerCase();
+      return !(activeValue === "false" || activeValue === "no" || activeValue === "0" || activeValue === "inactive");
+    })
+    .map(row => ({
+      category: String(row.category ?? row.Category ?? "").trim(),
+      categoryLabel: String(row.categoryLabel ?? row["Category Label"] ?? row.CategoryLabel ?? row.Category ?? "").trim(),
+      sortOrder: Number(row.sortOrder ?? row.SortOrder ?? 999999)
+    }))
+    .filter(row => row.category)
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+}
+
+async function loadMaterialCategoriesForAdmin() {
+  const list = document.getElementById("materialCategoriesAdminList");
+  const select = document.getElementById("materialCategorySelect");
+
+  if (list) list.innerHTML = "<p class='admin-note'>Loading categories...</p>";
+  if (select) select.innerHTML = '<option value="">Loading categories...</option>';
+
+  const url = getGoogleAppsScriptUrl();
+  if (!url) {
+    if (list) list.innerHTML = "<p class='admin-error'>Google Apps Script URL is missing.</p>";
+    return [];
+  }
+
+  try {
+    const response = await fetch(url + "?action=materialCategories&v=" + Date.now(), { cache: "no-store" });
+    const data = await response.json();
+    adminMaterialCategories = normalizeMaterialCategoryRowsAdmin(data.materialCategories || []);
+
+    if (!adminMaterialCategories.length) {
+      if (list) list.innerHTML = "<p class='admin-note'>No categories found in the MaterialCategories sheet.</p>";
+      if (select) select.innerHTML = '<option value="">No categories found</option>';
+      return [];
+    }
+
+    renderMaterialCategoryAdminList();
+    renderMaterialCategoryDropdown();
+
+    // Also load existing materials after categories come in.
+    await loadMaterialsFromGoogleSheetAdmin();
+
+    return adminMaterialCategories;
+  } catch (error) {
+    console.error(error);
+    if (list) list.innerHTML = "<p class='admin-error'>Could not load categories. Check Apps Script deployment and MaterialCategories sheet.</p>";
+    if (select) select.innerHTML = '<option value="">Could not load categories</option>';
+    return [];
+  }
+}
+
+function renderMaterialCategoryAdminList() {
+  const list = document.getElementById("materialCategoriesAdminList");
+  if (!list) return;
+
+  if (!adminMaterialCategories.length) {
+    list.innerHTML = "<p class='admin-note'>No categories found.</p>";
+    return;
+  }
+
+  const selected = document.getElementById("materialCategorySelect")?.value || "";
+
+  list.innerHTML = adminMaterialCategories.map(cat => `
+    <button type="button" class="material-category-admin-row ${selected === cat.category ? "active" : ""}" data-select-material-category="${safeText(cat.category)}">
+      <strong>${safeText(cat.categoryLabel || cat.category)}</strong>
+      <span>${safeText(cat.category)}</span>
+    </button>
+  `).join("");
+
+  document.querySelectorAll("[data-select-material-category]").forEach(button => {
+    button.addEventListener("click", () => {
+      const select = document.getElementById("materialCategorySelect");
+      if (select) {
+        select.value = button.dataset.selectMaterialCategory;
+        renderMaterialsForAdmin();
+        renderMaterialCategoryAdminList();
+      }
+    });
+  });
+}
+
+function renderMaterialCategoryDropdown(preferredKey) {
+  const select = document.getElementById("materialCategorySelect");
+  if (!select) return;
+
+  const previousValue = preferredKey || select.value || (adminMaterialCategories[0] && adminMaterialCategories[0].category) || "";
+  select.innerHTML = adminMaterialCategories
+    .map(cat => `<option value="${safeText(cat.category)}">${safeText(cat.categoryLabel || cat.category)}</option>`)
+    .join("");
+
+  if (previousValue && adminMaterialCategories.some(cat => cat.category === previousValue)) {
+    select.value = previousValue;
+  } else if (adminMaterialCategories.length) {
+    select.value = adminMaterialCategories[0].category;
+  }
+
+  // Merge category shell into local categories so materials can be added.
+  const current = getCategories();
+  const next = {};
+  adminMaterialCategories.forEach(cat => {
+    next[cat.category] = {
+      label: cat.categoryLabel || cat.category,
+      items: current[cat.category] && Array.isArray(current[cat.category].items) ? current[cat.category].items : []
+    };
+  });
+  localStorage.setItem("materialOrderCategories", JSON.stringify(next));
+
+  renderMaterialsForAdmin();
+  renderMaterialCategoryAdminList();
+}
+
+async function refreshMaterialCategorySelectAdmin(preferredKey) {
+  await loadMaterialCategoriesForAdmin();
+  if (preferredKey) renderMaterialCategoryDropdown(preferredKey);
+}
+
+
 function showMaterialAdmin() {
   document.getElementById("adminScreen").classList.add("hidden-admin");
   document.getElementById("materialAdminScreen").classList.remove("hidden-admin");
-  refreshMaterialCategorySelectAdmin();
+  loadMaterialCategoriesForAdmin();
 }
 
 function showAdmin() {
@@ -794,31 +917,11 @@ async function refreshMaterialCategorySelectAdmin(preferredKey) {
 }
 
 function renderMaterialCategorySelect(preferredKey) {
-  const select = document.getElementById("materialCategorySelect");
-  if (!select) return;
-
-  const categories = getCategories();
-  const entries = sortAdminCategoryEntries(categories).filter(([key]) => !!key);
-  const previousValue = preferredKey || select.value || "hanging";
-
-  if (!entries.length) {
-    select.innerHTML = `<option value="">No categories found - check MaterialCategories sheet</option>`;
-    const list = document.getElementById("materialManagerList");
-    if (list) list.innerHTML = "<p class='admin-note'>No categories found. Check the MaterialCategories sheet or refresh.</p>";
+  if (adminMaterialCategories && adminMaterialCategories.length) {
+    renderMaterialCategoryDropdown(preferredKey);
     return;
   }
-
-  select.innerHTML = entries
-    .map(([key, category]) => `<option value="${safeText(key)}">${safeText((category && category.label) || key)}</option>`)
-    .join("");
-
-  if (previousValue && categories[previousValue]) {
-    select.value = previousValue;
-  } else {
-    select.value = entries[0][0];
-  }
-
-  renderMaterialsForAdmin();
+  loadMaterialCategoriesForAdmin();
 }
 
 async function addMaterialCategory() {
@@ -838,42 +941,54 @@ async function addMaterialCategory() {
     return;
   }
 
-  await loadMaterialCategoriesDirectAdmin();
-  const categories = getCategories();
+  await loadMaterialCategoriesForAdmin();
 
-  if (categories[key]) {
+  if (adminMaterialCategories.some(cat => cat.category.toLowerCase() === key.toLowerCase())) {
     alert("That category already exists.");
-    renderMaterialCategorySelect(key);
+    renderMaterialCategoryDropdown(key);
     return;
   }
 
-  categories[key] = { label, items: [] };
-  localStorage.setItem("materialOrderCategories", JSON.stringify(categories));
+  adminMaterialCategories.push({
+    category: key,
+    categoryLabel: label,
+    sortOrder: adminMaterialCategories.length + 1
+  });
 
-  await syncMaterialCategoriesToGoogleSheet(categories);
+  const url = getGoogleAppsScriptUrl();
+  await fetch(url, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify({
+      action: "saveMaterialCategories",
+      materialCategories: adminMaterialCategories.map((cat, index) => ({
+        Category: cat.category,
+        "Category Label": cat.categoryLabel,
+        Active: true,
+        SortOrder: index + 1
+      }))
+    })
+  });
 
   if (nameEl) nameEl.value = "";
   if (keyEl) keyEl.value = "";
 
-  renderMaterialCategorySelect(key);
-
-  // Apps Script POST is no-cors, so give Google Sheet a moment, then refresh from the sheet.
-  setTimeout(() => refreshMaterialCategorySelectAdmin(key), 900);
-
-  alert("Category added. If you do not see it right away, click Refresh Categories.");
+  renderMaterialCategoryDropdown(key);
+  setTimeout(() => loadMaterialCategoriesForAdmin(), 800);
+  alert("Category added.");
 }
 
 async function addMaterial() {
   const categorySelect = document.getElementById("materialCategorySelect");
-  let categoryKey = categorySelect ? categorySelect.value : "";
+  const categoryKey = categorySelect ? categorySelect.value : "";
   const name = document.getElementById("materialNameInput").value.trim();
   const icon = document.getElementById("materialIconInput").value.trim() || "•";
   const options = parseCsvList(document.getElementById("materialOptionsInput").value);
   const units = parseCsvList(document.getElementById("materialUnitsInput").value);
 
-  if (!categoryKey) {
-    await refreshMaterialCategorySelectAdmin();
-    categoryKey = categorySelect ? categorySelect.value : "";
+  if (!adminMaterialCategories.length) {
+    await loadMaterialCategoriesForAdmin();
   }
 
   if (!categoryKey || !name) {
@@ -882,9 +997,13 @@ async function addMaterial() {
   }
 
   const categories = getCategories();
+  const foundCat = adminMaterialCategories.find(cat => cat.category === categoryKey);
+
   if (!categories[categoryKey]) {
-    alert("Category not found. Refresh Materials or check the MaterialCategories sheet.");
-    return;
+    categories[categoryKey] = {
+      label: foundCat ? foundCat.categoryLabel : categoryKey,
+      items: []
+    };
   }
 
   if (categories[categoryKey].items.some(item => item.name.toLowerCase() === name.toLowerCase())) {
@@ -904,6 +1023,7 @@ async function addMaterial() {
   document.getElementById("materialUnitsInput").value = "";
 
   renderMaterialsForAdmin();
+  alert("Material added.");
 }
 
 function saveMaterialEdit(index) {
@@ -1663,10 +1783,13 @@ function setupAdmin() {
   if (backToAdminBtn) backToAdminBtn.addEventListener("click", showAdminHome);
 
   const materialCategorySelect = document.getElementById("materialCategorySelect");
-  if (materialCategorySelect) materialCategorySelect.addEventListener("change", renderMaterialsForAdmin);
+  if (materialCategorySelect) materialCategorySelect.addEventListener("change", () => {
+    renderMaterialsForAdmin();
+    renderMaterialCategoryAdminList();
+  });
 
   const refreshMaterialCategoriesBtn = document.getElementById("refreshMaterialCategoriesBtn");
-  if (refreshMaterialCategoriesBtn) refreshMaterialCategoriesBtn.addEventListener("click", () => refreshMaterialCategorySelectAdmin());
+  if (refreshMaterialCategoriesBtn) refreshMaterialCategoriesBtn.addEventListener("click", () => loadMaterialCategoriesForAdmin());
 
   const addMaterialCategoryBtn = document.getElementById("addMaterialCategoryBtn");
   if (addMaterialCategoryBtn) addMaterialCategoryBtn.addEventListener("click", () => addMaterialCategory());
@@ -2386,3 +2509,6 @@ async function saveEmailPdfSettings() {
 /* V107 expose material category functions for Admin buttons */
 window.refreshMaterialCategorySelectAdmin = refreshMaterialCategorySelectAdmin;
 window.addMaterialCategory = addMaterialCategory;
+
+window.loadMaterialCategoriesForAdmin = loadMaterialCategoriesForAdmin;
+window.refreshMaterialCategorySelectAdmin = refreshMaterialCategorySelectAdmin;
