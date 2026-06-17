@@ -176,9 +176,36 @@ function parseMaterialListValue(value) {
     .filter(Boolean);
 }
 
-function buildCategoriesFromMaterialsRows(rows) {
+
+function buildCategoriesFromCategoryRows(categoryRows) {
   const nextCategories = {};
-  if (!Array.isArray(rows)) return null;
+  if (!Array.isArray(categoryRows)) return nextCategories;
+
+  const sortedRows = [...categoryRows].sort((a, b) => Number(a.sortOrder ?? a.SortOrder ?? 999999) - Number(b.sortOrder ?? b.SortOrder ?? 999999));
+
+  sortedRows.forEach(row => {
+    const activeValue = String(row.active ?? row.Active ?? "TRUE").trim().toLowerCase();
+    if (activeValue === "false" || activeValue === "no" || activeValue === "0" || activeValue === "inactive") return;
+
+    const category = String(row.category ?? row.Category ?? "").trim();
+    const categoryLabel = String(row.categoryLabel ?? row["Category Label"] ?? row.CategoryLabel ?? category).trim();
+    if (!category) return;
+
+    nextCategories[category] = {
+      label: categoryLabel || category,
+      items: []
+    };
+  });
+
+  return nextCategories;
+}
+
+
+function buildCategoriesFromMaterialsRows(rows, categoryRows) {
+  const nextCategories = buildCategoriesFromCategoryRows(categoryRows);
+  const hasCategorySheet = Object.keys(nextCategories).length > 0;
+
+  if (!Array.isArray(rows)) return hasCategorySheet ? nextCategories : null;
 
   rows.forEach(row => {
     const activeValue = String(row.active ?? row.Active ?? "TRUE").trim().toLowerCase();
@@ -188,6 +215,9 @@ function buildCategoriesFromMaterialsRows(rows) {
     const categoryLabel = String(row.categoryLabel ?? row["Category Label"] ?? row.CategoryLabel ?? category).trim();
     const material = String(row.material ?? row.Material ?? "").trim();
     if (!category || !material) return;
+
+    // If MaterialCategories exists, do NOT create old categories from the Materials tab.
+    if (hasCategorySheet && !nextCategories[category]) return;
 
     if (!nextCategories[category]) {
       nextCategories[category] = {
@@ -226,7 +256,7 @@ async function loadMaterialsFromGoogleSheet() {
   try {
     const response = await fetch(url + "?action=materials&v=" + Date.now(), { cache: "no-store" });
     const data = await response.json();
-    const sheetCategories = buildCategoriesFromMaterialsRows(data.materials || []);
+    const sheetCategories = buildCategoriesFromMaterialsRows(data.materials || [], data.materialCategories || []);
     if (!sheetCategories) return false;
 
     localStorage.setItem("materialOrderCategories", JSON.stringify(cleanCategories(sheetCategories)));
@@ -283,6 +313,24 @@ let customDrafts = {};
 let cart = [];
 let selectedPriority = "Normal";
 let currentSelectedJob = localStorage.getItem("materialOrderSelectedJob") || "";
+
+
+const MATERIAL_CATEGORY_ORDER = ["hanging", "fasteners", "tools", "duct", "pipe"];
+
+function categorySortIndex(key) {
+  const index = MATERIAL_CATEGORY_ORDER.indexOf(String(key || ""));
+  return index === -1 ? 999 : index;
+}
+
+function sortCategoryEntries(categoriesObject) {
+  return Object.entries(categoriesObject || {}).sort(([aKey, aCat], [bKey, bCat]) => {
+    const ai = categorySortIndex(aKey);
+    const bi = categorySortIndex(bKey);
+    if (ai !== bi) return ai - bi;
+    return String((aCat && aCat.label) || aKey).localeCompare(String((bCat && bCat.label) || bKey));
+  });
+}
+
 
 function safeText(text) {
   return String(text || "")
@@ -394,10 +442,11 @@ function renderJobSelect() {
 }
 
 function renderCategories() {
-  if (!categories[activeCategory]) activeCategory = Object.keys(categories)[0] || "hanging";
+  const sortedEntries = sortCategoryEntries(categories);
+  if (!categories[activeCategory]) activeCategory = (sortedEntries[0] && sortedEntries[0][0]) || "hanging";
   const tabs = document.getElementById("categoryTabs");
   if (tabs) {
-    tabs.innerHTML = Object.entries(categories).map(([key, cat]) => `
+    tabs.innerHTML = sortedEntries.map(([key, cat]) => `
       <button class="chip ${key === activeCategory ? "active" : ""}" data-category="${key}" type="button">${safeText(cat.label)}</button>
     `).join("");
 
@@ -412,7 +461,7 @@ function renderQuickOrder() {
   const quick = document.getElementById("quickOrder");
   if (!quick) return;
   const icons = ["🔩", "▰", "│", "◉", "•••"];
-  const entries = Object.entries(categories).slice(0, 5);
+  const entries = sortCategoryEntries(categories).slice(0, 5);
   quick.innerHTML = entries.map(([key, cat], index) => `
     <button class="quick-card ${key === activeCategory ? "active" : ""}" data-category="${key}" type="button">
       <span>${icons[index] || "📦"}</span>${safeText(cat.label)}
@@ -1205,7 +1254,7 @@ function renderRentalPreview() {
   preview.innerHTML = rentalCart.map((item, index) => `
     <div class="cart-line">
       <div>
-        <strong>${renderMaterialIcon(item.icon || "📦")} ${safeText(item.rentalItem)}</strong>
+        <strong>${safeText(item.rentalItem)}</strong>
         <span>Job Site Rental</span>
       </div>
       <div class="cart-line-right">
@@ -1628,20 +1677,7 @@ function renderManpowerBoard() {
   const unassignedEl = document.getElementById("manpowerUnassignedCount");
   const activeJobsEl = document.getElementById("manpowerActiveJobCount");
   const unassignedCount = manpowerEmployees.filter(emp => (emp.assignedTo || "Unassigned") === "Unassigned").length;
-  const activeJobCount = new Set(
-  manpowerEmployees
-    .map(emp => (emp.assignedTo || "Unassigned").trim())
-    .filter(name =>
-      name &&
-      ![
-        "Unassigned",
-        "Shop",
-        "Vacation",
-        "Office",
-        "Warehouse"
-      ].includes(name)
-    )
-).size;
+  const activeJobCount = new Set(manpowerEmployees.map(emp => emp.assignedTo || "Unassigned").filter(name => name && !["Unassigned", "Shop", "Vacation"].includes(name))).size;
 
   if (totalOld) totalOld.textContent = `${manpowerEmployees.length} total • ${unassignedCount} unassigned • ${activeJobCount} active jobs`;
   if (totalEmployeesEl) totalEmployeesEl.textContent = String(manpowerEmployees.length);

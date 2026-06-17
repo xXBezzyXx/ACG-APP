@@ -728,23 +728,7 @@ function dedupeCategoryItems(categories) {
 }
 
 
-/* V113 Material category save helpers */
-const MATERIAL_CATEGORY_ORDER_ADMIN_V113 = ["hanging", "fasteners", "tools", "duct", "pipe"];
-
-function categorySortIndexAdminV113(key) {
-  const index = MATERIAL_CATEGORY_ORDER_ADMIN_V113.indexOf(String(key || ""));
-  return index === -1 ? 999 : index;
-}
-
-function sortAdminCategoryEntries(categoriesObject) {
-  return Object.entries(categoriesObject || {}).sort(([aKey, aCat], [bKey, bCat]) => {
-    const ai = categorySortIndexAdminV113(aKey);
-    const bi = categorySortIndexAdminV113(bKey);
-    if (ai !== bi) return ai - bi;
-    return String((aCat && aCat.label) || aKey).localeCompare(String((bCat && bCat.label) || bKey));
-  });
-}
-
+/* V116 clean material category helpers */
 function slugifyMaterialCategoryKey(value) {
   const source = String(value || "").trim();
   if (!source) return "";
@@ -761,45 +745,36 @@ function buildAdminCategoriesFromCategoryRows(categoryRows) {
   (categoryRows || []).forEach(row => {
     const activeValue = String(row.active ?? row.Active ?? "TRUE").trim().toLowerCase();
     if (activeValue === "false" || activeValue === "no" || activeValue === "0" || activeValue === "inactive") return;
-
     const key = String(row.category ?? row.Category ?? "").trim();
     const label = String(row.categoryLabel ?? row["Category Label"] ?? row.CategoryLabel ?? key).trim();
     if (!key) return;
-
     categories[key] = { label: label || key, items: [] };
   });
   return categories;
 }
 
-function categoriesToCategoryRows(categories) {
-  return sortAdminCategoryEntries(categories).map(([key, category], index) => ({
-    Category: key,
-    "Category Label": (category && category.label) || key,
+function categoriesToMaterialCategoryRows(categories) {
+  return Object.entries(categories || {}).map(([key, category], index) => ({
+    Category: String(key || "").trim(),
+    "Category Label": String((category && category.label) || key || "").trim(),
     Active: true,
     SortOrder: index + 1
   }));
 }
 
-async function syncMaterialCategoriesToGoogleSheet(categories) {
-  const url = getGoogleAppsScriptUrl();
-  if (!url) {
-    alert("Google Apps Script URL is missing. Check App Settings.");
-    return;
-  }
-
-  try {
-    await fetch(url, {
-      method: "POST",
-      mode: "no-cors",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({
-        action: "saveMaterialCategories",
-        materialCategories: categoriesToCategoryRows(categories)
-      })
-    });
-  } catch (error) {
-    console.warn("Could not sync MaterialCategories tab to Google Sheet.", error);
-  }
+function normalizeMaterialCategoryRowsV116(rows) {
+  return (rows || [])
+    .filter(row => {
+      const activeValue = String(row.active ?? row.Active ?? "TRUE").trim().toLowerCase();
+      return !(activeValue === "false" || activeValue === "no" || activeValue === "0" || activeValue === "inactive");
+    })
+    .map(row => ({
+      category: String(row.category ?? row.Category ?? "").trim(),
+      categoryLabel: String(row.categoryLabel ?? row["Category Label"] ?? row.CategoryLabel ?? row.Category ?? "").trim(),
+      sortOrder: Number(row.sortOrder ?? row.SortOrder ?? 999999)
+    }))
+    .filter(row => row.category)
+    .sort((a,b) => a.sortOrder - b.sortOrder);
 }
 
 
@@ -1031,19 +1006,28 @@ async function addMaterialCategory() {
     sortOrder: adminMaterialCategories.length + 1
   });
 
-  const categories = getCategories();
-  categories[key] = { label, items: [] };
-  localStorage.setItem("materialOrderCategories", JSON.stringify(categories));
-
-  await syncMaterialCategoriesToGoogleSheet(categories);
+  const url = getGoogleAppsScriptUrl();
+  await fetch(url, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify({
+      action: "saveMaterialCategories",
+      materialCategories: adminMaterialCategories.map((cat, index) => ({
+        Category: cat.category,
+        "Category Label": cat.categoryLabel,
+        Active: true,
+        SortOrder: index + 1
+      }))
+    })
+  });
 
   if (nameEl) nameEl.value = "";
   if (keyEl) keyEl.value = "";
 
   renderMaterialCategoryDropdown(key);
-  setTimeout(() => loadMaterialCategoriesForAdmin(), 900);
-
-  alert("Category added. It may take a second to show in the Excel sheet.");
+  setTimeout(() => loadMaterialCategoriesForAdmin(), 800);
+  alert("Category added.");
 }
 
 async function addMaterial() {
@@ -1082,11 +1066,7 @@ async function addMaterial() {
   if (options.length) newItem.options = options;
 
   categories[categoryKey].items.push(newItem);
-
-  const cleaned = dedupeCategoryItems(categories);
-  localStorage.setItem("materialOrderCategories", JSON.stringify(cleaned));
-
-  await syncMaterialsToGoogleSheet(cleaned);
+  saveCategories(categories);
 
   document.getElementById("materialNameInput").value = "";
   document.getElementById("materialIconInput").value = "";
@@ -1094,7 +1074,7 @@ async function addMaterial() {
   document.getElementById("materialUnitsInput").value = "";
 
   renderMaterialsForAdmin();
-  alert("Material added. It may take a second to show in the Excel sheet.");
+  alert("Material added.");
 }
 
 function saveMaterialEdit(index) {
@@ -2583,3 +2563,300 @@ window.addMaterialCategory = addMaterialCategory;
 
 window.loadMaterialCategoriesForAdmin = loadMaterialCategoriesForAdmin;
 window.refreshMaterialCategorySelectAdmin = refreshMaterialCategorySelectAdmin;
+
+
+/* V116 clean material admin manager */
+let materialAdminCategoryRowsV116 = [];
+
+async function fetchMaterialCategoriesRowsV116() {
+  const url = getGoogleAppsScriptUrl();
+  if (!url) throw new Error("Google Apps Script URL is missing.");
+  const res = await fetch(url + "?action=materialCategories&v=" + Date.now(), { cache: "no-store" });
+  const data = await res.json();
+  if (!data || data.success === false) throw new Error("MaterialCategories endpoint failed.");
+  return normalizeMaterialCategoryRowsV116(data.materialCategories || []);
+}
+
+async function fetchMaterialsRowsV116() {
+  const url = getGoogleAppsScriptUrl();
+  if (!url) throw new Error("Google Apps Script URL is missing.");
+  const res = await fetch(url + "?action=materials&v=" + Date.now(), { cache: "no-store" });
+  const data = await res.json();
+  if (!data || data.success === false) throw new Error("Materials endpoint failed.");
+  return data.materials || [];
+}
+
+async function saveMaterialCategoriesRowsV116(categoriesObject) {
+  const url = getGoogleAppsScriptUrl();
+  if (!url) throw new Error("Google Apps Script URL is missing.");
+
+  await fetch(url, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify({
+      action: "saveMaterialCategories",
+      materialCategories: categoriesToMaterialCategoryRows(categoriesObject)
+    })
+  });
+}
+
+async function saveMaterialsRowsV116(categoriesObject) {
+  const url = getGoogleAppsScriptUrl();
+  if (!url) throw new Error("Google Apps Script URL is missing.");
+
+  await fetch(url, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify({
+      action: "saveMaterials",
+      materials: categoriesToMaterialRows(categoriesObject)
+    })
+  });
+}
+
+async function loadMaterialCategoriesForAdmin() {
+  const list = document.getElementById("materialCategoriesAdminList");
+  const select = document.getElementById("materialCategorySelect");
+  if (list) list.innerHTML = "<p class='admin-note'>Loading categories...</p>";
+  if (select) select.innerHTML = '<option value="">Loading categories...</option>';
+
+  try {
+    materialAdminCategoryRowsV116 = await fetchMaterialCategoriesRowsV116();
+    const materialRows = await fetchMaterialsRowsV116();
+
+    const categoryShell = {};
+    materialAdminCategoryRowsV116.forEach(cat => {
+      categoryShell[cat.category] = { label: cat.categoryLabel || cat.category, items: [] };
+    });
+
+    const built = materialRowsToCategories(materialRows, materialAdminCategoryRowsV116.map(cat => ({
+      category: cat.category,
+      categoryLabel: cat.categoryLabel,
+      active: true,
+      sortOrder: cat.sortOrder
+    }))) || categoryShell;
+
+    Object.keys(categoryShell).forEach(key => {
+      categoryShell[key].items = built[key] && Array.isArray(built[key].items) ? built[key].items : [];
+    });
+
+    localStorage.setItem("materialOrderCategories", JSON.stringify(categoryShell));
+    renderMaterialCategoryDropdownV116();
+    renderMaterialCategoryAdminListV116();
+    renderMaterialsForAdmin();
+
+    if (!materialAdminCategoryRowsV116.length && list) {
+      list.innerHTML = "<p class='admin-note'>No categories found in MaterialCategories.</p>";
+    }
+  } catch (err) {
+    console.error(err);
+    if (list) list.innerHTML = "<p class='admin-error'>Could not load categories from MaterialCategories.</p>";
+    if (select) select.innerHTML = '<option value="">Could not load categories</option>';
+  }
+}
+
+function renderMaterialCategoryDropdownV116(preferredKey) {
+  const select = document.getElementById("materialCategorySelect");
+  if (!select) return;
+  const old = preferredKey || select.value || (materialAdminCategoryRowsV116[0] && materialAdminCategoryRowsV116[0].category) || "";
+  select.innerHTML = materialAdminCategoryRowsV116.map(cat =>
+    `<option value="${safeText(cat.category)}">${safeText(cat.categoryLabel || cat.category)}</option>`
+  ).join("");
+
+  if (old && materialAdminCategoryRowsV116.some(cat => cat.category === old)) {
+    select.value = old;
+  } else if (materialAdminCategoryRowsV116.length) {
+    select.value = materialAdminCategoryRowsV116[0].category;
+  }
+}
+
+function renderMaterialCategoryAdminListV116() {
+  const list = document.getElementById("materialCategoriesAdminList");
+  if (!list) return;
+  if (!materialAdminCategoryRowsV116.length) {
+    list.innerHTML = "<p class='admin-note'>No categories found.</p>";
+    return;
+  }
+  const selected = document.getElementById("materialCategorySelect")?.value || "";
+  list.innerHTML = materialAdminCategoryRowsV116.map(cat => `
+    <button type="button" class="material-category-admin-row ${selected === cat.category ? "active" : ""}" data-v116-category="${safeText(cat.category)}">
+      <strong>${safeText(cat.categoryLabel || cat.category)}</strong>
+      <span>${safeText(cat.category)}</span>
+    </button>
+  `).join("");
+
+  document.querySelectorAll("[data-v116-category]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const select = document.getElementById("materialCategorySelect");
+      if (select) {
+        select.value = btn.dataset.v116Category;
+        renderMaterialsForAdmin();
+        renderMaterialCategoryAdminListV116();
+      }
+    });
+  });
+}
+
+function renderMaterialCategorySelect(preferredKey) {
+  renderMaterialCategoryDropdownV116(preferredKey);
+  renderMaterialCategoryAdminListV116();
+}
+
+function renderMaterialCategoryDropdown(preferredKey) {
+  renderMaterialCategoryDropdownV116(preferredKey);
+  renderMaterialCategoryAdminListV116();
+}
+
+function renderMaterialCategoryAdminList() {
+  renderMaterialCategoryAdminListV116();
+}
+
+async function refreshMaterialCategorySelectAdmin(preferredKey) {
+  await loadMaterialCategoriesForAdmin();
+  if (preferredKey) renderMaterialCategorySelect(preferredKey);
+}
+
+async function addMaterialCategory() {
+  const nameEl = document.getElementById("newMaterialCategoryName");
+  const keyEl = document.getElementById("newMaterialCategoryKey");
+  const label = nameEl ? nameEl.value.trim() : "";
+  const requestedKey = keyEl ? keyEl.value.trim() : "";
+  const key = slugifyMaterialCategoryKey(requestedKey || label);
+
+  if (!label) return alert("Enter a category name.");
+  if (!key) return alert("Could not create a category key. Try a different name.");
+
+  const url = getGoogleAppsScriptUrl();
+  if (!url) return alert("Google Apps Script URL is missing. Check App Settings.");
+
+  const categories = getCategories();
+  if (categories[key]) return alert("That category already exists.");
+
+  // Show it immediately in the app.
+  categories[key] = { label, items: [] };
+  localStorage.setItem("materialOrderCategories", JSON.stringify(categories));
+
+  try {
+    await fetch(url, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({
+        action: "addMaterialCategory",
+        category: key,
+        categoryLabel: label,
+        active: true,
+        sortOrder: Object.keys(categories).length
+      })
+    });
+  } catch (err) {
+    console.error(err);
+    alert("Could not save category to Excel. Check Apps Script addMaterialCategory.");
+    return;
+  }
+
+  if (nameEl) nameEl.value = "";
+  if (keyEl) keyEl.value = "";
+
+  // Reload from sheet after the no-cors POST has time to complete.
+  setTimeout(async () => {
+    await loadMaterialCategoriesForAdmin();
+    const select = document.getElementById("materialCategorySelect");
+    if (select) select.value = key;
+    renderMaterialsForAdmin();
+    renderMaterialCategoryAdminListV116();
+  }, 1000);
+
+  alert("Category added. It may take a second to show in the Excel sheet.");
+}
+
+async function addMaterial() {
+  const select = document.getElementById("materialCategorySelect");
+  const categoryKey = select ? select.value : "";
+  const name = document.getElementById("materialNameInput").value.trim();
+  const icon = document.getElementById("materialIconInput").value.trim() || "•";
+  const options = parseCsvList(document.getElementById("materialOptionsInput").value);
+  const units = parseCsvList(document.getElementById("materialUnitsInput").value);
+
+  if (!categoryKey) return alert("Select a category.");
+  if (!name) return alert("Enter a material name.");
+
+  const categories = getCategories();
+  if (!categories[categoryKey]) {
+    const found = materialAdminCategoryRowsV116.find(cat => cat.category === categoryKey);
+    categories[categoryKey] = { label: found ? found.categoryLabel : categoryKey, items: [] };
+  }
+
+  if (categories[categoryKey].items.some(item => String(item.name || "").toLowerCase() === name.toLowerCase())) {
+    return alert("That material already exists.");
+  }
+
+  const newItem = { icon, name, units: units.length ? units : ["Each"] };
+  if (options.length) newItem.options = options;
+  categories[categoryKey].items.push(newItem);
+
+  const cleaned = dedupeCategoryItems(categories);
+  localStorage.setItem("materialOrderCategories", JSON.stringify(cleaned));
+
+  try {
+    await saveMaterialsRowsV116(cleaned);
+  } catch (err) {
+    console.error(err);
+    alert("Could not save material to Excel. Check Apps Script saveMaterials.");
+    return;
+  }
+
+  document.getElementById("materialNameInput").value = "";
+  document.getElementById("materialIconInput").value = "";
+  document.getElementById("materialOptionsInput").value = "";
+  document.getElementById("materialUnitsInput").value = "";
+
+  await loadMaterialCategoriesForAdmin();
+  const s = document.getElementById("materialCategorySelect");
+  if (s) s.value = categoryKey;
+  renderMaterialsForAdmin();
+  renderMaterialCategoryAdminListV116();
+  alert("Material added.");
+}
+
+function showMaterialAdmin() {
+  document.getElementById("adminScreen").classList.add("hidden-admin");
+  document.getElementById("materialAdminScreen").classList.remove("hidden-admin");
+  loadMaterialCategoriesForAdmin();
+  setTimeout(wireMaterialAdminV116, 300);
+}
+
+function wireMaterialAdminV116() {
+  const select = document.getElementById("materialCategorySelect");
+  if (select && !select.dataset.v116) {
+    select.dataset.v116 = "true";
+    select.addEventListener("change", () => {
+      renderMaterialsForAdmin();
+      renderMaterialCategoryAdminListV116();
+    });
+  }
+
+  const refresh = document.getElementById("refreshMaterialCategoriesBtn");
+  if (refresh && !refresh.dataset.v116) {
+    refresh.dataset.v116 = "true";
+    refresh.addEventListener("click", () => loadMaterialCategoriesForAdmin());
+  }
+
+  const addCat = document.getElementById("addMaterialCategoryBtn");
+  if (addCat && !addCat.dataset.v116) {
+    addCat.dataset.v116 = "true";
+    addCat.addEventListener("click", () => addMaterialCategory());
+  }
+
+  const addMat = document.getElementById("addMaterialBtn");
+  if (addMat && !addMat.dataset.v116) {
+    addMat.dataset.v116 = "true";
+    addMat.addEventListener("click", () => addMaterial());
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => setTimeout(wireMaterialAdminV116, 500));
+window.loadMaterialCategoriesForAdmin = loadMaterialCategoriesForAdmin;
+
