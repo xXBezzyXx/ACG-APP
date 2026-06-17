@@ -612,6 +612,20 @@ function categoriesToMaterialRows(categories) {
     const categoryLabel = category && category.label ? category.label : categoryKey;
     const items = category && Array.isArray(category.items) ? category.items : [];
 
+    if (!items.length) {
+      rows.push({
+        Category: categoryKey,
+        "Category Label": categoryLabel,
+        Material: "",
+        Icon: "",
+        Options: "",
+        Units: "",
+        Active: true,
+        SortOrder: 0
+      });
+      return;
+    }
+
     items.forEach((item, index) => {
       rows.push({
         Category: categoryKey,
@@ -648,11 +662,14 @@ function materialRowsToCategories(rows) {
     const categoryKey = String(row.category ?? row.Category ?? "").trim();
     const categoryLabel = String(row.categoryLabel ?? row["Category Label"] ?? row.CategoryLabel ?? categoryKey).trim();
     const materialName = String(row.material ?? row.Material ?? "").trim();
-    if (!categoryKey || !materialName) return;
+    if (!categoryKey) return;
 
     if (!categories[categoryKey]) {
       categories[categoryKey] = { label: categoryLabel || categoryKey, items: [] };
     }
+
+    // Category-only rows let Admin create a new category before materials are added.
+    if (!materialName) return;
 
     if (categories[categoryKey].items.some(existing => materialDedupeKey(categoryKey, existing.name) === materialDedupeKey(categoryKey, materialName))) {
       return;
@@ -719,12 +736,53 @@ function renderMaterialCategorySelect() {
   const select = document.getElementById("materialCategorySelect");
   const categories = getCategories();
 
-  select.innerHTML = Object.entries(categories)
+  select.innerHTML = sortAdminCategoryEntries(categories)
     .map(([key, category]) => `<option value="${safeText(key)}">${safeText(category.label || key)}</option>`)
     .join("");
 
   renderMaterialsForAdmin();
 }
+
+
+function addMaterialCategory() {
+  const nameEl = document.getElementById("newMaterialCategoryName");
+  const keyEl = document.getElementById("newMaterialCategoryKey");
+  const label = nameEl ? nameEl.value.trim() : "";
+  const requestedKey = keyEl ? keyEl.value.trim() : "";
+  const key = slugifyMaterialCategoryKey(requestedKey || label);
+
+  if (!label) {
+    alert("Enter a category name.");
+    return;
+  }
+
+  if (!key) {
+    alert("Could not create a category key. Try a different name.");
+    return;
+  }
+
+  const categories = getCategories();
+  if (categories[key]) {
+    alert("That category already exists.");
+    return;
+  }
+
+  categories[key] = { label, items: [] };
+  saveCategories(categories);
+
+  if (nameEl) nameEl.value = "";
+  if (keyEl) keyEl.value = "";
+
+  renderMaterialCategorySelect();
+  const select = document.getElementById("materialCategorySelect");
+  if (select) {
+    select.value = key;
+    renderMaterialsForAdmin();
+  }
+
+  alert("Category added. You can now add materials to it.");
+}
+
 
 function addMaterial() {
   const categoryKey = document.getElementById("materialCategorySelect").value;
@@ -1521,6 +1579,14 @@ function setupAdmin() {
   if (backToAdminBtn) backToAdminBtn.addEventListener("click", showAdminHome);
 
   document.getElementById("materialCategorySelect").addEventListener("change", renderMaterialsForAdmin);
+  const addMaterialCategoryBtn = document.getElementById("addMaterialCategoryBtn");
+  if (addMaterialCategoryBtn) addMaterialCategoryBtn.addEventListener("click", addMaterialCategory);
+
+  const newMaterialCategoryName = document.getElementById("newMaterialCategoryName");
+  if (newMaterialCategoryName) newMaterialCategoryName.addEventListener("keydown", event => {
+    if (event.key === "Enter") addMaterialCategory();
+  });
+
   document.getElementById("addMaterialBtn").addEventListener("click", addMaterial);
   document.getElementById("materialNameInput").addEventListener("keydown", event => {
     if (event.key === "Enter") addMaterial();

@@ -2101,3 +2101,37 @@ label[for="dailySafety"]{
 .must-see-email-settings {
   display: none !important;
 }
+
+
+/* V102 Rental cart text-only compact preview */
+#rentalPreview .material-icon,
+#rentalPreview .material-icon-img,
+#rentalPreview img {
+  display: none !important;
+}
+
+#rentalPreview .cart-line strong {
+  display: block !important;
+}
+
+
+/* V103 Material category tabs start left and swipe right */
+#categoryTabs.chips,
+.chips {
+  justify-content: flex-start !important;
+  text-align: left !important;
+  scroll-padding-left: 0 !important;
+  padding-left: 0 !important;
+  margin-left: 0 !important;
+  width: 100% !important;
+}
+
+#categoryTabs .chip:first-child {
+  margin-left: 0 !important;
+}
+
+.admin-soft-divider {
+  border: 0;
+  border-top: 1px solid rgba(255,255,255,.14);
+  margin: 18px 0;
+}

@@ -744,7 +744,7 @@ function saveMaterials_(materials) {
     const material = String(item.Material || item.material || "").trim();
     const key = category.toLowerCase() + "::" + material.toLowerCase();
 
-    if (!category || !material || seen[key]) return;
+    if (!category || seen[key]) return;
     seen[key] = true;
 
     rows.push([
@@ -791,7 +791,7 @@ function getMaterials_() {
     })
     .filter(item => {
       const key = String(item.category || "").trim().toLowerCase() + "::" + String(item.material || "").trim().toLowerCase();
-      if (!item.category || !item.material || seen[key]) return false;
+      if (!item.category || seen[key]) return false;
       seen[key] = true;
       return true;
     })
