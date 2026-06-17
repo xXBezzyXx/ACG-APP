@@ -722,17 +722,16 @@ async function loadMaterialsFromGoogleSheetAdmin() {
 
 async function loadMaterialCategoriesDirectAdmin() {
   const url = getGoogleAppsScriptUrl();
-  if (!url) return getCategories();
+  const fallback = getCategories();
+  if (!url) return fallback;
 
   try {
     const response = await fetch(url + "?action=materialCategories&v=" + Date.now(), { cache: "no-store" });
     const data = await response.json();
     const rows = data.materialCategories || [];
 
-    if (Array.isArray(rows) && rows.length) {
-      const currentCategories = getCategories();
-      const nextCategories = {};
-
+    const nextCategories = {};
+    if (Array.isArray(rows)) {
       rows
         .filter(row => {
           const activeValue = String(row.active ?? row.Active ?? "TRUE").trim().toLowerCase();
@@ -743,29 +742,56 @@ async function loadMaterialCategoriesDirectAdmin() {
           const key = String(row.category ?? row.Category ?? "").trim();
           const label = String(row.categoryLabel ?? row["Category Label"] ?? row.CategoryLabel ?? key).trim();
           if (!key) return;
-          nextCategories[key] = {
-            label: label || key,
-            items: currentCategories[key] && Array.isArray(currentCategories[key].items) ? currentCategories[key].items : []
-          };
+          nextCategories[key] = { label: label || key, items: [] };
         });
+    }
 
-      if (Object.keys(nextCategories).length) {
-        localStorage.setItem("materialOrderCategories", JSON.stringify(nextCategories));
-        return nextCategories;
-      }
+    // Load material rows and place them ONLY under categories that exist in MaterialCategories.
+    // This prevents old category names in the Materials sheet from reappearing after you rename/delete them.
+    try {
+      const materialResponse = await fetch(url + "?action=materials&v=" + Date.now(), { cache: "no-store" });
+      const materialData = await materialResponse.json();
+      const materialCategories = materialRowsToCategories(materialData.materials || [], Object.values(nextCategories).length ? Object.entries(nextCategories).map(([category, obj], index) => ({
+        category,
+        categoryLabel: obj.label,
+        active: true,
+        sortOrder: index + 1
+      })) : (materialData.materialCategories || []));
+
+      Object.keys(nextCategories).forEach(key => {
+        nextCategories[key].items = materialCategories[key] && Array.isArray(materialCategories[key].items) ? materialCategories[key].items : [];
+      });
+    } catch (materialError) {
+      console.warn("Could not load materials while refreshing categories.", materialError);
+    }
+
+    if (Object.keys(nextCategories).length) {
+      localStorage.setItem("materialOrderCategories", JSON.stringify(nextCategories));
+      return nextCategories;
     }
   } catch (error) {
     console.warn("Could not load MaterialCategories directly.", error);
   }
 
-  return getCategories();
+  return fallback;
 }
 
 async function refreshMaterialCategorySelectAdmin(preferredKey) {
+  const btn = document.getElementById("refreshMaterialCategoriesBtn");
+  const oldText = btn ? btn.textContent : "";
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "Refreshing...";
+  }
+
   await loadMaterialCategoriesDirectAdmin();
   renderMaterialCategorySelect(preferredKey);
-}
 
+  if (btn) {
+    btn.disabled = false;
+    btn.textContent = oldText || "Refresh Categories";
+  }
+}
 
 function renderMaterialCategorySelect(preferredKey) {
   const select = document.getElementById("materialCategorySelect");
@@ -824,14 +850,17 @@ async function addMaterialCategory() {
   categories[key] = { label, items: [] };
   localStorage.setItem("materialOrderCategories", JSON.stringify(categories));
 
-  // Write only the category list to the MaterialCategories sheet.
   await syncMaterialCategoriesToGoogleSheet(categories);
 
   if (nameEl) nameEl.value = "";
   if (keyEl) keyEl.value = "";
 
-  await refreshMaterialCategorySelectAdmin(key);
-  alert("Category added to MaterialCategories.");
+  renderMaterialCategorySelect(key);
+
+  // Apps Script POST is no-cors, so give Google Sheet a moment, then refresh from the sheet.
+  setTimeout(() => refreshMaterialCategorySelectAdmin(key), 900);
+
+  alert("Category added. If you do not see it right away, click Refresh Categories.");
 }
 
 async function addMaterial() {
@@ -1636,6 +1665,9 @@ function setupAdmin() {
   const materialCategorySelect = document.getElementById("materialCategorySelect");
   if (materialCategorySelect) materialCategorySelect.addEventListener("change", renderMaterialsForAdmin);
 
+  const refreshMaterialCategoriesBtn = document.getElementById("refreshMaterialCategoriesBtn");
+  if (refreshMaterialCategoriesBtn) refreshMaterialCategoriesBtn.addEventListener("click", () => refreshMaterialCategorySelectAdmin());
+
   const addMaterialCategoryBtn = document.getElementById("addMaterialCategoryBtn");
   if (addMaterialCategoryBtn) addMaterialCategoryBtn.addEventListener("click", () => addMaterialCategory());
 
@@ -2349,3 +2381,8 @@ async function saveEmailPdfSettings() {
     });
   });
 })();
+
+
+/* V107 expose material category functions for Admin buttons */
+window.refreshMaterialCategorySelectAdmin = refreshMaterialCategorySelectAdmin;
+window.addMaterialCategory = addMaterialCategory;

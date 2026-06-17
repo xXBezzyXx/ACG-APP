@@ -203,7 +203,9 @@ function buildCategoriesFromCategoryRows(categoryRows) {
 
 function buildCategoriesFromMaterialsRows(rows, categoryRows) {
   const nextCategories = buildCategoriesFromCategoryRows(categoryRows);
-  if (!Array.isArray(rows)) return null;
+  const hasCategorySheet = Object.keys(nextCategories).length > 0;
+
+  if (!Array.isArray(rows)) return hasCategorySheet ? nextCategories : null;
 
   rows.forEach(row => {
     const activeValue = String(row.active ?? row.Active ?? "TRUE").trim().toLowerCase();
@@ -212,7 +214,10 @@ function buildCategoriesFromMaterialsRows(rows, categoryRows) {
     const category = String(row.category ?? row.Category ?? "").trim();
     const categoryLabel = String(row.categoryLabel ?? row["Category Label"] ?? row.CategoryLabel ?? category).trim();
     const material = String(row.material ?? row.Material ?? "").trim();
-    if (!category) return;
+    if (!category || !material) return;
+
+    // If MaterialCategories exists, do NOT create old categories from the Materials tab.
+    if (hasCategorySheet && !nextCategories[category]) return;
 
     if (!nextCategories[category]) {
       nextCategories[category] = {
@@ -220,9 +225,6 @@ function buildCategoriesFromMaterialsRows(rows, categoryRows) {
         items: []
       };
     }
-
-    // Category-only rows let Admin create a new category before materials are added.
-    if (!material) return;
 
     const item = {
       icon: String(row.icon ?? row.Icon ?? "").trim() || "📦",

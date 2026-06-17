@@ -2210,3 +2210,15 @@ label[for="dailySafety"]{
   color: #fff !important;
   border: 0 !important;
 }
+
+
+/* V107 stronger admin material category fixes */
+#materialCategorySelect {
+  appearance: auto !important;
+  -webkit-appearance: auto !important;
+}
+
+#refreshMaterialCategoriesBtn:disabled {
+  opacity: .65 !important;
+  cursor: wait !important;
+}
