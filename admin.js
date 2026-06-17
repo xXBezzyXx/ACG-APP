@@ -801,9 +801,34 @@ function materialRowsToCategories(rows, categoryRows) {
   return Object.keys(categories).length ? categories : null;
 }
 
-async function syncMaterialsToGoogleSheet(categories) {
+async 
+async function syncMaterialCategoriesToGoogleSheet(categories) {
   const url = getGoogleAppsScriptUrl();
   if (!url) return;
+
+  const categoryRows = categoriesToCategoryRows(categories);
+
+  try {
+    await fetch(url, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({
+        action: "saveMaterialCategories",
+        materialCategories: categoryRows
+      })
+    });
+  } catch (error) {
+    console.warn("Could not sync MaterialCategories tab to Google Sheet.", error);
+  }
+}
+
+async function syncMaterialsToGoogleSheet(categories) {
+  const url = getGoogleAppsScriptUrl();
+  if (!url) {
+    alert("Google Apps Script URL is missing. Check App Settings.");
+    return;
+  }
 
   try {
     await fetch(url, {
@@ -815,9 +840,15 @@ async function syncMaterialsToGoogleSheet(categories) {
         materials: categoriesToMaterialRows(categories)
       })
     });
-    await syncMaterialCategoriesToGoogleSheet(categories);
   } catch (error) {
     console.warn("Could not sync materials to Google Sheet.", error);
+  }
+
+  // Keep category list saved separately in MaterialCategories.
+  try {
+    await syncMaterialCategoriesToGoogleSheet(categories);
+  } catch (error) {
+    console.warn("Could not sync categories to Google Sheet.", error);
   }
 }
 
@@ -955,28 +986,19 @@ async function addMaterialCategory() {
     sortOrder: adminMaterialCategories.length + 1
   });
 
-  const url = getGoogleAppsScriptUrl();
-  await fetch(url, {
-    method: "POST",
-    mode: "no-cors",
-    headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify({
-      action: "saveMaterialCategories",
-      materialCategories: adminMaterialCategories.map((cat, index) => ({
-        Category: cat.category,
-        "Category Label": cat.categoryLabel,
-        Active: true,
-        SortOrder: index + 1
-      }))
-    })
-  });
+  const current = getCategories();
+  current[key] = { label, items: [] };
+  localStorage.setItem("materialOrderCategories", JSON.stringify(current));
+
+  await syncMaterialCategoriesToGoogleSheet(current);
 
   if (nameEl) nameEl.value = "";
   if (keyEl) keyEl.value = "";
 
   renderMaterialCategoryDropdown(key);
-  setTimeout(() => loadMaterialCategoriesForAdmin(), 800);
-  alert("Category added.");
+
+  setTimeout(() => loadMaterialCategoriesForAdmin(), 900);
+  alert("Category added. It may take a second to show in the Excel sheet.");
 }
 
 async function addMaterial() {
@@ -1015,7 +1037,11 @@ async function addMaterial() {
   if (options.length) newItem.options = options;
 
   categories[categoryKey].items.push(newItem);
-  saveCategories(categories);
+
+  const cleaned = dedupeCategoryItems(categories);
+  localStorage.setItem("materialOrderCategories", JSON.stringify(cleaned));
+
+  await syncMaterialsToGoogleSheet(cleaned);
 
   document.getElementById("materialNameInput").value = "";
   document.getElementById("materialIconInput").value = "";
@@ -1023,7 +1049,7 @@ async function addMaterial() {
   document.getElementById("materialUnitsInput").value = "";
 
   renderMaterialsForAdmin();
-  alert("Material added.");
+  alert("Material added. It may take a second to show in the Excel sheet.");
 }
 
 function saveMaterialEdit(index) {
