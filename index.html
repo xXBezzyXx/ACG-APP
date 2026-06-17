@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Material Order App</title>
+  <title>Material Orders</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body class="auth-locked">
@@ -63,7 +63,7 @@
           <textarea id="rentalNotesInput" class="daily-textarea" placeholder="Example: 10k lull needed for rooftop units"></textarea>
         </label>
 
-        <button id="submitRentalBtn" class="submit-btn" type="button">Submit Rentals</button>
+        <button id="submitRentalBtn" class="submit-btn orange-submit-btn" type="button">Submit Rentals</button>
       </div>
     </section>
 
@@ -150,7 +150,7 @@
     <section id="orderScreen" class="screen">
       <header class="top-bar center"><button class="back-btn" onclick="showScreen('jobsScreen')" type="button">‹</button><h2>New Order</h2><span></span></header>
       <div class="step"><div class="step-number">1</div><div class="step-body"><p>Select Job</p><select id="selectedJob"></select></div></div>
-      <div class="step"><div class="step-number">2</div><div class="step-body"><p>Select Material</p><div id="categoryTabs" class="chips"></div></div></div>
+      <div class="step"><div class="step-number">2</div><div class="step-body"><p>Select Material</p><div id="categoryTabs" class="chips"></div><div class="search-box material-search-box"><span>⌕</span><input id="materialSearch" type="search" placeholder="Search material" /></div></div></div>
       <div id="materialList" class="material-list"></div>
       <div class="cart-preview-card">
         <div class="cart-preview-head"><span>Cart</span><strong id="cartCount">0 items</strong></div>

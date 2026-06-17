@@ -2290,3 +2290,32 @@ label[for="dailySafety"]{
   color: #111827 !important;
   -webkit-text-fill-color: #111827 !important;
 }
+
+/* V109 Material search + orange rental submit */
+.material-search-box {
+  margin-top: 10px;
+  margin-bottom: 0;
+}
+
+.orange-submit-btn,
+#submitRentalBtn {
+  width: 100%;
+  height: 60px;
+  border: 0;
+  border-radius: 18px;
+  background: linear-gradient(135deg,#ff9f24,#f97316) !important;
+  color: #fff;
+  font-size: 17px;
+  font-weight: 950;
+  box-shadow: 0 16px 32px rgba(249,115,22,.27);
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  align-items: center;
+}
+
+.rental-card-size-input {
+  width: 100%;
+  min-height: 44px;
+  border-radius: 14px;
+}

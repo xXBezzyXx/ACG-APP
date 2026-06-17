@@ -37,6 +37,7 @@ const DEFAULT_PDF_LETTERHEAD = {
 const DEFAULT_SETTINGS = {
   companyTitle: "AC General",
   mainPageTitle: "Jobs",
+  webpageTitle: "Material Orders",
   adminPassword: DEFAULT_PASSWORD,
   googleAppsScriptUrl: "",
   senderEmail: "",
@@ -435,6 +436,7 @@ function resetAdminLogin() {
   const settings = {
     companyTitle: "AC General",
     mainPageTitle: "Jobs",
+    webpageTitle: "Material Orders",
     adminPassword: DEFAULT_PASSWORD,
     pdfLetterhead: DEFAULT_PDF_LETTERHEAD
   };
@@ -461,9 +463,12 @@ function setValueIfExists(id, value) {
 function loadSettingsForm() {
   const settings = getSettings();
   const pdf = mergePdfLetterhead(settings);
+  document.title = "Admin - " + (settings.webpageTitle || "Material Orders");
   document.getElementById("companyTitleInput").value = settings.companyTitle || DEFAULT_SETTINGS.companyTitle;
   const main = document.getElementById("mainPageTitleInput");
   if (main) main.value = settings.mainPageTitle || "Jobs";
+  const webpageTitle = document.getElementById("webpageTitleInput");
+  if (webpageTitle) webpageTitle.value = settings.webpageTitle || "Material Orders";
   setValueIfExists("googleAppsScriptUrlInput", settings.googleAppsScriptUrl || DEFAULT_SETTINGS.googleAppsScriptUrl);
   setValueIfExists("googleAppsScriptUrlInputDashboard", settings.googleAppsScriptUrl || DEFAULT_SETTINGS.googleAppsScriptUrl);
   setValueIfExists("googleAppsScriptUrlInputAppSettings", settings.googleAppsScriptUrl || DEFAULT_SETTINGS.googleAppsScriptUrl);
@@ -486,9 +491,10 @@ function loadSettingsForm() {
 function saveCompanyTitle() {
   const companyTitle = document.getElementById("companyTitleInput").value.trim();
   const mainPageTitle = (document.getElementById("mainPageTitleInput")?.value || "Jobs").trim();
+  const webpageTitle = (document.getElementById("webpageTitleInput")?.value || "Material Orders").trim();
 
-  if (!companyTitle || !mainPageTitle) {
-    alert("Company title and main page title are required.");
+  if (!companyTitle || !mainPageTitle || !webpageTitle) {
+    alert("Company title, main page title, and browser tab title are required.");
     return;
   }
 
@@ -498,6 +504,7 @@ function saveCompanyTitle() {
     ...existing,
     companyTitle,
     mainPageTitle,
+    webpageTitle,
     adminPassword: existing.adminPassword || DEFAULT_PASSWORD,
     googleAppsScriptUrl: emailSettings.googleAppsScriptUrl || existing.googleAppsScriptUrl || "",
     senderEmail: emailSettings.senderEmail || existing.senderEmail || "",
@@ -1313,9 +1320,9 @@ function deleteAdminOrder(orderId) {
 
 const DEFAULT_RENTAL_ITEMS_ADMIN = [
   { name: "Conex", icon: "🚚", active: true, custom: false },
-  { name: "Lull", icon: "🚜", active: true, custom: false },
-  { name: "Scissor Lift", icon: "↕️", active: true, custom: false },
-  { name: "Boom Lift", icon: "🏗️", active: true, custom: false },
+  { name: "Lull", icon: "🚜", active: true, custom: false, options: ["6k", "8k", "10k", "12k"] },
+  { name: "Scissor Lift", icon: "↕️", active: true, custom: false, options: ["19 ft", "26 ft", "32 ft", "40 ft"] },
+  { name: "Boom Lift", icon: "🏗️", active: true, custom: false, options: ["45 ft", "60 ft", "80 ft", "125 ft"] },
   { name: "Porta John", icon: "🚻", active: true, custom: false },
   { name: "Other / Custom", icon: "➕", active: true, custom: true }
 ];
@@ -1338,6 +1345,7 @@ function normalizeRentalItems(items) {
       icon: item.icon || item.Icon || "📦",
       active: !(item.active === false || item.Active === false || String(item.active || item.Active || "").toLowerCase() === "false"),
       custom: item.custom === true || item.Custom === true || String(item.custom || item.Custom || "").toLowerCase() === "true",
+      options: String(item.options || item.Options || item.sizes || item.Sizes || "").split(",").map(part => part.trim()).filter(Boolean),
       sortOrder: Number(item.sortOrder || item.SortOrder || index + 1)
     });
   });
@@ -1417,16 +1425,20 @@ function renderRentalItemsAdmin() {
 
   list.innerHTML = items.map((item, index) => `
     <div class="material-manager-row editable-material-row">
-      <div class="material-edit-grid">
-        <label class="admin-label">Icon
+      <div class="material-edit-grid rental-edit-grid">
+        <label class="admin-label rental-icon-field">Icon
           <input value="${safeText(item.icon || "📦")}" data-rental-icon="${index}" />
         </label>
 
-        <label class="admin-label">Rental Item
+        <label class="admin-label rental-name-field">Rental Item
           <input value="${safeText(item.name || "")}" data-rental-name="${index}" ${item.custom ? "readonly" : ""} />
         </label>
 
-        <label class="admin-label">Active
+        <label class="admin-label rental-options-field">Sizes / Options
+          <input value="${safeText((item.options || []).join(", "))}" data-rental-options="${index}" placeholder="Example: 6k, 8k, 10k" />
+        </label>
+
+        <label class="admin-label rental-active-field">Active
           <select data-rental-active="${index}">
             <option value="true" ${item.active !== false ? "selected" : ""}>Active</option>
             <option value="false" ${item.active === false ? "selected" : ""}>Not Active</option>
@@ -1452,8 +1464,10 @@ function renderRentalItemsAdmin() {
 async function addRentalItemAdmin() {
   const nameEl = document.getElementById("newRentalItemName");
   const iconEl = document.getElementById("newRentalItemIcon");
+  const sizesEl = document.getElementById("newRentalItemSizes");
   const name = (nameEl ? nameEl.value : "").trim();
   const icon = (iconEl ? iconEl.value : "").trim() || "📦";
+  const options = (sizesEl ? sizesEl.value : "").split(",").map(part => part.trim()).filter(Boolean);
 
   if (!name) return alert("Enter a rental item name.");
 
@@ -1463,12 +1477,13 @@ async function addRentalItemAdmin() {
   }
 
   const customIndex = items.findIndex(item => item.custom);
-  items.splice(customIndex >= 0 ? customIndex : items.length, 0, { name, icon, active: true, custom: false, sortOrder: items.length + 1 });
+  items.splice(customIndex >= 0 ? customIndex : items.length, 0, { name, icon, options, active: true, custom: false, sortOrder: items.length + 1 });
 
   await saveRentalItemsAdmin(items);
 
   if (nameEl) nameEl.value = "";
   if (iconEl) iconEl.value = "";
+  if (sizesEl) sizesEl.value = "";
 }
 
 async function saveRentalButtonEdit(index) {
@@ -1478,10 +1493,11 @@ async function saveRentalButtonEdit(index) {
   const name = document.querySelector(`[data-rental-name="${index}"]`)?.value.trim() || "";
   const icon = document.querySelector(`[data-rental-icon="${index}"]`)?.value.trim() || "📦";
   const active = document.querySelector(`[data-rental-active="${index}"]`)?.value !== "false";
+  const options = (document.querySelector(`[data-rental-options="${index}"]`)?.value || "").split(",").map(part => part.trim()).filter(Boolean);
 
   if (!name) return alert("Rental item name cannot be blank.");
 
-  items[index] = { ...items[index], name, icon, active };
+  items[index] = { ...items[index], name, icon, options, active };
   await saveRentalItemsAdmin(items);
 }
 
@@ -1538,13 +1554,14 @@ async function renderAdminRentals() {
       <div class="admin-order-row">
         <div class="admin-order-head">
           <div>
-            <strong>${safeText(rental.job || "Unknown Job")} — ${safeText(rental.rentalItem || "Rental")}</strong>
+            <strong>${safeText(rental.job || "Unknown Job")} — ${safeText(rental.rentalItem || "Rental")}${rental.rentalSize ? " - " + safeText(rental.rentalSize) : ""}</strong>
             <span>Requested by ${safeText(rental.requestedBy || "Unknown")} • ${safeText(formatOrderDate(rental.dateAdded))}</span>
           </div>
           <span class="status-badge ${rentalStatusClass(status)}">${safeText(status)}</span>
         </div>
 
         <div class="admin-order-items">
+          <div class="admin-order-line"><span>Size</span><input class="daily-input" type="text" value="${safeText(rental.rentalSize || "")}" data-rental-size="${safeText(rental.id)}" /></div>
           <div class="admin-order-line"><span>Qty</span><input class="daily-input" type="number" min="0" value="${safeText(rental.quantity || 1)}" data-rental-qty="${safeText(rental.id)}" /></div>
           <div class="admin-order-line"><span>Vendor</span><input class="daily-input" type="text" value="${safeText(rental.vendor || "")}" data-rental-vendor="${safeText(rental.id)}" /></div>
           <div class="admin-order-line"><span>Notes</span><input class="daily-input" type="text" value="${safeText(rental.notes || "")}" data-rental-notes="${safeText(rental.id)}" /></div>
@@ -1579,6 +1596,7 @@ async function saveActiveRentalAdmin(id) {
       action: "updateRental",
       id,
       status: document.querySelector(`[data-rental-status="${CSS.escape(id)}"]`)?.value || "Active",
+      rentalSize: document.querySelector(`[data-rental-size="${CSS.escape(id)}"]`)?.value || "",
       quantity: document.querySelector(`[data-rental-qty="${CSS.escape(id)}"]`)?.value || "1",
       vendor: document.querySelector(`[data-rental-vendor="${CSS.escape(id)}"]`)?.value || "",
       notes: document.querySelector(`[data-rental-notes="${CSS.escape(id)}"]`)?.value || "",
@@ -1664,8 +1682,10 @@ function renderAdminManpowerEmployees() {
         <label class="admin-label">Position
           <input value="${safeText(emp.position || "")}" data-admin-mp-position="${index}" />
         </label>
-        <label class="admin-label">Assigned To
-          <input value="${safeText(emp.assignedTo || "Unassigned")}" data-admin-mp-assigned="${index}" />
+        <label class="admin-label" style="grid-column: span 2;">Assigned To
+          <select data-admin-mp-assigned="${index}" style="width:100%;min-width:300px;">
+            ${["Unassigned","Office","Shop","Vacation", ...(window.jobs||[]).map(j=>j.name).filter(Boolean)].filter((v,i,a)=>a.indexOf(v)===i).map(job=>`<option value="${job}" ${job=== (emp.assignedTo||"Unassigned") ? "selected" : ""}>${job}</option>`).join("")}
+          </select>
         </label>
       </div>
       <div class="material-edit-actions">
@@ -1784,6 +1804,9 @@ function setupAdmin() {
         renderRentalItemsAdmin();
         loadRentalItemsFromGoogleSheetAdmin();
         renderAdminRentals();
+      }
+      if (button.dataset.adminPage === "manpowerAdminPage") {
+        loadAdminManpowerEmployees();
       }
     });
   });
@@ -2860,3 +2883,36 @@ function wireMaterialAdminV116() {
 document.addEventListener("DOMContentLoaded", () => setTimeout(wireMaterialAdminV116, 500));
 window.loadMaterialCategoriesForAdmin = loadMaterialCategoriesForAdmin;
 
+
+/* V110 hotfix: make sidebar Materials and Add Rental reliable even if older listeners miss */
+document.addEventListener("click", function(event) {
+  const materialBtn = event.target.closest && event.target.closest("#openMaterialManagerBtn");
+  if (materialBtn) {
+    event.preventDefault();
+    if (typeof showMaterialAdmin === "function") showMaterialAdmin();
+    return;
+  }
+});
+
+/* V117 hotfix: make Add Rental Button work reliably */
+window.addRentalItemAdmin = addRentalItemAdmin;
+window.saveRentalItemsAdmin = saveRentalItemsAdmin;
+window.loadRentalItemsFromGoogleSheetAdmin = loadRentalItemsFromGoogleSheetAdmin;
+
+document.addEventListener("click", function(event) {
+  const addRentalBtn = event.target.closest && event.target.closest("#addRentalItemBtn");
+  if (!addRentalBtn) return;
+  event.preventDefault();
+  event.stopPropagation();
+  if (typeof addRentalItemAdmin === "function") {
+    addRentalItemAdmin();
+  }
+}, true);
+
+document.addEventListener("keydown", function(event) {
+  if (event.key !== "Enter") return;
+  const target = event.target;
+  if (!target || !["newRentalItemName", "newRentalItemIcon", "newRentalItemSizes"].includes(target.id)) return;
+  event.preventDefault();
+  if (typeof addRentalItemAdmin === "function") addRentalItemAdmin();
+}, true);

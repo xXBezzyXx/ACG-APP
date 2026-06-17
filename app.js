@@ -21,6 +21,7 @@ function getAppSettings() {
   const defaults = {
     companyTitle: "AC General",
     mainPageTitle: "Jobs",
+    webpageTitle: "Material Orders",
     googleAppsScriptUrl: "https://script.google.com/macros/s/AKfycbwUTdmg06ygEMLTSQ6qRd1uaheqvNQbOh3d45UZX_clnWP2OHmUKwM5UiWVIdmX8kCj/exec",
     senderEmail: "",
     dailyReportCcEmail: "",
@@ -44,12 +45,12 @@ function getAppSettings() {
 function applyAppSettings() {
   const settings = getAppSettings();
   const companyTitle = document.getElementById("companyTitle");
-  if (companyTitle) companyTitle.textContent = settings.companyTitle || DEFAULT_SETTINGS.companyTitle;
+  if (companyTitle) companyTitle.textContent = settings.companyTitle || "AC General";
 
   const mainPageTitle = document.getElementById("mainPageTitle");
   if (mainPageTitle) mainPageTitle.textContent = settings.mainPageTitle || "Jobs";
 
-  document.title = `${settings.companyTitle || DEFAULT_SETTINGS.companyTitle} - Material Orders`;
+  document.title = settings.webpageTitle || `${settings.companyTitle || "AC General"} - Material Orders`;
 }
 
 const ORDER_EMAIL = "nmcdonald@acgeneral.net";
@@ -684,7 +685,9 @@ function renderMaterialIcon(icon) {
 
 function renderMaterials() {
   if (!categories[activeCategory]) activeCategory = Object.keys(categories)[0] || "hanging";
-  const items = categories[activeCategory].items;
+  const searchText = ((document.getElementById("materialSearch") || {}).value || "").trim().toLowerCase();
+  const allItems = categories[activeCategory].items || [];
+  const items = searchText ? allItems.filter(item => `${item.name || ""} ${(item.options || []).join(" ")}`.toLowerCase().includes(searchText)) : allItems;
   const materialList = document.getElementById("materialList");
   if (!materialList) return;
 
@@ -1086,9 +1089,9 @@ let rentalCart = [];
 
 const DEFAULT_RENTAL_ITEMS = [
   { name: "Conex", icon: "🚚", active: true },
-  { name: "Lull", icon: "🚜", active: true },
-  { name: "Scissor Lift", icon: "↕️", active: true },
-  { name: "Boom Lift", icon: "🏗️", active: true },
+  { name: "Lull", icon: "🚜", active: true, options: ["6k", "8k", "10k", "12k"] },
+  { name: "Scissor Lift", icon: "↕️", active: true, options: ["19 ft", "26 ft", "32 ft", "40 ft"] },
+  { name: "Boom Lift", icon: "🏗️", active: true, options: ["45 ft", "60 ft", "80 ft", "125 ft"] },
   { name: "Porta John", icon: "🚻", active: true },
   { name: "Other / Custom", icon: "➕", active: true, custom: true }
 ];
@@ -1128,6 +1131,14 @@ function renderRentalItems() {
           <span class="material-icon">${renderMaterialIcon(item.icon || "📦")}</span>
           <strong>${safeText(item.name)}</strong>
         </button>
+
+        ${item.options && item.options.length ? `
+        <label class="rental-card-qty-label">
+          Size
+          <select class="rental-card-size-input" data-rental-size-card="${key}">
+            ${item.options.map(option => `<option>${safeText(option)}</option>`).join("")}
+          </select>
+        </label>` : ""}
 
         <label class="rental-card-qty-label">
           Quantity
@@ -1177,7 +1188,8 @@ async function loadRentalItemsFromGoogleSheet() {
         name: item.name || item["Rental Item"] || "",
         icon: item.icon || item.Icon || "📦",
         active: !(item.active === false || String(item.active).toLowerCase() === "false"),
-        custom: item.custom === true || String(item.custom || "").toLowerCase() === "true"
+        custom: item.custom === true || String(item.custom || "").toLowerCase() === "true",
+        options: parseMaterialListValue(item.options || item.Options || item.sizes || item.Sizes)
       })).filter(item => item.name);
 
       setStoredRentalItems(items);
@@ -1205,6 +1217,8 @@ function addRentalToList(rentalName) {
   }
   const item = getCurrentRentalSelectionName();
   const cardQtyInput = rentalName ? document.querySelector(`[data-rental-qty-card="${CSS.escape(rentalName)}"]`) : null;
+  const cardSizeInput = rentalName ? document.querySelector(`[data-rental-size-card="${CSS.escape(rentalName)}"]`) : null;
+  const rentalSize = (cardSizeInput && cardSizeInput.value ? cardSizeInput.value : "").trim();
   const quantityValue = Number((cardQtyInput && cardQtyInput.value) || "1");
   const quantity = Number.isFinite(quantityValue) && quantityValue > 0 ? Math.floor(quantityValue) : 1;
 
@@ -1213,13 +1227,14 @@ function addRentalToList(rentalName) {
     return;
   }
 
-  const existing = rentalCart.find(line => String(line.rentalItem || "").trim().toLowerCase() === item.toLowerCase());
+  const existing = rentalCart.find(line => String(line.rentalItem || "").trim().toLowerCase() === item.toLowerCase() && String(line.rentalSize || "") === rentalSize);
   if (existing) {
     existing.quantity += quantity;
   } else {
     const selectedRental = getStoredRentalItems().find(rental => rental.name === selectedRentalItem);
     rentalCart.push({
       rentalItem: item,
+      rentalSize,
       quantity,
       icon: selectedRental ? selectedRental.icon : "📦"
     });
@@ -1254,7 +1269,7 @@ function renderRentalPreview() {
   preview.innerHTML = rentalCart.map((item, index) => `
     <div class="cart-line">
       <div>
-        <strong>${safeText(item.rentalItem)}</strong>
+        <strong>${safeText(item.rentalItem)}${item.rentalSize ? " - " + safeText(item.rentalSize) : ""}</strong>
         <span>Job Site Rental</span>
       </div>
       <div class="cart-line-right">
@@ -1321,6 +1336,7 @@ async function submitRental() {
       action: "rentalRequest",
       job,
       rentalItem: rental.rentalItem,
+      rentalSize: rental.rentalSize || "",
       quantity: rental.quantity,
       status: "Active",
       requestedBy,
@@ -1771,6 +1787,9 @@ function setupApp() {
 
   const submitRentalBtn = document.getElementById("submitRentalBtn");
   if (submitRentalBtn) submitRentalBtn.addEventListener("click", submitRental);
+
+  const materialSearch = document.getElementById("materialSearch");
+  if (materialSearch) materialSearch.addEventListener("input", renderMaterials);
 const bottomManpowerBtn = document.getElementById("bottomManpowerBtn");
   if (bottomManpowerBtn) bottomManpowerBtn.addEventListener("click", openManpowerFromBottom);
 
