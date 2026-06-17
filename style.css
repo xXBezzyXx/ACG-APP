@@ -2087,3 +2087,17 @@ label[for="dailySafety"]{
     min-width: 105px !important;
   }
 }
+
+
+/* V101 Admin cleanup hide removed pages/buttons if cached */
+[data-admin-page="emailPdfPage"],
+[data-admin-page="ordersAdminPage"],
+[data-admin-page="dataToolsPage"],
+[data-admin-page="passwordPage"],
+#emailPdfPage,
+#ordersAdminPage,
+#dataToolsPage,
+#passwordPage,
+.must-see-email-settings {
+  display: none !important;
+}

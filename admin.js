@@ -1,3 +1,23 @@
+
+/* V101 Admin cleanup: remove unused admin pages */
+function cleanupUnusedAdminPagesV101() {
+  const removePages = ["emailPdfPage", "ordersAdminPage", "dataToolsPage", "passwordPage"];
+  removePages.forEach(page => {
+    document.querySelectorAll(`[data-admin-page="${page}"]`).forEach(el => el.remove());
+    const section = document.getElementById(page);
+    if (section) section.remove();
+  });
+
+  document.querySelectorAll(".must-see-email-settings").forEach(el => el.remove());
+
+  document.querySelectorAll("h2").forEach(h2 => {
+    if (String(h2.textContent || "").trim() === "Active Job Site Rentals") {
+      const card = h2.closest(".admin-card");
+      if (card) card.remove();
+    }
+  });
+}
+
 const DEFAULT_PASSWORD = "password";
 
 const DEFAULT_PDF_LETTERHEAD = {
@@ -263,7 +283,6 @@ function showAdmin() {
   if (materialScreen) materialScreen.classList.add("hidden-admin");
   loadSettingsForm();
   renderJobs();
-  renderAdminOrders();
   showAdminPage("adminDashboardPage");
 }
 
@@ -961,7 +980,6 @@ function updateOrderStatus(orderId, newStatus) {
   order.status = newStatus;
   order.updatedAt = new Date().toISOString();
   saveOrders(orders);
-  renderAdminOrders();
 }
 
 function deleteAdminOrder(orderId) {
@@ -974,7 +992,6 @@ function deleteAdminOrder(orderId) {
   if (!confirm(`Delete ${label}? This cannot be undone.`)) return;
 
   saveOrders(orders.filter(item => item.id !== orderId));
-  renderAdminOrders();
 }
 
 
@@ -1277,7 +1294,6 @@ async function deleteActiveRentalAdmin(id) {
 function showRentalsAdminPage() {
   showAdminPage("rentalsPage");
   loadRentalItemsFromGoogleSheetAdmin();
-  renderAdminRentals();
 }
 
 
@@ -1447,6 +1463,7 @@ function roleOptionsHtml(selectedRole) {
 }
 
 function setupAdmin() {
+  cleanupUnusedAdminPagesV101();
   document.querySelectorAll("[data-admin-page]").forEach(button => {
     button.addEventListener("click", () => {
       showAdminPage(button.dataset.adminPage);
@@ -1550,7 +1567,7 @@ function setupAdmin() {
   }
 }
 
-document.addEventListener("DOMContentLoaded", setupAdmin);
+document.addEventListener("DOMContentLoaded", () => { setupAdmin(); cleanupUnusedAdminPagesV101(); });
 
 window.resetAdminLogin = resetAdminLogin;
 

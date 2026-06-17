@@ -37,15 +37,11 @@
           <nav class="admin-nav">
             <button type="button" data-admin-page="adminDashboardPage">Dashboard</button>
             <button type="button" data-admin-page="appSettingsPage">App Settings</button>
-            <button type="button" data-admin-page="emailPdfPage">Email / PDF Sending</button>
             <button type="button" data-admin-page="dailyReportsPage">Daily Reports</button>
             <button type="button" data-admin-page="rentalsPage">Rentals</button>
             <button type="button" data-admin-page="manpowerAdminPage">Manpower</button>
             <button type="button" data-admin-page="pdfLetterheadPage">PDF Letterhead</button>
             <button type="button" data-admin-page="jobsPage">Jobs</button>
-            <button type="button" data-admin-page="ordersAdminPage">Orders</button>
-            <button type="button" data-admin-page="dataToolsPage">Import / Export</button>
-            <button type="button" data-admin-page="passwordPage">Password</button>
             <button id="openMaterialManagerBtn" type="button">Materials</button>
           </nav>
           <a class="admin-link admin-sidebar-link" href="index.html">Open App</a>
@@ -60,26 +56,9 @@
               </div>
               <a class="admin-link" href="index.html">Open App</a>
             </div>
-
-            <div class="admin-card admin-wide-card must-see-email-settings" style="border:2px solid #f97316; box-shadow:0 0 0 3px rgba(249,115,22,.18), 0 18px 35px rgba(0,0,0,.22);">
-              <h2>📧 Email + PDF Sending Setup</h2>
-              <p class="admin-note left-note">Paste your Google Apps Script Web App URL here. It must end with <strong>/exec</strong>. This is required before the app can email the branded PDF automatically.</p>
-              <label class="admin-label">Google Apps Script Web App URL
-                <input id="googleAppsScriptUrlInputDashboard" type="url" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off" />
-              </label>
-              <label class="admin-label">Sender Email / Gmail Alias
-                <input id="senderEmailInputDashboard" type="email" placeholder="Example: orders@yourcompany.com" />
-              </label>
-              <p class="admin-note left-note">This email must be a verified Gmail send-as alias on the Google account running the Apps Script. Leave blank to send from the script owner.</p>
-              <button id="saveEmailPdfSettingsDashboardBtn" class="primary-btn" type="button">Save Email + PDF Settings</button>
-            </div>
-
-            <div class="admin-dashboard-grid">
+<div class="admin-dashboard-grid">
               <button class="admin-menu-card" type="button" data-admin-page="appSettingsPage">
                 <span>⚙️</span><strong>App Settings</strong><small>Company title and home page heading</small>
-              </button>
-              <button class="admin-menu-card" type="button" data-admin-page="emailPdfPage">
-                <span>📧</span><strong>Email / PDF Sending</strong><small>Paste Google Apps Script /exec URL and sender alias</small>
               </button>
               <button class="admin-menu-card" type="button" data-admin-page="dailyReportsPage">
                 <span>📝</span><strong>Daily Reports</strong><small>Set CC email for daily report PDFs</small>
@@ -92,15 +71,6 @@
               </button>
               <button class="admin-menu-card" id="openMaterialManagerCard" type="button">
                 <span>📦</span><strong>Materials</strong><small>Add and edit material categories</small>
-              </button>
-              <button class="admin-menu-card" type="button" data-admin-page="ordersAdminPage">
-                <span>🧾</span><strong>Orders</strong><small>Review local submitted orders</small>
-              </button>
-              <button class="admin-menu-card" type="button" data-admin-page="dataToolsPage">
-                <span>⬇️</span><strong>Import / Export</strong><small>Move app data between computers</small>
-              </button>
-              <button class="admin-menu-card" type="button" data-admin-page="passwordPage">
-                <span>🔐</span><strong>Password</strong><small>Change the admin password</small>
               </button>
             </div>
           </section>
@@ -127,22 +97,6 @@
               </label>
               <p class="admin-note left-note">This email must be a verified Gmail send-as alias on the Google account running the Apps Script. Leave blank to send from the script owner.</p>
               <button id="saveCompanyTitleBtn" class="primary-btn" type="button">Save App Settings</button>
-            </div>
-          </section>
-
-          <section id="emailPdfPage" class="admin-page">
-            <div class="admin-page-head"><div><p class="small-text">Admin Panel</p><h1>Email / PDF Sending</h1></div><button class="admin-link-button" type="button" data-admin-page="adminDashboardPage">Back</button></div>
-            <div class="admin-card admin-wide-card email-settings-card">
-              <h2>Google Apps Script Connection</h2>
-              <p class="admin-note left-note">Paste your Google Apps Script Web App URL here. It must be the Web App URL that ends in <strong>/exec</strong>. This is what sends the email and attaches the branded PDF automatically.</p>
-              <label class="admin-label">Google Apps Script Web App URL
-                <input id="googleAppsScriptUrlInput" type="url" placeholder="https://script.google.com/macros/s/PASTE-YOUR-WEB-APP-ID-HERE/exec" autocomplete="off" />
-              </label>
-              <label class="admin-label">Sender Email / Gmail Alias
-                <input id="senderEmailInput" type="email" placeholder="Example: orders@yourcompany.com" />
-              </label>
-              <p class="admin-note left-note">This email must be a verified Gmail send-as alias on the Google account running the Apps Script. Leave blank to send from the script owner.</p>
-              <button id="saveEmailPdfSettingsBtn" class="primary-btn" type="button">Save Email / PDF Settings</button>
             </div>
           </section>
 
@@ -212,42 +166,6 @@
               </div>
             </div>
           </section>
-<section id="ordersAdminPage" class="admin-page">
-            <div class="admin-page-head"><div><p class="small-text">Admin Panel</p><h1>Orders</h1></div><button class="admin-link-button" type="button" data-admin-page="adminDashboardPage">Back</button></div>
-            <div class="admin-card admin-wide-card">
-              <div class="admin-card-head"><h2>Local Orders</h2><button id="refreshOrdersBtn" class="admin-danger-small refresh-orders" type="button">Refresh</button></div>
-              <p class="admin-note left-note">Only the admin panel can change order status or delete orders.</p>
-              <div id="adminOrdersList" class="admin-orders-list"></div>
-            </div>
-          </section>
-
-          <section id="dataToolsPage" class="admin-page">
-            <div class="admin-page-head"><div><p class="small-text">Admin Panel</p><h1>Import / Export</h1></div><button class="admin-link-button" type="button" data-admin-page="adminDashboardPage">Back</button></div>
-            <div class="admin-card admin-wide-card">
-              <h2>Export / Import App Data</h2>
-              <p class="admin-note left-note">Use this when you make local admin changes and want those changes to move with your upload.</p>
-              <div class="admin-button-row">
-                <button id="exportAppDataBtn" class="primary-btn" type="button">Export App Data</button>
-                <button id="reloadAppDataBtn" class="admin-reset-btn" type="button">Reload Uploaded App Data</button>
-              </div>
-              <label class="admin-label import-label">Import App Data
-                <input id="importAppDataInput" type="file" accept=".json,application/json" />
-              </label>
-              <p class="admin-note left-note">After exporting, put the downloaded <strong>app-data.json</strong> file in the same folder as index.html before uploading.</p>
-            </div>
-          </section>
-
-          <section id="passwordPage" class="admin-page">
-            <div class="admin-page-head"><div><p class="small-text">Admin Panel</p><h1>Password</h1></div><button class="admin-link-button" type="button" data-admin-page="adminDashboardPage">Back</button></div>
-            <div class="admin-card admin-wide-card">
-              <h2>Change Admin Password</h2>
-              <label class="admin-label">Current Password<input id="currentPasswordInput" type="password" placeholder="Current password" /></label>
-              <label class="admin-label">New Password<input id="newPasswordInput" type="password" placeholder="New password" /></label>
-              <label class="admin-label">Confirm New Password<input id="confirmPasswordInput" type="password" placeholder="Confirm new password" /></label>
-              <button id="savePasswordBtn" class="primary-btn" type="button">Save New Password</button>
-              <p id="passwordMessage" class="admin-message"></p>
-            </div>
-          </section>
         
           <section id="rentalsPage" class="admin-page">
             <div class="admin-page-head">
@@ -279,15 +197,6 @@
                 <p class="admin-note left-note">Edit icons, rename buttons, move them up/down, or mark them Active / Not Active.</p>
                 <div id="rentalItemsAdminList" class="job-manager-list"></div>
               </div>
-            </div>
-
-            <div class="admin-card admin-wide-card">
-              <div class="admin-card-head">
-                <h2>Active Job Site Rentals</h2>
-                <button id="refreshRentalsBtn" class="admin-danger-small refresh-orders" type="button">Refresh</button>
-              </div>
-              <p class="admin-note left-note">These are rentals submitted from the field by job.</p>
-              <div id="adminRentalsList" class="admin-orders-list"></div>
             </div>
           </section>
 
@@ -386,15 +295,6 @@
                 <p class="admin-note left-note">Edit icons, rename buttons, move them up/down, or mark them Active / Not Active.</p>
                 <div id="rentalItemsAdminList" class="job-manager-list"></div>
               </div>
-            </div>
-
-            <div class="admin-card admin-wide-card">
-              <div class="admin-card-head">
-                <h2>Active Job Site Rentals</h2>
-                <button id="refreshRentalsBtn" class="admin-danger-small refresh-orders" type="button">Refresh</button>
-              </div>
-              <p class="admin-note left-note">These are rentals submitted from the field by job.</p>
-              <div id="adminRentalsList" class="admin-orders-list"></div>
             </div>
           </section>
 
