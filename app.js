@@ -176,8 +176,33 @@ function parseMaterialListValue(value) {
     .filter(Boolean);
 }
 
-function buildCategoriesFromMaterialsRows(rows) {
+
+function buildCategoriesFromCategoryRows(categoryRows) {
   const nextCategories = {};
+  if (!Array.isArray(categoryRows)) return nextCategories;
+
+  const sortedRows = [...categoryRows].sort((a, b) => Number(a.sortOrder ?? a.SortOrder ?? 999999) - Number(b.sortOrder ?? b.SortOrder ?? 999999));
+
+  sortedRows.forEach(row => {
+    const activeValue = String(row.active ?? row.Active ?? "TRUE").trim().toLowerCase();
+    if (activeValue === "false" || activeValue === "no" || activeValue === "0" || activeValue === "inactive") return;
+
+    const category = String(row.category ?? row.Category ?? "").trim();
+    const categoryLabel = String(row.categoryLabel ?? row["Category Label"] ?? row.CategoryLabel ?? category).trim();
+    if (!category) return;
+
+    nextCategories[category] = {
+      label: categoryLabel || category,
+      items: []
+    };
+  });
+
+  return nextCategories;
+}
+
+
+function buildCategoriesFromMaterialsRows(rows, categoryRows) {
+  const nextCategories = buildCategoriesFromCategoryRows(categoryRows);
   if (!Array.isArray(rows)) return null;
 
   rows.forEach(row => {
@@ -229,7 +254,7 @@ async function loadMaterialsFromGoogleSheet() {
   try {
     const response = await fetch(url + "?action=materials&v=" + Date.now(), { cache: "no-store" });
     const data = await response.json();
-    const sheetCategories = buildCategoriesFromMaterialsRows(data.materials || []);
+    const sheetCategories = buildCategoriesFromMaterialsRows(data.materials || [], data.materialCategories || []);
     if (!sheetCategories) return false;
 
     localStorage.setItem("materialOrderCategories", JSON.stringify(cleanCategories(sheetCategories)));

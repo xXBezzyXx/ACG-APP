@@ -2168,3 +2168,20 @@ label[for="dailySafety"]{
 #categoryTabs .chip {
   flex: 0 0 auto !important;
 }
+
+
+/* V105 MaterialCategories sheet dropdown/left-tabs hard fix */
+#materialCategorySelect,
+#materialCategorySelect option {
+  background: #ffffff !important;
+  color: #111827 !important;
+}
+
+#categoryTabs.chips {
+  justify-content: flex-start !important;
+  padding-left: 0 !important;
+  margin-left: 0 !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  white-space: nowrap !important;
+}

@@ -8,6 +8,7 @@ const RENTAL_ITEMS_SHEET_NAME = "RentalItems";
 const MANPOWER_EMPLOYEES_SHEET_NAME = "Employees";
 const MANPOWER_JOBS_SHEET_NAME = "ManpowerJobs";
 const MATERIALS_SHEET_NAME = "Materials";
+const MATERIAL_CATEGORIES_SHEET_NAME = "MaterialCategories";
 
 function doPost(e) {
   const data = JSON.parse((e && e.postData && e.postData.contents) || "{}");
@@ -30,6 +31,11 @@ function doPost(e) {
   if (data.action === "saveMaterials") {
     saveMaterials_(data.materials || []);
     return json_({ success: true, action: "saveMaterials" });
+  }
+
+  if (data.action === "saveMaterialCategories") {
+    saveMaterialCategories_(data.materialCategories || data.categories || []);
+    return json_({ success: true, action: "saveMaterialCategories" });
   }
 
   if (data.action === "updateStatus") {
@@ -156,7 +162,11 @@ function doGet(e) {
   if (action === "manpowerBoard") return json_({ success: true, employees: getManpowerEmployees_(), jobs: getManpowerJobs_() });
 
   if (action === "materials") {
-    return json_({ success: true, materials: getMaterials_() });
+    return json_({ success: true, materials: getMaterials_(), materialCategories: getMaterialCategories_() });
+  }
+
+  if (action === "materialCategories") {
+    return json_({ success: true, materialCategories: getMaterialCategories_() });
   }
 
   if (action === "settings") return json_({ success: true, settings: getSettings_() });
@@ -744,7 +754,7 @@ function saveMaterials_(materials) {
     const material = String(item.Material || item.material || "").trim();
     const key = category.toLowerCase() + "::" + material.toLowerCase();
 
-    if (!category || seen[key]) return;
+    if (!category || !material || seen[key]) return;
     seen[key] = true;
 
     rows.push([
@@ -791,7 +801,7 @@ function getMaterials_() {
     })
     .filter(item => {
       const key = String(item.category || "").trim().toLowerCase() + "::" + String(item.material || "").trim().toLowerCase();
-      if (!item.category || seen[key]) return false;
+      if (!item.category || !item.material || seen[key]) return false;
       seen[key] = true;
       return true;
     })

@@ -612,20 +612,6 @@ function categoriesToMaterialRows(categories) {
     const categoryLabel = category && category.label ? category.label : categoryKey;
     const items = category && Array.isArray(category.items) ? category.items : [];
 
-    if (!items.length) {
-      rows.push({
-        Category: categoryKey,
-        "Category Label": categoryLabel,
-        Material: "",
-        Icon: "",
-        Options: "",
-        Units: "",
-        Active: true,
-        SortOrder: 0
-      });
-      return;
-    }
-
     items.forEach((item, index) => {
       rows.push({
         Category: categoryKey,
@@ -643,8 +629,8 @@ function categoriesToMaterialRows(categories) {
   return rows;
 }
 
-function materialRowsToCategories(rows) {
-  const categories = {};
+function materialRowsToCategories(rows, categoryRows) {
+  const categories = buildAdminCategoriesFromCategoryRows(categoryRows);
   if (!Array.isArray(rows)) return null;
 
   const sortedRows = [...rows].sort((a, b) => {
@@ -706,6 +692,7 @@ async function syncMaterialsToGoogleSheet(categories) {
         materials: categoriesToMaterialRows(categories)
       })
     });
+    await syncMaterialCategoriesToGoogleSheet(categories);
   } catch (error) {
     console.warn("Could not sync materials to Google Sheet.", error);
   }
@@ -718,7 +705,7 @@ async function loadMaterialsFromGoogleSheetAdmin() {
   try {
     const response = await fetch(url + "?action=materials&v=" + Date.now(), { cache: "no-store" });
     const data = await response.json();
-    const categories = materialRowsToCategories(data.materials || []);
+    const categories = materialRowsToCategories(data.materials || [], data.materialCategories || []);
     if (!categories) return false;
 
     const cleaned = dedupeCategoryItems(categories);
@@ -780,16 +767,8 @@ function addMaterialCategory() {
   }
 
   categories[key] = { label, items: [] };
-
-  // Save locally immediately so the dropdown updates even before Google Sheet finishes.
   localStorage.setItem("materialOrderCategories", JSON.stringify(categories));
-
-  // Sync to Google Sheet. This requires the v103/v104 Apps Script to keep empty category rows.
-  try {
-    saveCategories(categories);
-  } catch (error) {
-    console.warn("Category saved locally, but Google Sheet sync failed.", error);
-  }
+  syncMaterialCategoriesToGoogleSheet(categories);
 
   if (nameEl) nameEl.value = "";
   if (keyEl) keyEl.value = "";
@@ -802,7 +781,7 @@ function addMaterialCategory() {
     renderMaterialsForAdmin();
   }
 
-  alert("Category added. Select it in the Category dropdown and add materials.");
+  alert("Category added to MaterialCategories. You can now add materials to it.");
 }
 
 function addMaterial() {
