@@ -397,7 +397,7 @@ function showMaterialAdmin() {
   document.getElementById("adminScreen").classList.add("hidden-admin");
   document.getElementById("materialAdminScreen").classList.remove("hidden-admin");
   loadMaterialCategoriesForAdmin();
-  setTimeout(wireMaterialAdminButtonsV110, 300);
+  setTimeout(wireMaterialButtonsV111, 500);
 }
 
 function showAdmin() {
@@ -776,7 +776,7 @@ function buildAdminCategoriesFromCategoryRows(categoryRows) {
 }
 
 function materialRowsToCategories(rows, categoryRows) {
-  const categories = (typeof buildAdminCategoriesFromCategoryRows === 'function') ? buildAdminCategoriesFromCategoryRows(categoryRows) : {};
+  const categories = buildAdminCategoriesFromCategoryRows(categoryRows);
   if (!Array.isArray(rows)) return null;
 
   const sortedRows = [...rows].sort((a, b) => {
@@ -2563,33 +2563,36 @@ window.loadMaterialCategoriesForAdmin = loadMaterialCategoriesForAdmin;
 window.refreshMaterialCategorySelectAdmin = refreshMaterialCategorySelectAdmin;
 
 
-/* V110 safety wiring for Materials admin buttons */
-function wireMaterialAdminButtonsV110() {
-  const addCategory = document.getElementById("addMaterialCategoryBtn");
-  if (addCategory && !addCategory.dataset.v110Wired) {
-    addCategory.dataset.v110Wired = "true";
-    addCategory.addEventListener("click", () => {
+/* V111 simple safety wiring for Materials admin buttons */
+function wireMaterialButtonsV111() {
+  var addCat = document.getElementById("addMaterialCategoryBtn");
+  if (addCat && !addCat.dataset.v111) {
+    addCat.dataset.v111 = "true";
+    addCat.onclick = function () {
       if (typeof addMaterialCategory === "function") addMaterialCategory();
-    });
+    };
   }
 
-  const addMat = document.getElementById("addMaterialBtn");
-  if (addMat && !addMat.dataset.v110Wired) {
-    addMat.dataset.v110Wired = "true";
-    addMat.addEventListener("click", () => {
+  var addMat = document.getElementById("addMaterialBtn");
+  if (addMat && !addMat.dataset.v111) {
+    addMat.dataset.v111 = "true";
+    addMat.onclick = function () {
       if (typeof addMaterial === "function") addMaterial();
-    });
+    };
   }
 
-  const refreshCats = document.getElementById("refreshMaterialCategoriesBtn");
-  if (refreshCats && !refreshCats.dataset.v110Wired) {
-    refreshCats.dataset.v110Wired = "true";
-    refreshCats.addEventListener("click", () => {
+  var refreshCat = document.getElementById("refreshMaterialCategoriesBtn");
+  if (refreshCat && !refreshCat.dataset.v111) {
+    refreshCat.dataset.v111 = "true";
+    refreshCat.onclick = function () {
       if (typeof loadMaterialCategoriesForAdmin === "function") loadMaterialCategoriesForAdmin();
       else if (typeof refreshMaterialCategorySelectAdmin === "function") refreshMaterialCategorySelectAdmin();
-    });
+    };
   }
 }
 
-document.addEventListener("DOMContentLoaded", () => setTimeout(wireMaterialAdminButtonsV110, 300));
-window.wireMaterialAdminButtonsV110 = wireMaterialAdminButtonsV110;
+document.addEventListener("DOMContentLoaded", function () {
+  setTimeout(wireMaterialButtonsV111, 500);
+});
+
+window.wireMaterialButtonsV111 = wireMaterialButtonsV111;
