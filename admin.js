@@ -397,6 +397,7 @@ function showMaterialAdmin() {
   document.getElementById("adminScreen").classList.add("hidden-admin");
   document.getElementById("materialAdminScreen").classList.remove("hidden-admin");
   loadMaterialCategoriesForAdmin();
+  setTimeout(wireMaterialAdminButtonsV110, 300);
 }
 
 function showAdmin() {
@@ -752,8 +753,30 @@ function categoriesToMaterialRows(categories) {
   return rows;
 }
 
+
+function buildAdminCategoriesFromCategoryRows(categoryRows) {
+  const categories = {};
+
+  (categoryRows || []).forEach(row => {
+    const activeValue = String(row.active ?? row.Active ?? "TRUE").trim().toLowerCase();
+    if (activeValue === "false" || activeValue === "no" || activeValue === "0" || activeValue === "inactive") return;
+
+    const key = String(row.category || row.Category || "").trim();
+    const label = String(row.categoryLabel || row["Category Label"] || row.CategoryLabel || key).trim();
+
+    if (!key) return;
+
+    categories[key] = {
+      label: label || key,
+      items: []
+    };
+  });
+
+  return categories;
+}
+
 function materialRowsToCategories(rows, categoryRows) {
-  const categories = buildAdminCategoriesFromCategoryRows(categoryRows);
+  const categories = (typeof buildAdminCategoriesFromCategoryRows === 'function') ? buildAdminCategoriesFromCategoryRows(categoryRows) : {};
   if (!Array.isArray(rows)) return null;
 
   const sortedRows = [...rows].sort((a, b) => {
@@ -2538,3 +2561,35 @@ window.addMaterialCategory = addMaterialCategory;
 
 window.loadMaterialCategoriesForAdmin = loadMaterialCategoriesForAdmin;
 window.refreshMaterialCategorySelectAdmin = refreshMaterialCategorySelectAdmin;
+
+
+/* V110 safety wiring for Materials admin buttons */
+function wireMaterialAdminButtonsV110() {
+  const addCategory = document.getElementById("addMaterialCategoryBtn");
+  if (addCategory && !addCategory.dataset.v110Wired) {
+    addCategory.dataset.v110Wired = "true";
+    addCategory.addEventListener("click", () => {
+      if (typeof addMaterialCategory === "function") addMaterialCategory();
+    });
+  }
+
+  const addMat = document.getElementById("addMaterialBtn");
+  if (addMat && !addMat.dataset.v110Wired) {
+    addMat.dataset.v110Wired = "true";
+    addMat.addEventListener("click", () => {
+      if (typeof addMaterial === "function") addMaterial();
+    });
+  }
+
+  const refreshCats = document.getElementById("refreshMaterialCategoriesBtn");
+  if (refreshCats && !refreshCats.dataset.v110Wired) {
+    refreshCats.dataset.v110Wired = "true";
+    refreshCats.addEventListener("click", () => {
+      if (typeof loadMaterialCategoriesForAdmin === "function") loadMaterialCategoriesForAdmin();
+      else if (typeof refreshMaterialCategorySelectAdmin === "function") refreshMaterialCategorySelectAdmin();
+    });
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => setTimeout(wireMaterialAdminButtonsV110, 300));
+window.wireMaterialAdminButtonsV110 = wireMaterialAdminButtonsV110;
