@@ -2135,3 +2135,36 @@ label[for="dailySafety"]{
   border-top: 1px solid rgba(255,255,255,.14);
   margin: 18px 0;
 }
+
+
+/* V104 Fix Admin Material category dropdown + add category */
+#materialCategorySelect,
+.admin-select-light {
+  background: #ffffff !important;
+  color: #111827 !important;
+  border: 1px solid rgba(15,23,42,.22) !important;
+}
+
+#materialCategorySelect option,
+.admin-select-light option {
+  background: #ffffff !important;
+  color: #111827 !important;
+}
+
+/* Force material category chips to start left and swipe right */
+#categoryTabs.chips {
+  justify-content: flex-start !important;
+  align-items: center !important;
+  text-align: left !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  white-space: nowrap !important;
+  scroll-behavior: smooth !important;
+  -webkit-overflow-scrolling: touch !important;
+  padding-left: 0 !important;
+  margin-left: 0 !important;
+}
+
+#categoryTabs .chip {
+  flex: 0 0 auto !important;
+}

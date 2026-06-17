@@ -732,13 +732,23 @@ async function loadMaterialsFromGoogleSheetAdmin() {
   }
 }
 
-function renderMaterialCategorySelect() {
+function renderMaterialCategorySelect(preferredKey) {
   const select = document.getElementById("materialCategorySelect");
-  const categories = getCategories();
+  if (!select) return;
 
-  select.innerHTML = sortAdminCategoryEntries(categories)
+  const categories = getCategories();
+  const entries = sortAdminCategoryEntries(categories);
+  const previousValue = preferredKey || select.value || "hanging";
+
+  select.innerHTML = entries
     .map(([key, category]) => `<option value="${safeText(key)}">${safeText(category.label || key)}</option>`)
     .join("");
+
+  if (previousValue && categories[previousValue]) {
+    select.value = previousValue;
+  } else if (entries.length) {
+    select.value = entries[0][0];
+  }
 
   renderMaterialsForAdmin();
 }
@@ -762,30 +772,42 @@ function addMaterialCategory() {
   }
 
   const categories = getCategories();
+
   if (categories[key]) {
     alert("That category already exists.");
+    renderMaterialCategorySelect(key);
     return;
   }
 
   categories[key] = { label, items: [] };
-  saveCategories(categories);
+
+  // Save locally immediately so the dropdown updates even before Google Sheet finishes.
+  localStorage.setItem("materialOrderCategories", JSON.stringify(categories));
+
+  // Sync to Google Sheet. This requires the v103/v104 Apps Script to keep empty category rows.
+  try {
+    saveCategories(categories);
+  } catch (error) {
+    console.warn("Category saved locally, but Google Sheet sync failed.", error);
+  }
 
   if (nameEl) nameEl.value = "";
   if (keyEl) keyEl.value = "";
 
-  renderMaterialCategorySelect();
+  renderMaterialCategorySelect(key);
+
   const select = document.getElementById("materialCategorySelect");
   if (select) {
     select.value = key;
     renderMaterialsForAdmin();
   }
 
-  alert("Category added. You can now add materials to it.");
+  alert("Category added. Select it in the Category dropdown and add materials.");
 }
 
-
 function addMaterial() {
-  const categoryKey = document.getElementById("materialCategorySelect").value;
+  const categorySelect = document.getElementById("materialCategorySelect");
+  const categoryKey = categorySelect ? categorySelect.value : "";
   const name = document.getElementById("materialNameInput").value.trim();
   const icon = document.getElementById("materialIconInput").value.trim() || "•";
   const options = parseCsvList(document.getElementById("materialOptionsInput").value);
@@ -1578,7 +1600,9 @@ function setupAdmin() {
   const backToAdminBtn = document.getElementById("backToAdminBtn");
   if (backToAdminBtn) backToAdminBtn.addEventListener("click", showAdminHome);
 
-  document.getElementById("materialCategorySelect").addEventListener("change", renderMaterialsForAdmin);
+  const materialCategorySelect = document.getElementById("materialCategorySelect");
+  if (materialCategorySelect) materialCategorySelect.addEventListener("change", renderMaterialsForAdmin);
+
   const addMaterialCategoryBtn = document.getElementById("addMaterialCategoryBtn");
   if (addMaterialCategoryBtn) addMaterialCategoryBtn.addEventListener("click", addMaterialCategory);
 
@@ -1587,8 +1611,11 @@ function setupAdmin() {
     if (event.key === "Enter") addMaterialCategory();
   });
 
-  document.getElementById("addMaterialBtn").addEventListener("click", addMaterial);
-  document.getElementById("materialNameInput").addEventListener("keydown", event => {
+  const addMaterialBtn = document.getElementById("addMaterialBtn");
+  if (addMaterialBtn) addMaterialBtn.addEventListener("click", addMaterial);
+
+  const materialNameInput = document.getElementById("materialNameInput");
+  if (materialNameInput) materialNameInput.addEventListener("keydown", event => {
     if (event.key === "Enter") addMaterial();
   });
 
