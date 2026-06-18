@@ -813,7 +813,6 @@ function categoriesToMaterialRows(categories) {
         Icon: item.icon || "",
         Options: Array.isArray(item.options) ? item.options.join(", ") : "",
         Units: Array.isArray(item.units) ? item.units.join(", ") : "Each",
-        "Notes Enabled": item.notesEnabled === true ? true : false,
         Active: true,
         SortOrder: index + 1
       });
@@ -858,8 +857,7 @@ function materialRowsToCategories(rows, categoryRows) {
     const item = {
       icon: String(row.icon ?? row.Icon ?? "").trim() || "📦",
       name: materialName,
-      units: parseCsvList(String(row.units ?? row.Units ?? "Each")),
-      notesEnabled: String(row.notesEnabled ?? row["Notes Enabled"] ?? row.NotesEnabled ?? "FALSE").trim().toLowerCase() === "true"
+      units: parseCsvList(String(row.units ?? row.Units ?? "Each"))
     };
 
     if (!item.units.length) item.units = ["Each"];
@@ -1083,7 +1081,7 @@ async function addMaterial() {
     return;
   }
 
-  const newItem = { icon, name, units: units.length ? units : ["Each"], notesEnabled: false };
+  const newItem = { icon, name, units: units.length ? units : ["Each"] };
   if (options.length) newItem.options = options;
 
   categories[categoryKey].items.push(newItem);
@@ -1111,7 +1109,6 @@ function saveMaterialEdit(index) {
   const name = document.querySelector(`[data-material-name="${index}"]`).value.trim();
   const options = parseCsvList(document.querySelector(`[data-material-options="${index}"]`).value);
   const units = parseCsvList(document.querySelector(`[data-material-units="${index}"]`).value);
-  const notesEnabled = document.querySelector(`[data-material-notes-enabled="${index}"]`)?.value === "true";
 
   if (!name) {
     alert("Material name cannot be blank.");
@@ -1121,8 +1118,7 @@ function saveMaterialEdit(index) {
   categories[categoryKey].items[index] = {
     icon,
     name,
-    units: units.length ? units : ["Each"],
-    notesEnabled
+    units: units.length ? units : ["Each"]
   };
 
   if (options.length) {
@@ -1202,13 +1198,6 @@ function renderMaterialsForAdmin() {
 
           <label class="admin-label wide">Unit Options
             <input value="${safeText(units)}" data-material-units="${index}" placeholder="Example: Box, Each" />
-          </label>
-
-          <label class="admin-label wide">Item Note Box
-            <select data-material-notes-enabled="${index}">
-              <option value="false" ${item.notesEnabled === true ? "" : "selected"}>Off</option>
-              <option value="true" ${item.notesEnabled === true ? "selected" : ""}>On</option>
-            </select>
           </label>
         </div>
 
@@ -2839,7 +2828,7 @@ async function addMaterial() {
     return alert("That material already exists.");
   }
 
-  const newItem = { icon, name, units: units.length ? units : ["Each"], notesEnabled: false };
+  const newItem = { icon, name, units: units.length ? units : ["Each"] };
   if (options.length) newItem.options = options;
   categories[categoryKey].items.push(newItem);
 
@@ -3107,3 +3096,156 @@ document.addEventListener("click", function(event) {
   const btn = event.target.closest && event.target.closest('[data-admin-page="estimatingPage"]');
   if (btn) setTimeout(setupEstimatingPage, 100);
 }, true);
+
+
+/* V126 material note required support */
+(function(){
+  function boolFromInputValue(value) {
+    const text = String(value ?? "").trim().toLowerCase();
+    return text === "true" || text === "yes" || text === "1";
+  }
+
+  window.categoriesToMaterialRows = function(categories) {
+    const rows = [];
+    const cleanedCategories = typeof dedupeCategoryItems === "function" ? dedupeCategoryItems(categories) : categories;
+
+    Object.entries(cleanedCategories || {}).forEach(([categoryKey, category]) => {
+      const categoryLabel = category && category.label ? category.label : categoryKey;
+      const items = category && Array.isArray(category.items) ? category.items : [];
+
+      items.forEach((item, index) => {
+        rows.push({
+          Category: categoryKey,
+          "Category Label": categoryLabel,
+          Material: item.name || "",
+          Icon: item.icon || "",
+          Options: Array.isArray(item.options) ? item.options.join(", ") : "",
+          Units: Array.isArray(item.units) ? item.units.join(", ") : "Each",
+          "Note Required": item.noteRequired ? true : false,
+          Active: true,
+          SortOrder: index + 1
+        });
+      });
+    });
+    return rows;
+  };
+
+  window.materialRowsToCategories = function(rows, categoryRows) {
+    const categories = typeof buildAdminCategoriesFromCategoryRows === "function" ? buildAdminCategoriesFromCategoryRows(categoryRows) : {};
+    if (!Array.isArray(rows)) return null;
+
+    const sortedRows = [...rows].sort((a, b) => {
+      const ac = String(a.category ?? a.Category ?? "").localeCompare(String(b.category ?? b.Category ?? ""));
+      if (ac !== 0) return ac;
+      const ao = Number(a.sortOrder ?? a.SortOrder ?? 999999);
+      const bo = Number(b.sortOrder ?? b.SortOrder ?? 999999);
+      return ao - bo;
+    });
+
+    sortedRows.forEach(row => {
+      const activeValue = String(row.active ?? row.Active ?? "TRUE").trim().toLowerCase();
+      if (["false", "no", "0", "inactive"].includes(activeValue)) return;
+      const categoryKey = String(row.category ?? row.Category ?? "").trim();
+      const categoryLabel = String(row.categoryLabel ?? row["Category Label"] ?? row.CategoryLabel ?? categoryKey).trim();
+      const materialName = String(row.material ?? row.Material ?? "").trim();
+      if (!categoryKey) return;
+      if (!categories[categoryKey]) categories[categoryKey] = { label: categoryLabel || categoryKey, items: [] };
+      if (!materialName) return;
+      if (categories[categoryKey].items.some(existing => materialDedupeKey(categoryKey, existing.name) === materialDedupeKey(categoryKey, materialName))) return;
+      const item = {
+        icon: String(row.icon ?? row.Icon ?? "").trim() || "📦",
+        name: materialName,
+        units: parseCsvList(String(row.units ?? row.Units ?? "Each"))
+      };
+      if (!item.units.length) item.units = ["Each"];
+      const options = parseCsvList(String(row.options ?? row.Options ?? ""));
+      if (options.length) item.options = options;
+      if (boolFromInputValue(row.noteRequired ?? row["Note Required"] ?? row.RequiresNote ?? row["Requires Note"])) item.noteRequired = true;
+      categories[categoryKey].items.push(item);
+    });
+    return Object.keys(categories).length ? categories : null;
+  };
+
+  window.addMaterial = async function() {
+    const select = document.getElementById("materialCategorySelect");
+    const categoryKey = select ? select.value : "";
+    const name = document.getElementById("materialNameInput").value.trim();
+    const icon = document.getElementById("materialIconInput").value.trim() || "•";
+    const options = parseCsvList(document.getElementById("materialOptionsInput").value);
+    const units = parseCsvList(document.getElementById("materialUnitsInput").value);
+    const noteRequired = boolFromInputValue((document.getElementById("materialNoteRequiredInput") || {}).value || "false");
+    if (!categoryKey) return alert("Select a category.");
+    if (!name) return alert("Enter a material name.");
+    const categories = getCategories();
+    if (!categories[categoryKey]) {
+      const found = (window.materialAdminCategoryRowsV116 || []).find(cat => cat.category === categoryKey);
+      categories[categoryKey] = { label: found ? found.categoryLabel : categoryKey, items: [] };
+    }
+    if (categories[categoryKey].items.some(item => String(item.name || "").toLowerCase() === name.toLowerCase())) return alert("That material already exists.");
+    const newItem = { icon, name, units: units.length ? units : ["Each"] };
+    if (options.length) newItem.options = options;
+    if (noteRequired) newItem.noteRequired = true;
+    categories[categoryKey].items.push(newItem);
+    const cleaned = typeof dedupeCategoryItems === "function" ? dedupeCategoryItems(categories) : categories;
+    localStorage.setItem("materialOrderCategories", JSON.stringify(cleaned));
+    try { await saveMaterialsRowsV116(cleaned); } catch (err) { console.error(err); alert("Could not save material to Excel. Check Apps Script saveMaterials."); return; }
+    ["materialNameInput", "materialIconInput", "materialOptionsInput", "materialUnitsInput"].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
+    const noteEl = document.getElementById("materialNoteRequiredInput"); if (noteEl) noteEl.value = "false";
+    await loadMaterialCategoriesForAdmin();
+    const s = document.getElementById("materialCategorySelect"); if (s) s.value = categoryKey;
+    renderMaterialsForAdmin();
+    if (typeof renderMaterialCategoryAdminListV116 === "function") renderMaterialCategoryAdminListV116();
+    alert("Material added.");
+  };
+
+  window.saveMaterialEdit = function(index) {
+    const categoryKey = document.getElementById("materialCategorySelect").value;
+    const categories = getCategories();
+    if (!categories[categoryKey] || !categories[categoryKey].items[index]) return alert("Material not found.");
+    const icon = document.querySelector(`[data-material-icon="${index}"]`).value.trim() || "•";
+    const name = document.querySelector(`[data-material-name="${index}"]`).value.trim();
+    const options = parseCsvList(document.querySelector(`[data-material-options="${index}"]`).value);
+    const units = parseCsvList(document.querySelector(`[data-material-units="${index}"]`).value);
+    const noteRequired = boolFromInputValue((document.querySelector(`[data-material-note-required="${index}"]`) || {}).value || "false");
+    if (!name) return alert("Material name cannot be blank.");
+    const next = { icon, name, units: units.length ? units : ["Each"] };
+    if (options.length) next.options = options;
+    if (noteRequired) next.noteRequired = true;
+    categories[categoryKey].items[index] = next;
+    saveCategories(categories);
+    renderMaterialsForAdmin();
+  };
+
+  window.renderMaterialsForAdmin = function() {
+    const categoryKey = document.getElementById("materialCategorySelect").value;
+    const list = document.getElementById("materialManagerList");
+    const categories = getCategories();
+    const items = (categories[categoryKey] && categories[categoryKey].items) || [];
+    if (!list) return;
+    if (!items.length) { list.innerHTML = "<p class='admin-note'>No materials in this category.</p>"; return; }
+    list.innerHTML = items.map((item, index) => {
+      const options = item.options && item.options.length ? item.options.join(", ") : "";
+      const units = item.units && item.units.length ? item.units.join(", ") : "Each";
+      return `
+        <div class="material-manager-row editable-material-row">
+          <div class="material-edit-grid">
+            <label class="admin-label">Icon<input value="${safeText(item.icon || "•")}" data-material-icon="${index}" /></label>
+            <label class="admin-label">Material Name<input value="${safeText(item.name)}" data-material-name="${index}" /></label>
+            <label class="admin-label wide">Size Options<input value="${safeText(options)}" data-material-options="${index}" placeholder='Example: 1/4", 3/8", 1/2"' /></label>
+            <label class="admin-label wide">Unit Options<input value="${safeText(units)}" data-material-units="${index}" placeholder="Example: Box, Each" /></label>
+            <label class="admin-label">Note Required<select class="admin-select-light" data-material-note-required="${index}"><option value="false" ${item.noteRequired ? "" : "selected"}>FALSE</option><option value="true" ${item.noteRequired ? "selected" : ""}>TRUE</option></select></label>
+          </div>
+          <div class="material-edit-actions">
+            <button class="save-material" data-move-material-up="${index}" type="button" ${index === 0 ? "disabled" : ""}>Move Up</button>
+            <button class="save-material" data-move-material-down="${index}" type="button" ${index === items.length - 1 ? "disabled" : ""}>Move Down</button>
+            <button class="save-material" data-save-material="${index}" type="button">Save</button>
+            <button class="delete-material" data-delete-material="${index}" type="button">Delete</button>
+          </div>
+        </div>`;
+    }).join("");
+    document.querySelectorAll("[data-move-material-up]").forEach(button => button.addEventListener("click", () => moveMaterial(Number(button.dataset.moveMaterialUp), -1)));
+    document.querySelectorAll("[data-move-material-down]").forEach(button => button.addEventListener("click", () => moveMaterial(Number(button.dataset.moveMaterialDown), 1)));
+    document.querySelectorAll("[data-save-material]").forEach(button => button.addEventListener("click", () => saveMaterialEdit(Number(button.dataset.saveMaterial))));
+    document.querySelectorAll("[data-delete-material]").forEach(button => button.addEventListener("click", () => deleteMaterial(Number(button.dataset.deleteMaterial))));
+  };
+})();

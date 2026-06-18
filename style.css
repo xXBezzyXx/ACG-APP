@@ -2320,17 +2320,175 @@ label[for="dailySafety"]{
   border-radius: 14px;
 }
 
-/* Material item notes + quick cart jump */
-.jump-cart-btn{width:auto;min-height:42px;border:0;border-radius:14px;background:linear-gradient(135deg,#ff9f24,#f97316);color:#fff;font-weight:950;padding:10px 16px;margin:0 0 12px;box-shadow:0 10px 22px rgba(249,115,22,.25)}
-.material-note-input{margin-top:10px;min-height:48px;font-size:13px;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);color:#fff;resize:vertical}.material-note-input::placeholder{color:rgba(203,213,225,.72)}.review-item-note{display:block;color:var(--muted);font-size:12px;margin-top:4px;font-weight:700}.cart-line span{line-height:1.35}
-@media(max-width:430px){.jump-cart-btn{width:100%;}.material-note-input{font-size:14px;}}
+
+/* V126 material notes: full-width notes box on material cards */
+.material-note-label,
+.custom-material-label {
+  grid-column: 1 / -1 !important;
+  width: 100% !important;
+  margin-top: 10px !important;
+}
+.material-note-input,
+.custom-material-input {
+  width: 100% !important;
+  min-width: 100% !important;
+  min-height: 84px !important;
+  box-sizing: border-box !important;
+  display: block !important;
+}
+.material-info {
+  min-width: 0 !important;
+}
+.material-row.cart-style-row {
+  align-items: start !important;
+}
+@media (max-width: 430px) {
+  #materialList .material-row,
+  .material-list .material-row {
+    grid-template-columns: 42px 1fr !important;
+    min-height: auto !important;
+  }
+  #materialList .qty-control,
+  .material-list .qty-control,
+  #materialList .add-cart-wide,
+  .material-list .add-cart-wide {
+    grid-column: 1 / -1 !important;
+  }
+  #materialList .material-info,
+  .material-list .material-info {
+    grid-column: 2 / 3 !important;
+  }
+}
+
+/* V127 FIX: Material note box full-width, not skinny chip */
+#materialList .material-row.cart-style-row .material-note-label,
+.material-list .material-row.cart-style-row .material-note-label {
+  grid-column: 1 / -1 !important;
+  grid-row: 5 !important;
+  display: block !important;
+  width: 100% !important;
+  min-width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  margin-top: 10px !important;
+  color: var(--muted) !important;
+  font-size: 12px !important;
+  font-weight: 950 !important;
+  text-transform: uppercase !important;
+  letter-spacing: .08em !important;
+}
+
+#materialList .material-row.cart-style-row .material-note-input,
+.material-list .material-row.cart-style-row .material-note-input {
+  display: block !important;
+  width: 100% !important;
+  min-width: 100% !important;
+  max-width: 100% !important;
+  min-height: 92px !important;
+  box-sizing: border-box !important;
+  margin-top: 8px !important;
+  padding: 14px 16px !important;
+  border-radius: 16px !important;
+  resize: vertical !important;
+  font-size: 16px !important;
+  line-height: 1.35 !important;
+  white-space: normal !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  background: rgba(255,255,255,.07) !important;
+  border: 1px solid rgba(255,255,255,.16) !important;
+  color: #fff !important;
+}
+
+#materialList .material-row.cart-style-row .custom-material-label,
+.material-list .material-row.cart-style-row .custom-material-label {
+  grid-column: 1 / -1 !important;
+  grid-row: 2 !important;
+  display: block !important;
+  width: 100% !important;
+  min-width: 100% !important;
+  box-sizing: border-box !important;
+  margin-top: 10px !important;
+}
+
+#materialList .material-row.cart-style-row .custom-material-input,
+.material-list .material-row.cart-style-row .custom-material-input {
+  display: block !important;
+  width: 100% !important;
+  min-width: 100% !important;
+  min-height: 92px !important;
+  box-sizing: border-box !important;
+}
 
 
-/* Floating cart jump button for long material lists */
-.floating-cart-toggle{position:fixed;right:22px;bottom:104px;z-index:1200;border:0;border-radius:999px;background:linear-gradient(135deg,#ff9f24,#f97316);color:#fff;font-weight:950;font-size:15px;padding:14px 18px;box-shadow:0 14px 34px rgba(249,115,22,.38);letter-spacing:.01em}
-.floating-cart-toggle.hidden{display:none}
-@media(max-width:720px){.floating-cart-toggle{right:14px;bottom:96px;font-size:14px;padding:13px 15px}}
+/* MERGE FIX: floating Go To Cart / Back To Top button restored */
+.floating-cart-toggle{
+  position:fixed;
+  right:22px;
+  bottom:104px;
+  z-index:1200;
+  border:0;
+  border-radius:999px;
+  background:linear-gradient(135deg,#ff9f24,#f97316);
+  color:#fff;
+  font-weight:950;
+  font-size:15px;
+  padding:14px 18px;
+  box-shadow:0 14px 34px rgba(249,115,22,.38);
+  letter-spacing:.01em;
+}
+.floating-cart-toggle.hidden{display:none!important;}
+@media(max-width:720px){.floating-cart-toggle{right:14px;bottom:96px;font-size:14px;padding:13px 15px;}}
 
-.material-note-input{width:100%;margin-top:10px;border-radius:14px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.08);color:#fff;padding:10px 12px;box-sizing:border-box;resize:vertical;font:inherit}
-.material-note-input::placeholder{color:rgba(255,255,255,.48)}
-.review-item-note{display:block;color:var(--muted);font-size:12px;margin-top:4px}
+/* MERGE FIX: material notes as full-width textarea, never a skinny vertical chip */
+#materialList .material-row.cart-style-row > .material-note-label,
+.material-list .material-row.cart-style-row > .material-note-label{
+  grid-column:1 / -1!important;
+  grid-row:5!important;
+  display:block!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:none!important;
+  box-sizing:border-box!important;
+  margin:10px 0 0!important;
+  white-space:normal!important;
+  writing-mode:horizontal-tb!important;
+  text-orientation:mixed!important;
+  overflow:visible!important;
+  color:var(--muted)!important;
+  font-size:12px!important;
+  font-weight:950!important;
+  text-transform:uppercase!important;
+  letter-spacing:.08em!important;
+}
+#materialList .material-row.cart-style-row > .material-note-label .material-note-input,
+.material-list .material-row.cart-style-row > .material-note-label .material-note-input,
+#materialList .material-row.cart-style-row > .material-note-label textarea,
+.material-list .material-row.cart-style-row > .material-note-label textarea{
+  display:block!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  min-height:96px!important;
+  box-sizing:border-box!important;
+  margin-top:8px!important;
+  padding:14px 16px!important;
+  border-radius:16px!important;
+  resize:vertical!important;
+  font-size:16px!important;
+  line-height:1.35!important;
+  white-space:normal!important;
+  writing-mode:horizontal-tb!important;
+  text-orientation:mixed!important;
+  text-transform:none!important;
+  letter-spacing:normal!important;
+  background:rgba(255,255,255,.07)!important;
+  border:1px solid rgba(255,255,255,.16)!important;
+  color:#fff!important;
+}
+#materialList .material-row.cart-style-row .add-cart-wide,
+#materialList .material-row.cart-style-row .add-cart-btn,
+.material-list .material-row.cart-style-row .add-cart-wide,
+.material-list .material-row.cart-style-row .add-cart-btn{
+  grid-row:4!important;
+}

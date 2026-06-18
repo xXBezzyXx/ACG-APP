@@ -230,8 +230,7 @@ function buildCategoriesFromMaterialsRows(rows, categoryRows) {
     const item = {
       icon: String(row.icon ?? row.Icon ?? "").trim() || "📦",
       name: material,
-      units: parseMaterialListValue(row.units ?? row.Units),
-      notesEnabled: String(row.notesEnabled ?? row["Notes Enabled"] ?? row.NotesEnabled ?? "FALSE").trim().toLowerCase() === "true"
+      units: parseMaterialListValue(row.units ?? row.Units)
     };
 
     if (!item.units.length) item.units = ["Each"];
@@ -243,6 +242,11 @@ function buildCategoriesFromMaterialsRows(rows, categoryRows) {
     if (customValue === "true" || customValue === "yes" || customValue === "1") {
       item.custom = true;
       item.placeholder = String(row.placeholder ?? row.Placeholder ?? "Type what material you need here...").trim();
+    }
+
+    const noteRequiredValue = String(row.noteRequired ?? row["Note Required"] ?? row.RequiresNote ?? row["Requires Note"] ?? row.NotesRequired ?? "").trim().toLowerCase();
+    if (noteRequiredValue === "true" || noteRequiredValue === "yes" || noteRequiredValue === "1") {
+      item.noteRequired = true;
     }
 
     nextCategories[category].items.push(item);
@@ -352,7 +356,7 @@ function showScreen(id) {
   document.querySelectorAll(".nav-btn").forEach(btn => {
     btn.classList.toggle("active", btn.dataset.screen === id);
   });
-  updateFloatingCartButton();
+  if (typeof updateFloatingCartButton === "function") updateFloatingCartButton();
 }
 
 window.showScreen = showScreen;
@@ -527,7 +531,8 @@ function changeCustomDraft(itemName, value) {
 }
 
 function getMaterialNoteDraft(item) {
-  return materialNoteDrafts[baseKey(item)] || "";
+  const key = baseKey(item);
+  return materialNoteDrafts[key] || "";
 }
 
 function changeMaterialNoteDraft(itemName, value) {
@@ -602,8 +607,8 @@ function addToCart(itemName) {
 
   const option = getSelectedOption(item);
   const unit = getSelectedUnit(item);
-  const itemNotes = getMaterialNoteDraft(item).trim();
   const customText = item.custom ? getCustomDraft(item).trim() : "";
+  const itemNotes = item.noteRequired ? getMaterialNoteDraft(item).trim() : "";
 
   if (item.custom && !customText) {
     alert("Please type the custom material you need before adding to cart.");
@@ -619,6 +624,7 @@ function addToCart(itemName) {
   const existing = cart.find(line => line.cartKey === cartKey);
   if (existing) {
     existing.qty += qty;
+    if (itemNotes) existing.notes = itemNotes;
   } else {
     cart.push({
       cartKey,
@@ -635,7 +641,7 @@ function addToCart(itemName) {
 
   draftQty[key] = 0;
   if (item.custom) customDrafts[key] = "";
-  materialNoteDrafts[key] = "";
+  if (item.noteRequired) materialNoteDrafts[key] = "";
   renderMaterials();
   renderCartPreview();
 }
@@ -669,7 +675,7 @@ function renderCartPreview() {
     <div class="cart-line">
       <div>
         <strong>${safeText(displayName(item))}</strong>
-        <span>${safeText(item.categoryLabel)}${item.notes ? " • Note: " + safeText(item.notes) : ""}</span>
+        <span>${safeText(item.categoryLabel)}${item.notes ? " • Notes: " + safeText(item.notes) : ""}</span>
       </div>
       <div class="cart-line-right">
         <b>${item.qty} ${safeText(item.unit)}</b>
@@ -717,6 +723,13 @@ function renderMaterials() {
       </label>
     ` : "";
 
+    const noteInput = item.noteRequired ? `
+      <label class="select-label material-note-label">
+        Notes
+        <textarea class="material-note-input" data-note-item="${safeText(item.name)}" placeholder="Type notes for this material...">${safeText(getMaterialNoteDraft(item))}</textarea>
+      </label>
+    ` : "";
+
     const sizeSelect = !item.custom && item.options ? `
       <label class="select-label">
         Size
@@ -745,7 +758,6 @@ function renderMaterials() {
             ${sizeSelect}
             ${unitSelect}
           </div>
-          ${item.notesEnabled === true ? `<textarea class="material-note-input" data-note-item="${safeText(item.name)}" rows="2" placeholder="Note for this material only (optional)">${safeText(getMaterialNoteDraft(item))}</textarea>` : ""}
         </div>
 
         <div class="qty-control">
@@ -900,7 +912,7 @@ function goReview() {
 
   document.getElementById("reviewItems").innerHTML = items.map(item => `
     <div class="review-line">
-      <span>${safeText(item.name)}${item.notes ? "<small class='review-item-note'>Note: " + safeText(item.notes) + "</small>" : ""}</span>
+      <span>${safeText(item.name)}</span>
       <strong>${item.qty} ${safeText(item.unit)}</strong>
     </div>
   `).join("");
@@ -1004,7 +1016,7 @@ async function getPdfLetterheadForEmail() {
 }
 
 function buildEmailBody(orderRecord) {
-  const lines = (orderRecord.items || []).map(item => `- ${item.name}: ${item.qty} ${item.unit}${item.notes ? " — Note: " + item.notes : ""}`).join("\n");
+  const lines = (orderRecord.items || []).map(item => `- ${item.name}: ${item.qty} ${item.unit}`).join("\n");
   const companyName = orderRecord.pdfLetterhead && orderRecord.pdfLetterhead.companyName ? orderRecord.pdfLetterhead.companyName : (getAppSettings().companyTitle || "");
   return `${companyName ? companyName + "\n" : ""}Material Order Request
 
@@ -1812,8 +1824,6 @@ function setupApp() {
 
   const materialSearch = document.getElementById("materialSearch");
   if (materialSearch) materialSearch.addEventListener("input", renderMaterials);
-
-  setupFloatingCartButton();
 const bottomManpowerBtn = document.getElementById("bottomManpowerBtn");
   if (bottomManpowerBtn) bottomManpowerBtn.addEventListener("click", openManpowerFromBottom);
 
@@ -1967,6 +1977,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 
+
+
 function setupFloatingCartButton() {
   const button = document.getElementById("floatingCartToggleBtn");
   if (!button || button.dataset.ready === "true") return;
@@ -2007,6 +2019,10 @@ function updateFloatingCartButton() {
   button.textContent = nearCart ? "Back To Top ↑" : "Go To Cart ↓";
 }
 
+document.addEventListener("DOMContentLoaded", () => {
+  setupFloatingCartButton();
+  setTimeout(updateFloatingCartButton, 500);
+});
 
 /* V50 editable quantity real number input */
 document.addEventListener("input", event => {
