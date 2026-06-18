@@ -38,6 +38,7 @@
             <button type="button" data-admin-page="adminDashboardPage">Dashboard</button>
             <button type="button" data-admin-page="appSettingsPage">App Settings</button>
             <button type="button" data-admin-page="dailyReportsPage">Daily Reports</button>
+            <button type="button" data-admin-page="estimatingPage">Estimating</button>
             <button type="button" data-admin-page="rentalsPage">Rentals</button>
             <button type="button" data-admin-page="manpowerAdminPage">Manpower</button>
             <button type="button" data-admin-page="pdfLetterheadPage">PDF Letterhead</button>
@@ -62,6 +63,9 @@
               </button>
               <button class="admin-menu-card" type="button" data-admin-page="dailyReportsPage">
                 <span>📝</span><strong>Daily Reports</strong><small>Set CC email for daily report PDFs</small>
+              </button>
+              <button class="admin-menu-card" type="button" data-admin-page="estimatingPage">
+                <span>📤</span><strong>Estimating</strong><small>Create bid invite emails with download links</small>
               </button>
               <button class="admin-menu-card" type="button" data-admin-page="pdfLetterheadPage">
                 <span>📄</span><strong>PDF Letterhead</strong><small>Logos, company info, and PDF title</small>
@@ -114,6 +118,64 @@
               </label>
               <button id="saveDailyReportSettingsBtn" class="primary-btn" type="button">Save Daily Report Settings</button>
               <p id="dailyReportSettingsMessage" class="admin-message"></p>
+            </div>
+          </section>
+
+
+          <section id="estimatingPage" class="admin-page">
+            <div class="admin-page-head"><div><p class="small-text">Admin Panel</p><h1>Estimating</h1></div><button class="admin-link-button" type="button" data-admin-page="adminDashboardPage">Back</button></div>
+            <div class="admin-grid-2">
+              <div class="admin-card">
+                <h2>Bid Email</h2>
+                <label class="admin-label">Email Heading
+                  <input id="estimatingHeadingInput" type="text" placeholder="AC General BID Opportunity" />
+                </label>
+                <label class="admin-label">Job Name
+                  <input id="estimatingJobNameInput" type="text" placeholder="Example: UF Bay Street" />
+                </label>
+                <label class="admin-label">Bid Date
+                  <input id="estimatingBidDateInput" type="text" placeholder="Example: 06/25/26 at 2:00 PM" />
+                </label>
+                <label class="admin-label">Download Link
+                  <input id="estimatingDownloadLinkInput" type="url" placeholder="Paste Google Drive, Dropbox, SharePoint, or download link" />
+                </label>
+                <label class="admin-label">Send To
+                  <input id="estimatingToInput" type="email" placeholder="Example: bids@company.com" />
+                </label>
+                <label class="admin-label">Send From / Gmail Alias
+                  <input id="estimatingFromEmailInput" type="email" placeholder="Leave blank to use saved sender email" />
+                </label>
+                <label class="admin-label">Sender Display Name
+                  <input id="estimatingSenderNameInput" type="text" placeholder="Example: AC General Estimating" />
+                </label>
+                <label class="admin-label">Always CC
+                  <input id="estimatingCcInput" type="email" placeholder="Example: estimating@acgeneral.net" />
+                </label>
+                <label class="admin-label">Quote Contact / Bottom of Email
+                  <textarea id="estimatingQuoteContactInput" rows="4" placeholder="Nicholas Mcdonald – nmcdonald@acgeneral.net – Cell (904) 870-6197  Office (904) 783-4200"></textarea>
+                </label>
+                <div class="admin-button-row">
+                  <button id="openEstimatingEmailBtn" class="primary-btn" type="button">Open Email App</button>
+                  <button id="sendEstimatingEmailBtn" class="save-material" type="button">Send From App</button>
+                </div>
+                <p id="estimatingMessage" class="admin-message"></p>
+              </div>
+
+              <div class="admin-card">
+                <h2>BCC Recipient List</h2>
+                <p class="admin-note left-note">Add your common vendors/subs here. Click a name to include them as BCC on this bid email.</p>
+                <div class="estimating-add-row">
+                  <input id="estimatingRecipientNameInput" type="text" placeholder="Name / Company" />
+                  <input id="estimatingRecipientEmailInput" type="email" placeholder="Email" />
+                  <button id="addEstimatingRecipientBtn" class="primary-btn" type="button">Add</button>
+                </div>
+                <div id="estimatingRecipientList" class="estimating-recipient-list"></div>
+              </div>
+            </div>
+
+            <div class="admin-card admin-wide-card">
+              <h2>Email Preview</h2>
+              <div id="estimatingEmailPreview" class="estimating-email-preview"></div>
             </div>
           </section>
 

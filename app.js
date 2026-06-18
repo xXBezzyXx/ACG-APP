@@ -230,7 +230,8 @@ function buildCategoriesFromMaterialsRows(rows, categoryRows) {
     const item = {
       icon: String(row.icon ?? row.Icon ?? "").trim() || "📦",
       name: material,
-      units: parseMaterialListValue(row.units ?? row.Units)
+      units: parseMaterialListValue(row.units ?? row.Units),
+      notesEnabled: String(row.notesEnabled ?? row["Notes Enabled"] ?? row.NotesEnabled ?? "FALSE").trim().toLowerCase() === "true"
     };
 
     if (!item.units.length) item.units = ["Each"];
@@ -311,6 +312,7 @@ let selectedUnits = {};
 let draftQty = {};
 let qtyResetLock = {};
 let customDrafts = {};
+let materialNoteDrafts = {};
 let cart = [];
 let selectedPriority = "Normal";
 let currentSelectedJob = localStorage.getItem("materialOrderSelectedJob") || "";
@@ -350,6 +352,7 @@ function showScreen(id) {
   document.querySelectorAll(".nav-btn").forEach(btn => {
     btn.classList.toggle("active", btn.dataset.screen === id);
   });
+  updateFloatingCartButton();
 }
 
 window.showScreen = showScreen;
@@ -523,6 +526,16 @@ function changeCustomDraft(itemName, value) {
   customDrafts[baseKey(item)] = value;
 }
 
+function getMaterialNoteDraft(item) {
+  return materialNoteDrafts[baseKey(item)] || "";
+}
+
+function changeMaterialNoteDraft(itemName, value) {
+  const item = getItem(activeCategory, itemName);
+  if (!item) return;
+  materialNoteDrafts[baseKey(item)] = value;
+}
+
 function changeOption(itemName, value) {
   const item = getItem(activeCategory, itemName);
   if (!item) return;
@@ -589,6 +602,7 @@ function addToCart(itemName) {
 
   const option = getSelectedOption(item);
   const unit = getSelectedUnit(item);
+  const itemNotes = getMaterialNoteDraft(item).trim();
   const customText = item.custom ? getCustomDraft(item).trim() : "";
 
   if (item.custom && !customText) {
@@ -599,8 +613,8 @@ function addToCart(itemName) {
 
   const orderItemName = item.custom ? customText : item.name;
   const cartKey = item.custom
-    ? `${activeCategory}:${item.name}:${customText}:${unit}`
-    : `${activeCategory}:${item.name}:${option}:${unit}`;
+    ? `${activeCategory}:${item.name}:${customText}:${unit}:${itemNotes}`
+    : `${activeCategory}:${item.name}:${option}:${unit}:${itemNotes}`;
 
   const existing = cart.find(line => line.cartKey === cartKey);
   if (existing) {
@@ -614,12 +628,14 @@ function addToCart(itemName) {
       option: item.custom ? "" : option,
       unit,
       qty,
+      notes: itemNotes,
       custom: !!item.custom
     });
   }
 
   draftQty[key] = 0;
   if (item.custom) customDrafts[key] = "";
+  materialNoteDrafts[key] = "";
   renderMaterials();
   renderCartPreview();
 }
@@ -653,7 +669,7 @@ function renderCartPreview() {
     <div class="cart-line">
       <div>
         <strong>${safeText(displayName(item))}</strong>
-        <span>${safeText(item.categoryLabel)}</span>
+        <span>${safeText(item.categoryLabel)}${item.notes ? " • Note: " + safeText(item.notes) : ""}</span>
       </div>
       <div class="cart-line-right">
         <b>${item.qty} ${safeText(item.unit)}</b>
@@ -729,6 +745,7 @@ function renderMaterials() {
             ${sizeSelect}
             ${unitSelect}
           </div>
+          ${item.notesEnabled === true ? `<textarea class="material-note-input" data-note-item="${safeText(item.name)}" rows="2" placeholder="Note for this material only (optional)">${safeText(getMaterialNoteDraft(item))}</textarea>` : ""}
         </div>
 
         <div class="qty-control">
@@ -744,6 +761,10 @@ function renderMaterials() {
 
   document.querySelectorAll(".custom-material-input").forEach(input => {
     input.addEventListener("input", () => changeCustomDraft(input.dataset.item, input.value));
+  });
+
+  document.querySelectorAll(".material-note-input").forEach(input => {
+    input.addEventListener("input", () => changeMaterialNoteDraft(input.dataset.noteItem, input.value));
   });
 
   document.querySelectorAll(".variant-select").forEach(select => {
@@ -840,7 +861,8 @@ function getOrderItems() {
     option: item.option || "",
     name: displayName(item),
     qty: item.qty,
-    unit: item.unit
+    unit: item.unit,
+    notes: item.notes || ""
   }));
 }
 
@@ -878,7 +900,7 @@ function goReview() {
 
   document.getElementById("reviewItems").innerHTML = items.map(item => `
     <div class="review-line">
-      <span>${safeText(item.name)}</span>
+      <span>${safeText(item.name)}${item.notes ? "<small class='review-item-note'>Note: " + safeText(item.notes) + "</small>" : ""}</span>
       <strong>${item.qty} ${safeText(item.unit)}</strong>
     </div>
   `).join("");
@@ -982,7 +1004,7 @@ async function getPdfLetterheadForEmail() {
 }
 
 function buildEmailBody(orderRecord) {
-  const lines = (orderRecord.items || []).map(item => `- ${item.name}: ${item.qty} ${item.unit}`).join("\n");
+  const lines = (orderRecord.items || []).map(item => `- ${item.name}: ${item.qty} ${item.unit}${item.notes ? " — Note: " + item.notes : ""}`).join("\n");
   const companyName = orderRecord.pdfLetterhead && orderRecord.pdfLetterhead.companyName ? orderRecord.pdfLetterhead.companyName : (getAppSettings().companyTitle || "");
   return `${companyName ? companyName + "\n" : ""}Material Order Request
 
@@ -1790,6 +1812,8 @@ function setupApp() {
 
   const materialSearch = document.getElementById("materialSearch");
   if (materialSearch) materialSearch.addEventListener("input", renderMaterials);
+
+  setupFloatingCartButton();
 const bottomManpowerBtn = document.getElementById("bottomManpowerBtn");
   if (bottomManpowerBtn) bottomManpowerBtn.addEventListener("click", openManpowerFromBottom);
 
@@ -1941,6 +1965,47 @@ document.addEventListener("DOMContentLoaded", () => {
   setTimeout(loadSettingsFromGoogleSheet, 600);
 });
 
+
+
+function setupFloatingCartButton() {
+  const button = document.getElementById("floatingCartToggleBtn");
+  if (!button || button.dataset.ready === "true") return;
+  button.dataset.ready = "true";
+  button.addEventListener("click", () => {
+    const cartCard = document.getElementById("materialCartCard");
+    const orderScreen = document.getElementById("orderScreen");
+    if (!cartCard || !orderScreen || !orderScreen.classList.contains("active")) return;
+
+    const rect = cartCard.getBoundingClientRect();
+    const nearCart = rect.top < window.innerHeight * 0.45;
+    if (nearCart) {
+      orderScreen.scrollIntoView({ behavior: "smooth", block: "start" });
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      cartCard.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  });
+  window.addEventListener("scroll", updateFloatingCartButton, { passive: true });
+  window.addEventListener("resize", updateFloatingCartButton);
+  updateFloatingCartButton();
+}
+
+function updateFloatingCartButton() {
+  const button = document.getElementById("floatingCartToggleBtn");
+  const orderScreen = document.getElementById("orderScreen");
+  const cartCard = document.getElementById("materialCartCard");
+  if (!button) return;
+
+  if (!orderScreen || !orderScreen.classList.contains("active") || !cartCard) {
+    button.classList.add("hidden");
+    return;
+  }
+
+  button.classList.remove("hidden");
+  const rect = cartCard.getBoundingClientRect();
+  const nearCart = rect.top < window.innerHeight * 0.45;
+  button.textContent = nearCart ? "Back To Top ↑" : "Go To Cart ↓";
+}
 
 
 /* V50 editable quantity real number input */

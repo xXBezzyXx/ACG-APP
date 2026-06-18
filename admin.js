@@ -41,7 +41,13 @@ const DEFAULT_SETTINGS = {
   adminPassword: DEFAULT_PASSWORD,
   googleAppsScriptUrl: "",
   senderEmail: "",
-  pdfLetterhead: DEFAULT_PDF_LETTERHEAD
+  pdfLetterhead: DEFAULT_PDF_LETTERHEAD,
+  estimatingToEmail: "",
+  estimatingCcEmail: "",
+  estimatingSenderName: "AC General Estimating",
+  estimatingEmailHeading: "AC General BID Opportunity",
+  estimatingQuoteContact: "Nicholas Mcdonald – nmcdonald@acgeneral.net – Cell (904) 870-6197  Office (904) 783-4200",
+  estimatingRecipients: []
 };
 
 const DEFAULT_JOBS = [
@@ -475,6 +481,12 @@ function loadSettingsForm() {
   setValueIfExists("senderEmailInput", settings.senderEmail || DEFAULT_SETTINGS.senderEmail);
   setValueIfExists("senderEmailInputDashboard", settings.senderEmail || DEFAULT_SETTINGS.senderEmail);
   setValueIfExists("senderEmailInputAppSettings", settings.senderEmail || DEFAULT_SETTINGS.senderEmail);
+  setValueIfExists("estimatingToInput", settings.estimatingToEmail || "");
+  setValueIfExists("estimatingFromEmailInput", settings.senderEmail || DEFAULT_SETTINGS.senderEmail);
+  setValueIfExists("estimatingSenderNameInput", settings.estimatingSenderName || DEFAULT_SETTINGS.estimatingSenderName);
+  setValueIfExists("estimatingCcInput", settings.estimatingCcEmail || "");
+  setValueIfExists("estimatingHeadingInput", settings.estimatingEmailHeading || DEFAULT_SETTINGS.estimatingEmailHeading);
+  setValueIfExists("estimatingQuoteContactInput", settings.estimatingQuoteContact || DEFAULT_SETTINGS.estimatingQuoteContact);
 
   setValueIfExists("pdfTitleLine1Input", pdf.titleLine1);
   setValueIfExists("pdfTitleLine2Input", pdf.titleLine2);
@@ -801,6 +813,7 @@ function categoriesToMaterialRows(categories) {
         Icon: item.icon || "",
         Options: Array.isArray(item.options) ? item.options.join(", ") : "",
         Units: Array.isArray(item.units) ? item.units.join(", ") : "Each",
+        "Notes Enabled": item.notesEnabled === true ? true : false,
         Active: true,
         SortOrder: index + 1
       });
@@ -845,7 +858,8 @@ function materialRowsToCategories(rows, categoryRows) {
     const item = {
       icon: String(row.icon ?? row.Icon ?? "").trim() || "📦",
       name: materialName,
-      units: parseCsvList(String(row.units ?? row.Units ?? "Each"))
+      units: parseCsvList(String(row.units ?? row.Units ?? "Each")),
+      notesEnabled: String(row.notesEnabled ?? row["Notes Enabled"] ?? row.NotesEnabled ?? "FALSE").trim().toLowerCase() === "true"
     };
 
     if (!item.units.length) item.units = ["Each"];
@@ -1069,7 +1083,7 @@ async function addMaterial() {
     return;
   }
 
-  const newItem = { icon, name, units: units.length ? units : ["Each"] };
+  const newItem = { icon, name, units: units.length ? units : ["Each"], notesEnabled: false };
   if (options.length) newItem.options = options;
 
   categories[categoryKey].items.push(newItem);
@@ -1097,6 +1111,7 @@ function saveMaterialEdit(index) {
   const name = document.querySelector(`[data-material-name="${index}"]`).value.trim();
   const options = parseCsvList(document.querySelector(`[data-material-options="${index}"]`).value);
   const units = parseCsvList(document.querySelector(`[data-material-units="${index}"]`).value);
+  const notesEnabled = document.querySelector(`[data-material-notes-enabled="${index}"]`)?.value === "true";
 
   if (!name) {
     alert("Material name cannot be blank.");
@@ -1106,7 +1121,8 @@ function saveMaterialEdit(index) {
   categories[categoryKey].items[index] = {
     icon,
     name,
-    units: units.length ? units : ["Each"]
+    units: units.length ? units : ["Each"],
+    notesEnabled
   };
 
   if (options.length) {
@@ -1186,6 +1202,13 @@ function renderMaterialsForAdmin() {
 
           <label class="admin-label wide">Unit Options
             <input value="${safeText(units)}" data-material-units="${index}" placeholder="Example: Box, Each" />
+          </label>
+
+          <label class="admin-label wide">Item Note Box
+            <select data-material-notes-enabled="${index}">
+              <option value="false" ${item.notesEnabled === true ? "" : "selected"}>Off</option>
+              <option value="true" ${item.notesEnabled === true ? "selected" : ""}>On</option>
+            </select>
           </label>
         </div>
 
@@ -2816,7 +2839,7 @@ async function addMaterial() {
     return alert("That material already exists.");
   }
 
-  const newItem = { icon, name, units: units.length ? units : ["Each"] };
+  const newItem = { icon, name, units: units.length ? units : ["Each"], notesEnabled: false };
   if (options.length) newItem.options = options;
   categories[categoryKey].items.push(newItem);
 
@@ -2915,4 +2938,172 @@ document.addEventListener("keydown", function(event) {
   if (!target || !["newRentalItemName", "newRentalItemIcon", "newRentalItemSizes"].includes(target.id)) return;
   event.preventDefault();
   if (typeof addRentalItemAdmin === "function") addRentalItemAdmin();
+}, true);
+
+
+/* Estimating bid email page */
+function getEstimatingRecipients() {
+  const settings = getSettings();
+  if (Array.isArray(settings.estimatingRecipients)) return settings.estimatingRecipients;
+  if (typeof settings.estimatingRecipients === "string") {
+    try { return JSON.parse(settings.estimatingRecipients); } catch (err) { return []; }
+  }
+  return [];
+}
+async function loadEstimatingRecipientsFromSheet() {
+  const url = getGoogleAppsScriptUrl();
+  if (!url) return;
+  try {
+    const response = await fetch(url + "?action=estimatingRecipients&v=" + Date.now(), { cache: "no-store" });
+    const data = await response.json();
+    if (data && Array.isArray(data.estimatingRecipients)) {
+      const settings = getSettings();
+      settings.estimatingRecipients = data.estimatingRecipients.map(r => ({ name: r.name || r.email || "", email: r.email || "" })).filter(r => r.email);
+      saveSettings(settings);
+    }
+  } catch (err) { console.warn("Could not load estimating recipients from sheet", err); }
+}
+async function saveEstimatingRecipientsToSheet(recipients) {
+  const url = getGoogleAppsScriptUrl();
+  if (!url) return;
+  try {
+    await fetch(url, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "saveEstimatingRecipients", recipients: recipients || [] }) });
+  } catch (err) { console.warn("Could not save estimating recipients to sheet", err); }
+}
+function saveEstimatingSettings(partial) {
+  const settings = getSettings();
+  const merged = Object.assign({}, settings, partial || {});
+  saveSettings(merged);
+  const url = getGoogleAppsScriptUrl();
+  if (url) {
+    try {
+      fetch(url, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "saveSettings", settings: { estimatingToEmail: merged.estimatingToEmail || "", estimatingCcEmail: merged.estimatingCcEmail || "", estimatingSenderName: merged.estimatingSenderName || DEFAULT_SETTINGS.estimatingSenderName, estimatingEmailHeading: merged.estimatingEmailHeading || DEFAULT_SETTINGS.estimatingEmailHeading, estimatingQuoteContact: merged.estimatingQuoteContact || "" } }) });
+    } catch (err) { console.warn("Could not sync estimating settings", err); }
+  }
+}
+function selectedEstimatingBcc() {
+  return Array.from(document.querySelectorAll("[data-estimating-bcc]:checked")).map(cb => cb.value).filter(Boolean);
+}
+function renderEstimatingRecipients() {
+  const list = document.getElementById("estimatingRecipientList");
+  if (!list) return;
+  const recipients = getEstimatingRecipients();
+  if (!recipients.length) {
+    list.innerHTML = "<p class='admin-note left-note'>No saved recipients yet.</p>";
+    return;
+  }
+  list.innerHTML = recipients.map((r, i) => `
+    <div class="estimating-recipient-row">
+      <label><input type="checkbox" data-estimating-bcc value="${safeText(r.email)}" /> <strong>${safeText(r.name || r.email)}</strong><span>${safeText(r.email)}</span></label>
+      <button type="button" class="delete-material" data-delete-estimating-recipient="${i}">Delete</button>
+    </div>`).join("");
+  list.querySelectorAll("[data-estimating-bcc]").forEach(cb => cb.addEventListener("change", updateEstimatingPreview));
+  list.querySelectorAll("[data-delete-estimating-recipient]").forEach(btn => btn.addEventListener("click", () => deleteEstimatingRecipient(Number(btn.dataset.deleteEstimatingRecipient))));
+}
+function addEstimatingRecipient() {
+  const nameEl = document.getElementById("estimatingRecipientNameInput");
+  const emailEl = document.getElementById("estimatingRecipientEmailInput");
+  const name = (nameEl?.value || "").trim();
+  const email = (emailEl?.value || "").trim();
+  if (!email) return alert("Enter an email address.");
+  const recipients = getEstimatingRecipients().filter(r => String(r.email || "").toLowerCase() !== email.toLowerCase());
+  recipients.push({ name: name || email, email });
+  saveEstimatingSettings({ estimatingRecipients: recipients });
+  saveEstimatingRecipientsToSheet(recipients);
+  if (nameEl) nameEl.value = "";
+  if (emailEl) emailEl.value = "";
+  renderEstimatingRecipients();
+  updateEstimatingPreview();
+}
+function deleteEstimatingRecipient(index) {
+  const recipients = getEstimatingRecipients();
+  recipients.splice(index, 1);
+  saveEstimatingSettings({ estimatingRecipients: recipients });
+  saveEstimatingRecipientsToSheet(recipients);
+  renderEstimatingRecipients();
+  updateEstimatingPreview();
+}
+function getEstimatingFormData() {
+  const settings = getSettings();
+  const jobName = (document.getElementById("estimatingJobNameInput")?.value || "").trim();
+  const bidDate = (document.getElementById("estimatingBidDateInput")?.value || "").trim();
+  const downloadLink = (document.getElementById("estimatingDownloadLinkInput")?.value || "").trim();
+  const toEmail = (document.getElementById("estimatingToInput")?.value || settings.estimatingToEmail || "").trim();
+  const fromEmail = (document.getElementById("estimatingFromEmailInput")?.value || settings.senderEmail || "").trim();
+  const senderName = (document.getElementById("estimatingSenderNameInput")?.value || settings.estimatingSenderName || DEFAULT_SETTINGS.estimatingSenderName).trim();
+  const cc = (document.getElementById("estimatingCcInput")?.value || "").trim();
+  const heading = (document.getElementById("estimatingHeadingInput")?.value || settings.estimatingEmailHeading || DEFAULT_SETTINGS.estimatingEmailHeading).trim();
+  const quoteContact = (document.getElementById("estimatingQuoteContactInput")?.value || DEFAULT_SETTINGS.estimatingQuoteContact).trim();
+  return { jobName, bidDate, downloadLink, toEmail, fromEmail, senderName, cc, bcc: selectedEstimatingBcc(), heading, quoteContact };
+}
+function buildEstimatingSubject(data) {
+  return `Bid Request - ${data.jobName || "Project"}${data.bidDate ? " - Bid Date " + data.bidDate : ""}`;
+}
+function buildEstimatingPlainBody(data) {
+  return `${data.heading || "AC General BID Opportunity"}\n\n${data.jobName || "[JOB NAME]"}\n${data.bidDate || "[BID DATE]"}\n\nPlease click here to download the file for the job referenced above:\n${data.downloadLink || "[DOWNLOAD LINK]"}\n\nPlease send your quotes to:\n${data.quoteContact || "Nicholas Mcdonald – nmcdonald@acgeneral.net"}`;
+}
+function buildEstimatingHtmlBody(data) {
+  const link = data.downloadLink || "#";
+  return `<div style="font-family:Arial,sans-serif;max-width:720px;color:#111827;line-height:1.45;">
+    <div style="font-size:14px;letter-spacing:.08em;text-transform:uppercase;font-weight:800;color:#f97316;margin-bottom:8px;">${safeText(data.heading || "AC General BID Opportunity")}</div>
+    <h2 style="margin:0 0 8px;color:#0f172a;">${safeText(data.jobName || "[JOB NAME]")}</h2>
+    <p style="margin:0 0 18px;"><strong>Bid Date:</strong> ${safeText(data.bidDate || "[BID DATE]")}</p>
+    <p>Please click the button below to download the files for the job referenced above.</p>
+    <p style="margin:22px 0;"><a href="${safeText(link)}" style="background:#f97316;color:#ffffff;text-decoration:none;padding:12px 18px;border-radius:8px;font-weight:bold;display:inline-block;">Click Here To Download</a></p>
+    <p style="font-size:13px;color:#475569;">If the button does not open, copy and paste this link into your browser:<br>${safeText(data.downloadLink || "")}</p>
+    <hr style="border:0;border-top:1px solid #e5e7eb;margin:20px 0;" />
+    <p><strong>Please send your quotes to:</strong><br>${safeText(data.quoteContact || "Nicholas Mcdonald – nmcdonald@acgeneral.net")}</p>
+  </div>`;
+}
+function updateEstimatingPreview() {
+  const data = getEstimatingFormData();
+  const preview = document.getElementById("estimatingEmailPreview");
+  if (preview) preview.innerHTML = buildEstimatingHtmlBody(data) + `<p><strong>To:</strong> ${safeText(data.toEmail || "None")}</p><p><strong>CC:</strong> ${safeText(data.cc || "None")}</p><p><strong>BCC:</strong> ${safeText(data.bcc.join(", ") || "None selected")}</p>`;
+  saveEstimatingSettings({ estimatingToEmail: data.toEmail, estimatingCcEmail: data.cc, estimatingSenderName: data.senderName, estimatingEmailHeading: data.heading, estimatingQuoteContact: data.quoteContact, senderEmail: data.fromEmail || getSettings().senderEmail });
+}
+function openEstimatingEmailApp() {
+  const data = getEstimatingFormData();
+  if (!data.jobName || !data.bidDate || !data.downloadLink) return alert("Enter the job name, bid date, and download link first.");
+  updateEstimatingPreview();
+  // Build the mailto manually. URLSearchParams turns spaces into + signs,
+  // and some email apps show those plus signs instead of converting them back.
+  const parts = [];
+  parts.push("subject=" + encodeURIComponent(buildEstimatingSubject(data)));
+  parts.push("body=" + encodeURIComponent(buildEstimatingPlainBody(data)));
+  if (data.cc) parts.push("cc=" + encodeURIComponent(data.cc));
+  if (data.bcc.length) parts.push("bcc=" + encodeURIComponent(data.bcc.join(",")));
+  window.location.href = "mailto:" + encodeURIComponent(data.toEmail || "") + "?" + parts.join("&");
+}
+async function sendEstimatingEmailFromApp() {
+  const data = getEstimatingFormData();
+  if (!data.jobName || !data.bidDate || !data.downloadLink) return alert("Enter the job name, bid date, and download link first.");
+  if (!data.toEmail && !data.bcc.length) return alert("Enter a Send To email or select at least one BCC recipient.");
+  const url = getGoogleAppsScriptUrl();
+  if (!url) return alert("Missing Google Apps Script URL in App Settings.");
+  updateEstimatingPreview();
+  const msg = document.getElementById("estimatingMessage");
+  if (msg) msg.textContent = "Sending estimating email...";
+  await fetch(url, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "estimatingEmail", jobName: data.jobName, bidDate: data.bidDate, downloadLink: data.downloadLink, toEmail: data.toEmail, fromEmail: data.fromEmail, cc: data.cc, bcc: data.bcc.join(","), senderName: data.senderName, heading: data.heading, quoteContact: data.quoteContact }) });
+  if (msg) msg.textContent = "Estimating email sent/requested.";
+}
+async function setupEstimatingPage() {
+  await loadEstimatingRecipientsFromSheet();
+  renderEstimatingRecipients();
+  loadSettingsForm();
+  ["estimatingJobNameInput","estimatingBidDateInput","estimatingDownloadLinkInput","estimatingToInput","estimatingFromEmailInput","estimatingSenderNameInput","estimatingCcInput","estimatingHeadingInput","estimatingQuoteContactInput"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && !el.dataset.estimatingWired) { el.dataset.estimatingWired = "true"; el.addEventListener("input", updateEstimatingPreview); }
+  });
+  const addBtn = document.getElementById("addEstimatingRecipientBtn");
+  if (addBtn && !addBtn.dataset.estimatingWired) { addBtn.dataset.estimatingWired = "true"; addBtn.addEventListener("click", addEstimatingRecipient); }
+  const openBtn = document.getElementById("openEstimatingEmailBtn");
+  if (openBtn && !openBtn.dataset.estimatingWired) { openBtn.dataset.estimatingWired = "true"; openBtn.addEventListener("click", openEstimatingEmailApp); }
+  const sendBtn = document.getElementById("sendEstimatingEmailBtn");
+  if (sendBtn && !sendBtn.dataset.estimatingWired) { sendBtn.dataset.estimatingWired = "true"; sendBtn.addEventListener("click", sendEstimatingEmailFromApp); }
+  updateEstimatingPreview();
+}
+document.addEventListener("DOMContentLoaded", () => setTimeout(setupEstimatingPage, 700));
+document.addEventListener("click", function(event) {
+  const btn = event.target.closest && event.target.closest('[data-admin-page="estimatingPage"]');
+  if (btn) setTimeout(setupEstimatingPage, 100);
 }, true);

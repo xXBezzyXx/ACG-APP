@@ -873,3 +873,14 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Estimating admin page */
+.estimating-add-row{display:grid;grid-template-columns:1fr 1.3fr auto;gap:10px;align-items:end;margin:12px 0;}
+.estimating-add-row input{width:100%;padding:12px;border:1px solid #d7dee8;border-radius:10px;}
+.estimating-recipient-list{display:grid;gap:10px;margin-top:12px;}
+.estimating-recipient-row{display:flex;justify-content:space-between;gap:12px;align-items:center;border:1px solid #e5e7eb;border-radius:12px;padding:10px;background:#fff;}
+.estimating-recipient-row label{display:flex;align-items:center;gap:8px;flex-wrap:wrap;cursor:pointer;}
+.estimating-recipient-row span{color:#64748b;font-size:13px;}
+.estimating-email-preview{border:1px solid #d7dee8;border-radius:14px;background:#fff;padding:18px;min-height:160px;}
+@media(max-width:800px){.estimating-add-row{grid-template-columns:1fr}.estimating-recipient-row{align-items:flex-start;flex-direction:column}}
