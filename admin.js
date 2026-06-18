@@ -3121,7 +3121,7 @@ document.addEventListener("click", function(event) {
           Icon: item.icon || "",
           Options: Array.isArray(item.options) ? item.options.join(", ") : "",
           Units: Array.isArray(item.units) ? item.units.join(", ") : "Each",
-          "Note Required": item.noteRequired ? true : false,
+          "Notes Enabled": item.notesEnabled ? true : false,
           Active: true,
           SortOrder: index + 1
         });
@@ -3160,7 +3160,7 @@ document.addEventListener("click", function(event) {
       if (!item.units.length) item.units = ["Each"];
       const options = parseCsvList(String(row.options ?? row.Options ?? ""));
       if (options.length) item.options = options;
-      if (boolFromInputValue(row.noteRequired ?? row["Note Required"] ?? row.RequiresNote ?? row["Requires Note"])) item.noteRequired = true;
+      if (boolFromInputValue(row.notesEnabled ?? row["Notes Enabled"] ?? row.RequiresNote ?? row["Requires Note"])) item.notesEnabled = true;
       categories[categoryKey].items.push(item);
     });
     return Object.keys(categories).length ? categories : null;
@@ -3173,7 +3173,7 @@ document.addEventListener("click", function(event) {
     const icon = document.getElementById("materialIconInput").value.trim() || "•";
     const options = parseCsvList(document.getElementById("materialOptionsInput").value);
     const units = parseCsvList(document.getElementById("materialUnitsInput").value);
-    const noteRequired = boolFromInputValue((document.getElementById("materialNoteRequiredInput") || {}).value || "false");
+    const notesEnabled = boolFromInputValue((document.getElementById("materialNoteRequiredInput") || {}).value || "false");
     if (!categoryKey) return alert("Select a category.");
     if (!name) return alert("Enter a material name.");
     const categories = getCategories();
@@ -3184,7 +3184,7 @@ document.addEventListener("click", function(event) {
     if (categories[categoryKey].items.some(item => String(item.name || "").toLowerCase() === name.toLowerCase())) return alert("That material already exists.");
     const newItem = { icon, name, units: units.length ? units : ["Each"] };
     if (options.length) newItem.options = options;
-    if (noteRequired) newItem.noteRequired = true;
+    if (notesEnabled) newItem.notesEnabled = true;
     categories[categoryKey].items.push(newItem);
     const cleaned = typeof dedupeCategoryItems === "function" ? dedupeCategoryItems(categories) : categories;
     localStorage.setItem("materialOrderCategories", JSON.stringify(cleaned));
@@ -3206,11 +3206,11 @@ document.addEventListener("click", function(event) {
     const name = document.querySelector(`[data-material-name="${index}"]`).value.trim();
     const options = parseCsvList(document.querySelector(`[data-material-options="${index}"]`).value);
     const units = parseCsvList(document.querySelector(`[data-material-units="${index}"]`).value);
-    const noteRequired = boolFromInputValue((document.querySelector(`[data-material-note-required="${index}"]`) || {}).value || "false");
+    const notesEnabled = boolFromInputValue((document.querySelector(`[data-material-note-required="${index}"]`) || {}).value || "false");
     if (!name) return alert("Material name cannot be blank.");
     const next = { icon, name, units: units.length ? units : ["Each"] };
     if (options.length) next.options = options;
-    if (noteRequired) next.noteRequired = true;
+    if (notesEnabled) next.notesEnabled = true;
     categories[categoryKey].items[index] = next;
     saveCategories(categories);
     renderMaterialsForAdmin();
@@ -3233,7 +3233,7 @@ document.addEventListener("click", function(event) {
             <label class="admin-label">Material Name<input value="${safeText(item.name)}" data-material-name="${index}" /></label>
             <label class="admin-label wide">Size Options<input value="${safeText(options)}" data-material-options="${index}" placeholder='Example: 1/4", 3/8", 1/2"' /></label>
             <label class="admin-label wide">Unit Options<input value="${safeText(units)}" data-material-units="${index}" placeholder="Example: Box, Each" /></label>
-            <label class="admin-label">Note Required<select class="admin-select-light" data-material-note-required="${index}"><option value="false" ${item.noteRequired ? "" : "selected"}>FALSE</option><option value="true" ${item.noteRequired ? "selected" : ""}>TRUE</option></select></label>
+            <label class="admin-label">Notes Enabled<select class="admin-select-light" data-material-note-required="${index}"><option value="false" ${item.notesEnabled ? "" : "selected"}>FALSE</option><option value="true" ${item.notesEnabled ? "selected" : ""}>TRUE</option></select></label>
           </div>
           <div class="material-edit-actions">
             <button class="save-material" data-move-material-up="${index}" type="button" ${index === 0 ? "disabled" : ""}>Move Up</button>

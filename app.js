@@ -244,8 +244,18 @@ function buildCategoriesFromMaterialsRows(rows, categoryRows) {
       item.placeholder = String(row.placeholder ?? row.Placeholder ?? "Type what material you need here...").trim();
     }
 
-    const noteRequiredValue = String(row.noteRequired ?? row["Note Required"] ?? row.RequiresNote ?? row["Requires Note"] ?? row.NotesRequired ?? "").trim().toLowerCase();
-    if (noteRequiredValue === "true" || noteRequiredValue === "yes" || noteRequiredValue === "1") {
+    const noteRequiredValue = String(
+      row.noteRequired ??
+      row.notesEnabled ??
+      row["Note Required"] ??
+      row["Notes Enabled"] ??
+      row["Notes Enabled?"] ??
+      row.RequiresNote ??
+      row["Requires Note"] ??
+      row.NotesRequired ??
+      ""
+    ).trim().toLowerCase();
+    if (["true", "yes", "1", "y", "enabled", "on"].includes(noteRequiredValue)) {
       item.noteRequired = true;
     }
 
@@ -608,10 +618,16 @@ function addToCart(itemName) {
   const option = getSelectedOption(item);
   const unit = getSelectedUnit(item);
   const customText = item.custom ? getCustomDraft(item).trim() : "";
-  const itemNotes = item.noteRequired ? getMaterialNoteDraft(item).trim() : "";
+  const itemNotes = getMaterialNoteDraft(item).trim();
 
   if (item.custom && !customText) {
     alert("Please type the custom material you need before adding to cart.");
+    showScreen("orderScreen");
+    return;
+  }
+
+  if (item.noteRequired && !itemNotes) {
+    alert("Please type notes for this material before adding it to the cart.");
     showScreen("orderScreen");
     return;
   }
@@ -641,7 +657,7 @@ function addToCart(itemName) {
 
   draftQty[key] = 0;
   if (item.custom) customDrafts[key] = "";
-  if (item.noteRequired) materialNoteDrafts[key] = "";
+  materialNoteDrafts[key] = "";
   renderMaterials();
   renderCartPreview();
 }
@@ -724,8 +740,8 @@ function renderMaterials() {
     ` : "";
 
     const noteInput = item.noteRequired ? `
-      <label class="select-label material-note-label">
-        Notes
+      <label class="select-label material-note-label required-note">
+        Notes (Required)
         <textarea class="material-note-input" data-note-item="${safeText(item.name)}" placeholder="Type notes for this material...">${safeText(getMaterialNoteDraft(item))}</textarea>
       </label>
     ` : "";
@@ -767,6 +783,7 @@ function renderMaterials() {
         </div>
 
         <button class="add-cart-btn add-cart-wide" data-item="${safeText(item.name)}" type="button">Add to Cart</button>
+        ${noteInput}
       </div>
     `;
   }).join("");

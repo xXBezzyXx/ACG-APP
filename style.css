@@ -2492,3 +2492,49 @@ label[for="dailySafety"]{
 .material-list .material-row.cart-style-row .add-cart-btn{
   grid-row:4!important;
 }
+
+
+/* FINAL FIX: always show material notes as a full-width box below the controls */
+#materialList .material-row.cart-style-row > .material-note-label,
+.material-list .material-row.cart-style-row > .material-note-label {
+  grid-column: 1 / -1 !important;
+  grid-row: auto !important;
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  margin: 10px 0 0 0 !important;
+  padding: 0 !important;
+  white-space: normal !important;
+  writing-mode: horizontal-tb !important;
+  text-orientation: mixed !important;
+  color: var(--muted) !important;
+  font-size: 12px !important;
+  font-weight: 950 !important;
+  text-transform: uppercase !important;
+  letter-spacing: .08em !important;
+}
+#materialList .material-row.cart-style-row > .material-note-label textarea.material-note-input,
+.material-list .material-row.cart-style-row > .material-note-label textarea.material-note-input {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  min-height: 96px !important;
+  margin-top: 8px !important;
+  box-sizing: border-box !important;
+  padding: 14px 16px !important;
+  border-radius: 16px !important;
+  resize: vertical !important;
+  font-size: 16px !important;
+  line-height: 1.35 !important;
+  white-space: normal !important;
+  writing-mode: horizontal-tb !important;
+  text-orientation: mixed !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  background: rgba(255,255,255,.07) !important;
+  border: 1px solid rgba(255,255,255,.16) !important;
+  color: #fff !important;
+}
