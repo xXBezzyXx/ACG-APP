@@ -31,7 +31,8 @@ const DEFAULT_PDF_LETTERHEAD = {
   license: "CMC1250807",
   companyName: "AC General",
   documentTitle: "MATERIAL PROCUREMENT REQUEST",
-  footerMessage: "Thank you for using the Material Order App!"
+  footerMessage: "Thank you for using the Material Order App!",
+  previewHeading: "AC General Material Order PDF"
 };
 
 const DEFAULT_SETTINGS = {
@@ -495,6 +496,7 @@ function loadSettingsForm() {
   setValueIfExists("pdfWebsiteInput", pdf.website);
   setValueIfExists("pdfLicenseInput", pdf.license);
   setValueIfExists("pdfCompanyNameInput", pdf.companyName || settings.companyTitle);
+  setValueIfExists("pdfPreviewHeadingInput", pdf.previewHeading);
   setValueIfExists("pdfDocumentTitleInput", pdf.documentTitle);
   setValueIfExists("pdfFooterMessageInput", pdf.footerMessage);
   updateLetterheadPreview();
@@ -538,7 +540,7 @@ function updateLetterheadPreview() {
   const title = document.getElementById("letterheadPreviewTitle");
   if (title) title.innerHTML = `${safeText(pdf.titleLine1 || "")}<br />${safeText(pdf.titleLine2 || "")}`;
   const company = document.getElementById("letterheadPreviewCompany");
-  if (company) company.textContent = `${pdf.companyName || getSettings().companyTitle || "Company"} Material Order PDF`;
+  if (company) company.textContent = pdf.previewHeading || `${pdf.companyName || getSettings().companyTitle || "Company"} Material Order PDF`;
 }
 
 function getPdfLetterheadFromForm(existing) {
@@ -551,6 +553,7 @@ function getPdfLetterheadFromForm(existing) {
     website: document.getElementById("pdfWebsiteInput").value.trim(),
     license: document.getElementById("pdfLicenseInput").value.trim(),
     companyName: document.getElementById("pdfCompanyNameInput").value.trim() || document.getElementById("companyTitleInput").value.trim() || DEFAULT_PDF_LETTERHEAD.companyName,
+    previewHeading: document.getElementById("pdfPreviewHeadingInput")?.value.trim() || DEFAULT_PDF_LETTERHEAD.previewHeading,
     documentTitle: document.getElementById("pdfDocumentTitleInput").value.trim() || DEFAULT_PDF_LETTERHEAD.documentTitle,
     footerMessage: document.getElementById("pdfFooterMessageInput").value.trim() || DEFAULT_PDF_LETTERHEAD.footerMessage
   };
@@ -574,14 +577,53 @@ async function savePdfLetterhead() {
   settings.pdfLetterhead = pdf;
   saveSettings(settings);
   updateLetterheadPreview();
-  alert("PDF letterhead saved.");
+
+  const url = typeof getGoogleAppsScriptUrl === "function" ? getGoogleAppsScriptUrl() : (settings.googleAppsScriptUrl || "").trim();
+  if (!url) {
+    alert("PDF letterhead saved in this browser only. Add your Google Apps Script /exec URL in App Settings to save it to Excel.");
+    return;
+  }
+
+  try {
+    await fetch(url, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({
+        action: "savePdfLetterhead",
+        pdfLetterhead: pdf
+      })
+    });
+    alert("PDF letterhead saved to Excel.");
+  } catch (error) {
+    console.error(error);
+    alert("PDF letterhead saved in this browser, but could not save to Excel. Check your Google Apps Script URL.");
+  }
 }
 
-function resetPdfLetterhead() {
+async function resetPdfLetterhead() {
   const settings = getSettings();
   settings.pdfLetterhead = { ...DEFAULT_PDF_LETTERHEAD };
   saveSettings(settings);
   loadSettingsForm();
+
+  const url = typeof getGoogleAppsScriptUrl === "function" ? getGoogleAppsScriptUrl() : (settings.googleAppsScriptUrl || "").trim();
+  if (url) {
+    try {
+      await fetch(url, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({
+          action: "savePdfLetterhead",
+          pdfLetterhead: settings.pdfLetterhead
+        })
+      });
+    } catch (error) {
+      console.warn("Could not reset PDF letterhead in Excel.", error);
+    }
+  }
+
   alert("PDF letterhead reset to the default letterhead.");
 }
 

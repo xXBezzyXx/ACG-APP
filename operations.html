@@ -1,0 +1,1412 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Operations - Material Orders</title>
+<link href="style.css" rel="stylesheet"/>
+<link href="admin.css" rel="stylesheet"/>
+</head>
+<body class="auth-locked">
+<div class="app admin-app admin-desktop-app">
+<section class="admin-panel" id="operationsScreen">
+<div class="admin-layout">
+<aside class="admin-sidebar">
+<div class="admin-brand">
+<p class="small-text">Material Order App</p>
+<h1>Operations</h1>
+</div>
+<nav class="admin-nav">
+<button class="active" data-operations-page="operationsDashboardPage" type="button">Dashboard</button>
+<button data-operations-page="dailyReportsPage" type="button">Daily Reports</button>
+<button data-operations-page="rentalsPage" type="button">Rentals</button><button data-operations-page="materialsPage" type="button">Materials</button>
+<button data-operations-page="manpowerAdminPage" type="button">Manpower</button><button data-operations-page="jobsPage" type="button">Jobs</button><button data-operations-page="estimatingPage" type="button">Estimating</button></nav>
+<a class="admin-link admin-sidebar-link" href="index.html">Open App</a>
+</aside>
+<main class="admin-main">
+<section class="admin-page active-admin-page" id="operationsDashboardPage">
+<div class="admin-page-head">
+<div>
+<p class="small-text">Operations Setup</p>
+<h1>Operations</h1>
+</div>
+<a class="admin-link" href="index.html">Open App</a>
+</div>
+<div class="admin-card admin-wide-card" id="operationsAccessDenied" style="display:none;">
+<h2>Access Denied</h2>
+<p class="admin-note left-note">You do not have permission to access this page. Please contact a Manpower Manager, Operations Manager, or Administrator.</p>
+<a class="admin-link" href="index.html">Back To App</a>
+</div>
+<div id="operationsBlankContent" style="display:none;">
+<div class="admin-dashboard-grid">
+<button class="admin-menu-card" data-operations-page="dailyReportsPage" type="button">
+<span>📝</span><strong>Daily Reports</strong><small>Set CC email for daily report PDFs</small>
+</button>
+<button class="admin-menu-card" data-operations-page="rentalsPage" type="button">
+<span>🚜</span><strong>Rentals</strong><small>Add rental buttons and manage active rentals</small>
+</button>
+<button class="admin-menu-card" data-operations-page="materialsPage" id="operationsMaterialsCard" type="button"><span>📦</span><strong>Materials</strong><small>Add and edit material categories</small></button><button class="admin-menu-card" data-operations-page="manpowerAdminPage" type="button"><span>👷</span><strong>Manpower</strong><small>Add and manage employees</small></button><button class="admin-menu-card" data-operations-page="jobsPage" type="button"><span>🏗️</span><strong>Jobs</strong><small>Add, edit, delete, and activate jobs</small></button><button class="admin-menu-card" data-operations-page="estimatingPage" type="button"><span>📤</span><strong>Estimating</strong><small>Create bid invite emails with download links</small></button></div>
+</div>
+</section>
+<section class="admin-page" id="dailyReportsPage">
+<div class="admin-page-head"><div><p class="small-text">Operations Setup</p><h1>Daily Reports</h1></div><button class="admin-link-button" data-operations-page="operationsDashboardPage" type="button">Back</button></div>
+<div class="admin-card admin-wide-card">
+<h2>Daily Report Email Settings</h2>
+<p class="admin-note left-note">Enter the lead superintendent or office email to CC on every Daily Report PDF email. Leave blank if no CC is needed.</p>
+<label class="admin-label">Daily Report CC Email
+                <input autocomplete="off" id="dailyReportCcEmailInput" placeholder="Example: superintendent@company.com" type="email"/>
+</label>
+<button class="primary-btn" id="saveDailyReportSettingsBtn" type="button">Save Daily Report Settings</button>
+<p class="admin-message" id="dailyReportSettingsMessage"></p>
+</div>
+</section>
+<section class="admin-page" id="rentalsPage">
+<div class="admin-page-head">
+<div>
+<p class="small-text">Operations Setup</p>
+<h1>Rentals</h1>
+</div>
+<button class="admin-link-button" data-operations-page="operationsDashboardPage" type="button">Back</button>
+</div>
+<div class="admin-grid-2">
+<div class="admin-card">
+<h2>Add Rental Button</h2>
+<label class="admin-label">Rental Item
+                  <input id="newRentalItemName" placeholder="Example: Conex, Lull, Scissor Lift" type="text"/>
+</label>
+<label class="admin-label">Icon
+                  <input id="newRentalItemIcon" placeholder="Example: 🚜 or icons/lull.png" type="text"/>
+</label>
+<label class="admin-label">Sizes / Options
+                  <input id="newRentalItemSizes" placeholder="Example: 6k, 8k, 10k, 45 ft, 60 ft" type="text"/>
+</label>
+<button class="primary-btn" id="addRentalItemBtn" type="button">Add Rental Button</button>
+<p class="admin-note left-note">Works like Materials. Add a rental button here and it saves to the RentalItems sheet.</p>
+</div>
+<div class="admin-card">
+<div class="admin-card-head">
+<h2>Rental Button List</h2>
+<button class="admin-danger-small refresh-orders" id="refreshRentalItemsBtn" type="button">Refresh</button>
+</div>
+<p class="admin-note left-note">Edit icons, rename buttons, move them up/down, or mark them Active / Not Active.</p>
+<div class="job-manager-list" id="rentalItemsAdminList"></div>
+</div>
+</div>
+</section>
+<section class="admin-page" id="materialsPage">
+<div class="admin-page-head"><div><p class="small-text">Operations Setup</p><h1>Materials</h1></div><button class="admin-link-button" data-operations-page="operationsDashboardPage" type="button">Back</button></div>
+<div class="admin-grid-2 materials-admin-grid">
+<div class="admin-column-stack">
+<div class="admin-card">
+<div class="admin-card-head">
+<h2>Material Categories</h2>
+<button class="admin-danger-small refresh-orders" id="refreshMaterialCategoriesBtn" type="button">Refresh</button>
+</div>
+<p class="admin-note left-note">Loading categories from the MaterialCategories sheet. Click a category below to add material to it.</p>
+<div class="job-manager-list" id="materialCategoriesAdminList"><p class="admin-note">Loading categories...</p></div>
+</div>
+<div class="admin-card materials-in-category-card">
+<div class="admin-card-head"><h2>Materials In Category</h2></div>
+<p class="admin-note left-note">Edit a material below and click Save. Use commas for sizes and units.</p>
+<div class="material-manager-list" id="materialManagerList"></div>
+</div>
+</div>
+<div class="admin-card">
+<h2>Add Category</h2>
+<label class="admin-label">Category Name<input id="newMaterialCategoryName" placeholder="Example: Sheet Metal" type="text"/></label>
+<label class="admin-label">Category Key <small style="color:#94a3b8;">Optional</small><input id="newMaterialCategoryKey" placeholder="Example: sheetMetal" type="text"/></label>
+<button class="primary-btn" id="addMaterialCategoryBtn" type="button">Add Category</button>
+<p class="admin-note left-note">New categories save to the MaterialCategories sheet. Then select it below and add materials.</p>
+<hr class="admin-soft-divider"/>
+<h2>Add Material</h2>
+<label class="admin-label">Category<select class="admin-select-light" id="materialCategorySelect"></select></label>
+<label class="admin-label">Material Name<input id="materialNameInput" placeholder="Example: Cable Ties" type="text"/></label>
+<label class="admin-label">Icon / Emoji<input id="materialIconInput" placeholder="Example: 🔩" type="text"/></label>
+<label class="admin-label">Size Options<input id="materialOptionsInput" placeholder='Example: 1/4", 3/8", 1/2"' type="text"/></label>
+<label class="admin-label">Unit Options<input id="materialUnitsInput" placeholder="Example: Box, Each" type="text"/></label>
+<label class="admin-label">Note Required<select class="admin-select-light" id="materialNoteRequiredInput"><option value="false">FALSE</option><option value="true">TRUE</option></select></label>
+<button class="primary-btn" id="addMaterialBtn" type="button">Add Material</button>
+</div>
+</div>
+</section>
+<section class="admin-page" id="manpowerAdminPage">
+<div class="admin-page-head">
+<div><p class="small-text">Operations Setup</p><h1>Manpower</h1></div>
+<button class="admin-link-button" data-operations-page="operationsDashboardPage" type="button">Back</button>
+</div>
+<div class="admin-grid-2">
+<div class="admin-card">
+<h2>Add Employee</h2>
+<label class="admin-label">Employee Name
+                  <input id="adminManpowerEmployeeName" placeholder="Example: Mike" type="text"/>
+</label>
+<label class="admin-label">Position / Trade
+                  <input id="adminManpowerEmployeePosition" placeholder="Example: Foreman, Mechanic, Helper" type="text"/>
+</label>
+<button class="primary-btn" id="adminAddManpowerEmployeeBtn" type="button">Add Employee</button>
+</div>
+<div class="admin-card">
+<div class="admin-card-head">
+<h2>Employee List</h2>
+<button class="admin-danger-small refresh-orders" id="adminRefreshManpowerBtn" type="button">Refresh</button>
+</div>
+<p class="admin-note left-note">Employees added here save to the Employees sheet and show on the Manpower board.</p>
+<div class="job-manager-list" id="adminManpowerEmployeeList"></div>
+</div>
+</div>
+<div class="admin-card admin-wide-card">
+<h2>Permission</h2>
+<p class="admin-note left-note">Users with role <strong>Admin</strong> or <strong>Manpower Manager</strong> can add and move employees. Regular users can view the board only.</p>
+</div>
+</section>
+<section class="admin-page" id="jobsPage">
+<div class="admin-page-head"><div><p class="small-text">Operations Setup</p><h1>Jobs</h1></div><button class="admin-link-button" data-operations-page="operationsDashboardPage" type="button">Back</button></div>
+<div class="admin-grid-2">
+<div class="admin-card">
+<h2>Add Job</h2>
+<label class="admin-label">Job Name<input id="newJobName" placeholder="Example: UF Jax Bay Street" type="text"/></label>
+<button class="primary-btn" id="addJobBtn" type="button">Add Job</button>
+</div>
+<div class="admin-card">
+<div class="admin-card-head"><h2>Job List</h2><button class="admin-danger-small" id="resetJobsBtn" type="button">Reset</button></div>
+<div class="job-manager-list" id="jobManagerList"></div>
+</div>
+</div>
+</section><section class="admin-page" id="estimatingPage">
+<div class="admin-page-head"><div><p class="small-text">Operations Setup</p><h1>Estimating</h1></div><button class="admin-link-button" data-operations-page="operationsDashboardPage" type="button">Back</button></div>
+<div class="admin-grid-2">
+<div class="admin-card">
+<h2>Bid Email</h2>
+<label class="admin-label">Email Heading
+                  <input id="estimatingHeadingInput" placeholder="AC General BID Opportunity" type="text"/>
+</label>
+<label class="admin-label">Job Name
+                  <input id="estimatingJobNameInput" placeholder="Example: UF Bay Street" type="text"/>
+</label>
+<label class="admin-label">Bid Date
+                  <input id="estimatingBidDateInput" placeholder="Example: 06/25/26 at 2:00 PM" type="text"/>
+</label>
+<label class="admin-label">Download Link
+                  <input id="estimatingDownloadLinkInput" placeholder="Paste Google Drive, Dropbox, SharePoint, or download link" type="url"/>
+</label>
+<label class="admin-label">Send To
+                  <input id="estimatingToInput" placeholder="Example: bids@company.com" type="email"/>
+</label>
+<label class="admin-label">Send From / Gmail Alias
+                  <input id="estimatingFromEmailInput" placeholder="Leave blank to use saved sender email" type="email"/>
+</label>
+<label class="admin-label">Sender Display Name
+                  <input id="estimatingSenderNameInput" placeholder="Example: AC General Estimating" type="text"/>
+</label>
+<label class="admin-label">Always CC
+                  <input id="estimatingCcInput" placeholder="Example: estimating@acgeneral.net" type="email"/>
+</label>
+<label class="admin-label">Quote Contact / Bottom of Email
+                  <textarea id="estimatingQuoteContactInput" placeholder="Nicholas Mcdonald – nmcdonald@acgeneral.net – Cell (904) 870-6197  Office (904) 783-4200" rows="4"></textarea>
+</label>
+<div class="admin-button-row">
+<button class="primary-btn" id="openEstimatingEmailBtn" type="button">Open Email App</button>
+<button class="save-material" id="sendEstimatingEmailBtn" type="button">Send From App</button>
+</div>
+<p class="admin-message" id="estimatingMessage"></p>
+</div>
+<div class="admin-card">
+<h2>BCC Recipient List</h2>
+<p class="admin-note left-note">Add your common vendors/subs here. Click a name to include them as BCC on this bid email.</p>
+<div class="estimating-add-row">
+<input id="estimatingRecipientNameInput" placeholder="Name / Company" type="text"/>
+<input id="estimatingRecipientEmailInput" placeholder="Email" type="email"/>
+<button class="primary-btn" id="addEstimatingRecipientBtn" type="button">Add</button>
+</div>
+<div class="estimating-recipient-list" id="estimatingRecipientList"></div>
+</div>
+</div>
+<div class="admin-card admin-wide-card">
+<h2>Email Preview</h2>
+<div class="estimating-email-preview" id="estimatingEmailPreview"></div>
+</div>
+</section></main>
+</div>
+</section>
+<nav class="bottom-nav">
+<a class="nav-btn" href="index.html"><span>▣</span>Jobs</a>
+<a class="nav-btn" href="order-board.html"><span>▤</span>Orders</a>
+<a class="nav-btn" href="rental-board.html"><span>🚜</span>Rentals</a>
+<a class="nav-btn" href="index.html#manpower" onclick="localStorage.setItem('openManpowerOnLoad','true')"><span>👷</span>Manpower</a>
+<a class="nav-btn active" href="operations.html"><span>🛠️</span>Operations</a>
+<a class="nav-btn" href="admin.html"><span>⚙</span>Admin</a>
+</nav>
+</div>
+<script src="board.js"></script>
+<script>
+    function operationsRoleAllowed(role) {
+      const value = String(role || "User").trim().toLowerCase();
+      return value === "admin" || value === "operations manager" || value === "operations" || value === "operation manager" || value === "manpower manager" || value === "manpower";
+    }
+
+    function showOperationsPage(pageId) {
+      document.querySelectorAll("#operationsScreen .admin-page").forEach(page => {
+        page.classList.toggle("active-admin-page", page.id === pageId);
+      });
+      document.querySelectorAll("[data-operations-page]").forEach(button => {
+        button.classList.toggle("active", button.dataset.operationsPage === pageId);
+      });
+      setTimeout(fillOperationsDailyReportSettings, 50);
+      if (pageId === "rentalsPage") setTimeout(loadOperationsRentalsPage, 50);
+      if (pageId === "materialsPage") setTimeout(function(){ opWireMaterialsPage(); opLoadMaterialsPage(); }, 50);
+      if (pageId === "manpowerAdminPage") setTimeout(function(){ opWireManpowerPage(); opLoadManpowerEmployees(); }, 50);
+      if (pageId === "jobsPage") setTimeout(function(){ opWireJobsPage(); opLoadJobsPage(); }, 50);
+      if (pageId === "estimatingPage") setTimeout(opSetupEstimatingPage, 50);
+    }
+
+    function checkOperationsAccess() {
+      const denied = document.getElementById("operationsAccessDenied");
+      const content = document.getElementById("operationsBlankContent");
+      let user = null;
+      try { user = JSON.parse(localStorage.getItem("materialOrderCurrentUser") || "null"); } catch (err) { user = null; }
+      const allowed = user && operationsRoleAllowed(user.role);
+      if (denied) denied.style.display = allowed ? "none" : "block";
+      if (content) content.style.display = allowed ? "block" : "none";
+      if (!allowed) {
+        document.querySelectorAll("[data-operations-page]").forEach(button => {
+          if (button.dataset.operationsPage !== "operationsDashboardPage") button.style.display = "none";
+        });
+      }
+    }
+
+    function getOperationsScriptUrl() {
+      try {
+        const direct = localStorage.getItem("materialOrderGoogleAppsScriptUrl") || "";
+        if (direct.trim()) return direct.trim();
+        const settings = JSON.parse(localStorage.getItem("materialOrderSettings") || "{}");
+        return String(settings.googleAppsScriptUrl || "").trim();
+      } catch (err) {
+        return "";
+      }
+    }
+
+    function fillOperationsDailyReportSettings() {
+      const input = document.getElementById("dailyReportCcEmailInput");
+      if (!input) return;
+      let cc = "";
+      try {
+        cc = localStorage.getItem("materialOrderDailyReportCcEmail") || "";
+        if (!cc) {
+          const settings = JSON.parse(localStorage.getItem("materialOrderSettings") || "{}");
+          cc = settings.dailyReportCcEmail || "";
+        }
+      } catch (err) {}
+      input.value = cc || "";
+    }
+
+    async function saveOperationsDailyReportSettings(e) {
+      if (e) { e.preventDefault(); e.stopPropagation(); }
+      const input = document.getElementById("dailyReportCcEmailInput");
+      const msg = document.getElementById("dailyReportSettingsMessage");
+      const cc = input ? String(input.value || "").trim() : "";
+      localStorage.setItem("materialOrderDailyReportCcEmail", cc);
+      let settings = {};
+      try { settings = JSON.parse(localStorage.getItem("materialOrderSettings") || "{}"); } catch (err) { settings = {}; }
+      settings.dailyReportCcEmail = cc;
+      localStorage.setItem("materialOrderSettings", JSON.stringify(settings));
+
+      const url = getOperationsScriptUrl();
+      if (url) {
+        await fetch(url, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ action: "saveSettings", settings: { dailyReportCcEmail: cc } })
+        });
+      }
+      if (msg) msg.textContent = "Daily Report settings saved.";
+      alert("Daily Report settings saved.");
+      return false;
+    }
+
+
+
+/* Operations Rentals moved from Admin */
+
+function formatOrderDate(value) {
+  if (!value) return "";
+  try {
+    return new Date(value).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  } catch (err) {
+    return value;
+  }
+}
+const DEFAULT_RENTAL_ITEMS_ADMIN = [
+  { name: "Conex", icon: "🚚", active: true, custom: false },
+  { name: "Lull", icon: "🚜", active: true, custom: false, options: ["6k", "8k", "10k", "12k"] },
+  { name: "Scissor Lift", icon: "↕️", active: true, custom: false, options: ["19 ft", "26 ft", "32 ft", "40 ft"] },
+  { name: "Boom Lift", icon: "🏗️", active: true, custom: false, options: ["45 ft", "60 ft", "80 ft", "125 ft"] },
+  { name: "Porta John", icon: "🚻", active: true, custom: false },
+  { name: "Other / Custom", icon: "➕", active: true, custom: true }
+];
+
+let rentalItemsAdminCache = [];
+
+function normalizeRentalItems(items) {
+  const cleaned = [];
+  const seen = new Set();
+
+  (items || []).forEach((item, index) => {
+    const name = String(item.name || item["Rental Item"] || item.rentalItem || "").trim();
+    if (!name) return;
+    const key = name.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+
+    cleaned.push({
+      name,
+      icon: item.icon || item.Icon || "📦",
+      active: !(item.active === false || item.Active === false || String(item.active || item.Active || "").toLowerCase() === "false"),
+      custom: item.custom === true || item.Custom === true || String(item.custom || item.Custom || "").toLowerCase() === "true",
+      options: String(item.options || item.Options || item.sizes || item.Sizes || "").split(",").map(part => part.trim()).filter(Boolean),
+      sortOrder: Number(item.sortOrder || item.SortOrder || index + 1)
+    });
+  });
+
+  if (!cleaned.some(item => item.custom)) {
+    cleaned.push({ name: "Other / Custom", icon: "➕", active: true, custom: true, sortOrder: cleaned.length + 1 });
+  }
+
+  return cleaned.sort((a, b) => Number(a.sortOrder || 999999) - Number(b.sortOrder || 999999));
+}
+
+async function loadRentalItemsFromGoogleSheetAdmin() {
+  const list = document.getElementById("rentalItemsAdminList");
+  if (list) list.innerHTML = "<p class='admin-note'>Loading rental buttons...</p>";
+
+  const url = getGoogleAppsScriptUrl();
+  if (!url) {
+    rentalItemsAdminCache = normalizeRentalItems(DEFAULT_RENTAL_ITEMS_ADMIN);
+    renderRentalItemsAdmin();
+    return false;
+  }
+
+  try {
+    const response = await fetch(url + "?action=rentalItems&v=" + Date.now(), { cache: "no-store" });
+    const data = await response.json();
+    const rows = Array.isArray(data.rentalItems) && data.rentalItems.length ? data.rentalItems : DEFAULT_RENTAL_ITEMS_ADMIN;
+    rentalItemsAdminCache = normalizeRentalItems(rows);
+    localStorage.setItem("materialOrderRentalItems", JSON.stringify(rentalItemsAdminCache));
+    renderRentalItemsAdmin();
+    return true;
+  } catch (error) {
+    console.warn("Could not load RentalItems tab.", error);
+    rentalItemsAdminCache = normalizeRentalItems(JSON.parse(localStorage.getItem("materialOrderRentalItems") || "[]").length ? JSON.parse(localStorage.getItem("materialOrderRentalItems") || "[]") : DEFAULT_RENTAL_ITEMS_ADMIN);
+    renderRentalItemsAdmin();
+    return false;
+  }
+}
+
+async function saveRentalItemsAdmin(items) {
+  const cleaned = normalizeRentalItems(items);
+  rentalItemsAdminCache = cleaned;
+  localStorage.setItem("materialOrderRentalItems", JSON.stringify(cleaned));
+  renderRentalItemsAdmin();
+
+  const url = getGoogleAppsScriptUrl();
+  if (!url) {
+    alert("Missing Google Apps Script URL. Rental button saved locally only.");
+    return false;
+  }
+
+  try {
+    await fetch(url, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ action: "saveRentalItems", rentalItems: cleaned })
+    });
+    setTimeout(loadRentalItemsFromGoogleSheetAdmin, 700);
+    return true;
+  } catch (error) {
+    console.warn("Could not sync rental buttons.", error);
+    alert("Rental button saved locally, but did not sync to RentalItems sheet.");
+    return false;
+  }
+}
+
+function renderRentalItemsAdmin() {
+  const list = document.getElementById("rentalItemsAdminList");
+  if (!list) return;
+
+  const items = normalizeRentalItems(rentalItemsAdminCache.length ? rentalItemsAdminCache : DEFAULT_RENTAL_ITEMS_ADMIN);
+
+  if (!items.length) {
+    list.innerHTML = "<p class='admin-note'>No rental buttons yet.</p>";
+    return;
+  }
+
+  list.innerHTML = items.map((item, index) => `
+    <div class="material-manager-row editable-material-row">
+      <div class="material-edit-grid rental-edit-grid">
+        <label class="admin-label rental-icon-field">Icon
+          <input value="${safeText(item.icon || "📦")}" data-rental-icon="${index}" />
+        </label>
+
+        <label class="admin-label rental-name-field">Rental Item
+          <input value="${safeText(item.name || "")}" data-rental-name="${index}" ${item.custom ? "readonly" : ""} />
+        </label>
+
+        <label class="admin-label rental-options-field">Sizes / Options
+          <input value="${safeText((item.options || []).join(", "))}" data-rental-options="${index}" placeholder="Example: 6k, 8k, 10k" />
+        </label>
+
+        <label class="admin-label rental-active-field">Active
+          <select data-rental-active="${index}">
+            <option value="true" ${item.active !== false ? "selected" : ""}>Active</option>
+            <option value="false" ${item.active === false ? "selected" : ""}>Not Active</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="material-edit-actions">
+        <button class="save-material" data-rental-up="${index}" type="button" ${index === 0 ? "disabled" : ""}>Move Up</button>
+        <button class="save-material" data-rental-down="${index}" type="button" ${index === items.length - 1 ? "disabled" : ""}>Move Down</button>
+        <button class="save-material" data-rental-save="${index}" type="button">Save</button>
+        ${item.custom ? "" : `<button class="delete-material" data-rental-delete="${index}" type="button">Delete</button>`}
+      </div>
+    </div>
+  `).join("");
+
+  document.querySelectorAll("[data-rental-save]").forEach(button => button.addEventListener("click", () => saveRentalButtonEdit(Number(button.dataset.rentalSave))));
+  document.querySelectorAll("[data-rental-delete]").forEach(button => button.addEventListener("click", () => deleteRentalButton(Number(button.dataset.rentalDelete))));
+  document.querySelectorAll("[data-rental-up]").forEach(button => button.addEventListener("click", () => moveRentalButton(Number(button.dataset.rentalUp), -1)));
+  document.querySelectorAll("[data-rental-down]").forEach(button => button.addEventListener("click", () => moveRentalButton(Number(button.dataset.rentalDown), 1)));
+}
+
+async function addRentalItemAdmin() {
+  const nameEl = document.getElementById("newRentalItemName");
+  const iconEl = document.getElementById("newRentalItemIcon");
+  const sizesEl = document.getElementById("newRentalItemSizes");
+  const name = (nameEl ? nameEl.value : "").trim();
+  const icon = (iconEl ? iconEl.value : "").trim() || "📦";
+  const options = (sizesEl ? sizesEl.value : "").split(",").map(part => part.trim()).filter(Boolean);
+
+  if (!name) return alert("Enter a rental item name.");
+
+  const items = normalizeRentalItems(rentalItemsAdminCache.length ? rentalItemsAdminCache : DEFAULT_RENTAL_ITEMS_ADMIN);
+  if (items.some(item => item.name.toLowerCase() === name.toLowerCase())) {
+    return alert("That rental button already exists.");
+  }
+
+  const customIndex = items.findIndex(item => item.custom);
+  items.splice(customIndex >= 0 ? customIndex : items.length, 0, { name, icon, options, active: true, custom: false, sortOrder: items.length + 1 });
+
+  await saveRentalItemsAdmin(items);
+
+  if (nameEl) nameEl.value = "";
+  if (iconEl) iconEl.value = "";
+  if (sizesEl) sizesEl.value = "";
+}
+
+async function saveRentalButtonEdit(index) {
+  const items = normalizeRentalItems(rentalItemsAdminCache.length ? rentalItemsAdminCache : DEFAULT_RENTAL_ITEMS_ADMIN);
+  if (!items[index]) return;
+
+  const name = document.querySelector(`[data-rental-name="${index}"]`)?.value.trim() || "";
+  const icon = document.querySelector(`[data-rental-icon="${index}"]`)?.value.trim() || "📦";
+  const active = document.querySelector(`[data-rental-active="${index}"]`)?.value !== "false";
+  const options = (document.querySelector(`[data-rental-options="${index}"]`)?.value || "").split(",").map(part => part.trim()).filter(Boolean);
+
+  if (!name) return alert("Rental item name cannot be blank.");
+
+  items[index] = { ...items[index], name, icon, options, active };
+  await saveRentalItemsAdmin(items);
+}
+
+async function deleteRentalButton(index) {
+  const items = normalizeRentalItems(rentalItemsAdminCache.length ? rentalItemsAdminCache : DEFAULT_RENTAL_ITEMS_ADMIN);
+  if (!items[index]) return;
+  if (!confirm(`Delete rental button "${items[index].name}"?`)) return;
+  items.splice(index, 1);
+  await saveRentalItemsAdmin(items);
+}
+
+async function moveRentalButton(index, direction) {
+  const items = normalizeRentalItems(rentalItemsAdminCache.length ? rentalItemsAdminCache : DEFAULT_RENTAL_ITEMS_ADMIN);
+  const newIndex = index + direction;
+  if (newIndex < 0 || newIndex >= items.length) return;
+
+  const [moved] = items.splice(index, 1);
+  items.splice(newIndex, 0, moved);
+  await saveRentalItemsAdmin(items);
+}
+
+async function loadRentalsFromGoogleSheetAdmin() {
+  const url = getGoogleAppsScriptUrl();
+  if (!url) return [];
+  try {
+    const response = await fetch(url + "?action=rentals&v=" + Date.now(), { cache: "no-store" });
+    const data = await response.json();
+    return Array.isArray(data.rentals) ? data.rentals : [];
+  } catch (error) {
+    console.warn("Could not load Rentals tab.", error);
+    return [];
+  }
+}
+
+function rentalStatusClass(status) {
+  return String(status || "Active").toLowerCase().replace(/\s+/g, "-") === "not-active" ? "ordered" : "pending";
+}
+
+async function renderAdminRentals() {
+  const list = document.getElementById("adminRentalsList");
+  if (!list) return;
+
+  list.innerHTML = "<p class='admin-note'>Loading active rentals...</p>";
+  const rentals = await loadRentalsFromGoogleSheetAdmin();
+
+  if (!rentals.length) {
+    list.innerHTML = "<p class='admin-note'>No rentals submitted yet.</p>";
+    return;
+  }
+
+  list.innerHTML = rentals.map(rental => {
+    const status = rental.status || "Active";
+    return `
+      <div class="admin-order-row">
+        <div class="admin-order-head">
+          <div>
+            <strong>${safeText(rental.job || "Unknown Job")} — ${safeText(rental.rentalItem || "Rental")}${rental.rentalSize ? " - " + safeText(rental.rentalSize) : ""}</strong>
+            <span>Requested by ${safeText(rental.requestedBy || "Unknown")} • ${safeText(formatOrderDate(rental.dateAdded))}</span>
+          </div>
+          <span class="status-badge ${rentalStatusClass(status)}">${safeText(status)}</span>
+        </div>
+
+        <div class="admin-order-items">
+          <div class="admin-order-line"><span>Size</span><input class="daily-input" type="text" value="${safeText(rental.rentalSize || "")}" data-rental-size="${safeText(rental.id)}" /></div>
+          <div class="admin-order-line"><span>Qty</span><input class="daily-input" type="number" min="0" value="${safeText(rental.quantity || 1)}" data-rental-qty="${safeText(rental.id)}" /></div>
+          <div class="admin-order-line"><span>Vendor</span><input class="daily-input" type="text" value="${safeText(rental.vendor || "")}" data-rental-vendor="${safeText(rental.id)}" /></div>
+          <div class="admin-order-line"><span>Notes</span><input class="daily-input" type="text" value="${safeText(rental.notes || "")}" data-rental-notes="${safeText(rental.id)}" /></div>
+          <div class="admin-order-line"><span>Date Off Rent</span><input class="daily-input" type="date" value="${safeText(rental.dateOffRent || "")}" data-rental-off="${safeText(rental.id)}" /></div>
+        </div>
+
+        <div class="admin-order-actions">
+          <select data-rental-status="${safeText(rental.id)}">
+            <option ${status === "Active" ? "selected" : ""}>Active</option>
+            <option ${status === "Not Active" ? "selected" : ""}>Not Active</option>
+          </select>
+          <button class="save-material" data-save-active-rental="${safeText(rental.id)}" type="button">Save Rental</button>
+          <button class="delete-material" data-delete-active-rental="${safeText(rental.id)}" type="button">Delete</button>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  document.querySelectorAll("[data-save-active-rental]").forEach(button => button.addEventListener("click", () => saveActiveRentalAdmin(button.dataset.saveActiveRental)));
+  document.querySelectorAll("[data-delete-active-rental]").forEach(button => button.addEventListener("click", () => deleteActiveRentalAdmin(button.dataset.deleteActiveRental)));
+}
+
+async function saveActiveRentalAdmin(id) {
+  const url = getGoogleAppsScriptUrl();
+  if (!url) return alert("Missing Google Apps Script URL.");
+
+  await fetch(url, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify({
+      action: "updateRental",
+      id,
+      status: document.querySelector(`[data-rental-status="${CSS.escape(id)}"]`)?.value || "Active",
+      rentalSize: document.querySelector(`[data-rental-size="${CSS.escape(id)}"]`)?.value || "",
+      quantity: document.querySelector(`[data-rental-qty="${CSS.escape(id)}"]`)?.value || "1",
+      vendor: document.querySelector(`[data-rental-vendor="${CSS.escape(id)}"]`)?.value || "",
+      notes: document.querySelector(`[data-rental-notes="${CSS.escape(id)}"]`)?.value || "",
+      dateOffRent: document.querySelector(`[data-rental-off="${CSS.escape(id)}"]`)?.value || ""
+    })
+  });
+
+  setTimeout(renderAdminRentals, 600);
+}
+
+async function deleteActiveRentalAdmin(id) {
+  if (!confirm("Delete this rental?")) return;
+  const url = getGoogleAppsScriptUrl();
+  if (!url) return alert("Missing Google Apps Script URL.");
+
+  await fetch(url, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify({ action: "deleteRental", id })
+  });
+
+  setTimeout(renderAdminRentals, 600);
+}
+
+
+function loadOperationsRentalsPage() {
+  renderRentalItemsAdmin();
+  loadRentalItemsFromGoogleSheetAdmin();
+  renderAdminRentals();
+}
+
+
+
+/* Operations Materials moved from Admin - standalone wiring */
+let opMaterialCategoriesCache = [];
+let opMaterialsCache = [];
+
+function opMaterialScriptUrl() {
+  try {
+    const direct = localStorage.getItem("materialOrderGoogleAppsScriptUrl") || "";
+    if (direct.trim()) return direct.trim();
+    const settings = JSON.parse(localStorage.getItem("materialOrderSettings") || "{}");
+    return String(settings.googleAppsScriptUrl || "").trim();
+  } catch (err) { return ""; }
+}
+
+function opSlugifyCategory(value) {
+  return String(value || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "") || "category";
+}
+
+function opSplitList(value) {
+  return String(value || "").split(",").map(part => part.trim()).filter(Boolean);
+}
+
+function opBool(value, fallback) {
+  if (value === true || String(value).toLowerCase() === "true" || String(value).toLowerCase() === "yes" || String(value) === "1") return true;
+  if (value === false || String(value).toLowerCase() === "false" || String(value).toLowerCase() === "no" || String(value) === "0") return false;
+  return fallback;
+}
+
+function opNormalizeCategories(rows) {
+  return (rows || []).map((row, index) => ({
+    category: String(row.category ?? row.Category ?? "").trim(),
+    categoryLabel: String(row.categoryLabel ?? row["Category Label"] ?? row.CategoryLabel ?? row.Category ?? "").trim(),
+    active: opBool(row.active ?? row.Active, true),
+    sortOrder: Number(row.sortOrder ?? row.SortOrder ?? index + 1)
+  })).filter(row => row.category && row.active !== false).sort((a,b) => Number(a.sortOrder || 999999) - Number(b.sortOrder || 999999));
+}
+
+function opNormalizeMaterials(rows) {
+  return (rows || []).map((row, index) => ({
+    category: String(row.category ?? row.Category ?? "").trim(),
+    categoryLabel: String(row.categoryLabel ?? row["Category Label"] ?? row.CategoryLabel ?? "").trim(),
+    material: String(row.material ?? row.Material ?? "").trim(),
+    icon: String(row.icon ?? row.Icon ?? "📦").trim() || "📦",
+    options: String(row.options ?? row.Options ?? "").trim(),
+    units: String(row.units ?? row.Units ?? "Each").trim() || "Each",
+    notesEnabled: opBool(row.notesEnabled ?? row["Notes Enabled"] ?? row.noteRequired ?? row["Note Required"], false),
+    active: opBool(row.active ?? row.Active, true),
+    sortOrder: Number(row.sortOrder ?? row.SortOrder ?? index + 1)
+  })).filter(row => row.category && row.material && row.active !== false).sort((a,b) => {
+    const c = String(a.category).localeCompare(String(b.category));
+    if (c) return c;
+    return Number(a.sortOrder || 999999) - Number(b.sortOrder || 999999);
+  });
+}
+
+async function opFetchMaterialsPage() {
+  const url = opMaterialScriptUrl();
+  if (!url) throw new Error("Missing Google Apps Script URL.");
+  const response = await fetch(url + "?action=materials&v=" + Date.now(), { cache: "no-store" });
+  const data = await response.json();
+  opMaterialCategoriesCache = opNormalizeCategories(data.materialCategories || []);
+  opMaterialsCache = opNormalizeMaterials(data.materials || []);
+  opRenderMaterialCategoryList();
+  opRenderMaterialCategorySelect();
+  opRenderMaterialsForSelectedCategory();
+}
+
+function opRenderMaterialCategoryList() {
+  const list = document.getElementById("materialCategoriesAdminList");
+  if (!list) return;
+  if (!opMaterialCategoriesCache.length) {
+    list.innerHTML = "<p class='admin-note'>No categories found.</p>";
+    return;
+  }
+  const selected = document.getElementById("materialCategorySelect")?.value || opMaterialCategoriesCache[0]?.category || "";
+  list.innerHTML = opMaterialCategoriesCache.map(cat => `
+    <button type="button" class="material-category-admin-row ${selected === cat.category ? "active" : ""}" data-op-material-category="${safeText(cat.category)}">
+      <strong>${safeText(cat.categoryLabel || cat.category)}</strong>
+      <span>${safeText(cat.category)}</span>
+    </button>
+  `).join("");
+  list.querySelectorAll("[data-op-material-category]").forEach(button => {
+    button.addEventListener("click", () => {
+      const select = document.getElementById("materialCategorySelect");
+      if (select) select.value = button.dataset.opMaterialCategory;
+      opRenderMaterialCategoryList();
+      opRenderMaterialsForSelectedCategory();
+    });
+  });
+}
+
+function opRenderMaterialCategorySelect() {
+  const select = document.getElementById("materialCategorySelect");
+  if (!select) return;
+  const previous = select.value || opMaterialCategoriesCache[0]?.category || "";
+  select.innerHTML = opMaterialCategoriesCache.map(cat => `<option value="${safeText(cat.category)}">${safeText(cat.categoryLabel || cat.category)}</option>`).join("");
+  if (previous && opMaterialCategoriesCache.some(cat => cat.category === previous)) select.value = previous;
+}
+
+function opMaterialRowsForSave() {
+  return opMaterialsCache.map((item, index) => ({
+    category: item.category,
+    categoryLabel: item.categoryLabel || (opMaterialCategoriesCache.find(c => c.category === item.category)?.categoryLabel || item.category),
+    material: item.material,
+    icon: item.icon || "📦",
+    options: item.options || "",
+    units: item.units || "Each",
+    notesEnabled: item.notesEnabled === true,
+    active: item.active === false ? false : true,
+    sortOrder: index + 1
+  }));
+}
+
+async function opSaveMaterialsToSheet() {
+  const url = opMaterialScriptUrl();
+  if (!url) return alert("Missing Google Apps Script URL.");
+  await fetch(url, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify({ action: "saveMaterials", materials: opMaterialRowsForSave() })
+  });
+}
+
+async function opSaveCategoriesToSheet() {
+  const url = opMaterialScriptUrl();
+  if (!url) return alert("Missing Google Apps Script URL.");
+  await fetch(url, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify({ action: "saveMaterialCategories", materialCategories: opMaterialCategoriesCache })
+  });
+}
+
+function opRenderMaterialsForSelectedCategory() {
+  const list = document.getElementById("materialManagerList");
+  const select = document.getElementById("materialCategorySelect");
+  if (!list || !select) return;
+  const category = select.value;
+  const materials = opMaterialsCache.filter(item => item.category === category);
+  if (!materials.length) {
+    list.innerHTML = "<p class='admin-note'>No materials in this category yet.</p>";
+    return;
+  }
+  list.innerHTML = materials.map((item) => {
+    const globalIndex = opMaterialsCache.indexOf(item);
+    return `
+      <div class="material-manager-row editable-material-row">
+        <div class="material-edit-grid">
+          <label class="admin-label">Icon<input data-op-material-icon="${globalIndex}" type="text" value="${safeText(item.icon || "📦")}" /></label>
+          <label class="admin-label">Material<input data-op-material-name="${globalIndex}" type="text" value="${safeText(item.material)}" /></label>
+          <label class="admin-label wide">Size Options<input data-op-material-options="${globalIndex}" type="text" value="${safeText(item.options || "")}" /></label>
+          <label class="admin-label wide">Unit Options<input data-op-material-units="${globalIndex}" type="text" value="${safeText(item.units || "")}" /></label>
+          <label class="admin-label">Note Required<select data-op-material-notes="${globalIndex}" class="admin-select-light"><option value="false" ${item.notesEnabled ? "" : "selected"}>FALSE</option><option value="true" ${item.notesEnabled ? "selected" : ""}>TRUE</option></select></label>
+          <label class="admin-label">Active<select data-op-material-active="${globalIndex}" class="admin-select-light"><option value="true" ${item.active === false ? "" : "selected"}>TRUE</option><option value="false" ${item.active === false ? "selected" : ""}>FALSE</option></select></label>
+        </div>
+        <div class="material-edit-actions">
+          <button type="button" class="save-material" data-op-save-material="${globalIndex}">Save</button>
+          <button type="button" class="admin-link-button" data-op-move-material="${globalIndex}" data-direction="-1">Up</button>
+          <button type="button" class="admin-link-button" data-op-move-material="${globalIndex}" data-direction="1">Down</button>
+          <button type="button" class="delete-material" data-op-delete-material="${globalIndex}">Delete</button>
+        </div>
+      </div>
+    `;
+  }).join("");
+  list.querySelectorAll("[data-op-save-material]").forEach(btn => btn.addEventListener("click", () => opSaveMaterialEdit(Number(btn.dataset.opSaveMaterial))));
+  list.querySelectorAll("[data-op-delete-material]").forEach(btn => btn.addEventListener("click", () => opDeleteMaterial(Number(btn.dataset.opDeleteMaterial))));
+  list.querySelectorAll("[data-op-move-material]").forEach(btn => btn.addEventListener("click", () => opMoveMaterial(Number(btn.dataset.opMoveMaterial), Number(btn.dataset.direction))));
+}
+
+async function opAddMaterialCategory() {
+  const nameEl = document.getElementById("newMaterialCategoryName");
+  const keyEl = document.getElementById("newMaterialCategoryKey");
+  const label = String(nameEl?.value || "").trim();
+  const key = String(keyEl?.value || "").trim() || opSlugifyCategory(label);
+  if (!label) return alert("Enter a category name.");
+  if (opMaterialCategoriesCache.some(cat => cat.category.toLowerCase() === key.toLowerCase())) return alert("That category already exists.");
+  opMaterialCategoriesCache.push({ category: key, categoryLabel: label, active: true, sortOrder: opMaterialCategoriesCache.length + 1 });
+  await opSaveCategoriesToSheet();
+  if (nameEl) nameEl.value = "";
+  if (keyEl) keyEl.value = "";
+  await opFetchMaterialsPage();
+  const select = document.getElementById("materialCategorySelect");
+  if (select) select.value = key;
+  opRenderMaterialCategoryList();
+  opRenderMaterialsForSelectedCategory();
+}
+
+async function opAddMaterial() {
+  const category = document.getElementById("materialCategorySelect")?.value || "";
+  const nameEl = document.getElementById("materialNameInput");
+  const iconEl = document.getElementById("materialIconInput");
+  const optionsEl = document.getElementById("materialOptionsInput");
+  const unitsEl = document.getElementById("materialUnitsInput");
+  const notesEl = document.getElementById("materialNoteRequiredInput");
+  const material = String(nameEl?.value || "").trim();
+  if (!category) return alert("Select a category.");
+  if (!material) return alert("Enter a material name.");
+  if (opMaterialsCache.some(item => item.category === category && item.material.toLowerCase() === material.toLowerCase())) return alert("That material already exists in this category.");
+  const categoryLabel = opMaterialCategoriesCache.find(cat => cat.category === category)?.categoryLabel || category;
+  opMaterialsCache.push({
+    category,
+    categoryLabel,
+    material,
+    icon: String(iconEl?.value || "📦").trim() || "📦",
+    options: String(optionsEl?.value || "").trim(),
+    units: String(unitsEl?.value || "Each").trim() || "Each",
+    notesEnabled: String(notesEl?.value || "false") === "true",
+    active: true,
+    sortOrder: opMaterialsCache.filter(item => item.category === category).length + 1
+  });
+  await opSaveMaterialsToSheet();
+  if (nameEl) nameEl.value = "";
+  if (iconEl) iconEl.value = "";
+  if (optionsEl) optionsEl.value = "";
+  if (unitsEl) unitsEl.value = "";
+  await opFetchMaterialsPage();
+  const select = document.getElementById("materialCategorySelect");
+  if (select) select.value = category;
+  opRenderMaterialCategoryList();
+  opRenderMaterialsForSelectedCategory();
+}
+
+async function opSaveMaterialEdit(index) {
+  const item = opMaterialsCache[index];
+  if (!item) return;
+  item.icon = document.querySelector(`[data-op-material-icon="${index}"]`)?.value || "📦";
+  item.material = document.querySelector(`[data-op-material-name="${index}"]`)?.value.trim() || item.material;
+  item.options = document.querySelector(`[data-op-material-options="${index}"]`)?.value || "";
+  item.units = document.querySelector(`[data-op-material-units="${index}"]`)?.value || "Each";
+  item.notesEnabled = document.querySelector(`[data-op-material-notes="${index}"]`)?.value === "true";
+  item.active = document.querySelector(`[data-op-material-active="${index}"]`)?.value !== "false";
+  await opSaveMaterialsToSheet();
+  await opFetchMaterialsPage();
+}
+
+async function opDeleteMaterial(index) {
+  const item = opMaterialsCache[index];
+  if (!item) return;
+  if (!confirm(`Delete ${item.material}?`)) return;
+  opMaterialsCache.splice(index, 1);
+  await opSaveMaterialsToSheet();
+  await opFetchMaterialsPage();
+}
+
+async function opMoveMaterial(index, direction) {
+  const item = opMaterialsCache[index];
+  if (!item) return;
+  const sameCat = opMaterialsCache.map((m,i) => ({m,i})).filter(x => x.m.category === item.category);
+  const pos = sameCat.findIndex(x => x.i === index);
+  const newPos = pos + direction;
+  if (newPos < 0 || newPos >= sameCat.length) return;
+  const swapIndex = sameCat[newPos].i;
+  const temp = opMaterialsCache[index];
+  opMaterialsCache[index] = opMaterialsCache[swapIndex];
+  opMaterialsCache[swapIndex] = temp;
+  await opSaveMaterialsToSheet();
+  await opFetchMaterialsPage();
+}
+
+function opLoadMaterialsPage() {
+  const list = document.getElementById("materialCategoriesAdminList");
+  if (list) list.innerHTML = "<p class='admin-note'>Loading categories...</p>";
+  opFetchMaterialsPage().catch(err => {
+    console.error(err);
+    if (list) list.innerHTML = "<p class='admin-error'>Could not load materials. Check Apps Script URL and deployment.</p>";
+  });
+}
+
+function opWireMaterialsPage() {
+  const refresh = document.getElementById("refreshMaterialCategoriesBtn");
+  if (refresh && !refresh.dataset.opWired) { refresh.dataset.opWired = "true"; refresh.addEventListener("click", opLoadMaterialsPage); }
+  const select = document.getElementById("materialCategorySelect");
+  if (select && !select.dataset.opWired) { select.dataset.opWired = "true"; select.addEventListener("change", () => { opRenderMaterialCategoryList(); opRenderMaterialsForSelectedCategory(); }); }
+  const addCat = document.getElementById("addMaterialCategoryBtn");
+  if (addCat && !addCat.dataset.opWired) { addCat.dataset.opWired = "true"; addCat.addEventListener("click", opAddMaterialCategory); }
+  const addMat = document.getElementById("addMaterialBtn");
+  if (addMat && !addMat.dataset.opWired) { addMat.dataset.opWired = "true"; addMat.addEventListener("click", opAddMaterial); }
+  ["newMaterialCategoryName", "newMaterialCategoryKey", "materialNameInput", "materialIconInput", "materialOptionsInput", "materialUnitsInput"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && !el.dataset.opEnter) {
+      el.dataset.opEnter = "true";
+      el.addEventListener("keydown", event => {
+        if (event.key !== "Enter") return;
+        if (id.indexOf("newMaterialCategory") === 0) opAddMaterialCategory(); else opAddMaterial();
+      });
+    }
+  });
+}
+
+
+
+/* Operations Manpower moved from Admin - standalone wiring */
+let opManpowerEmployees = [];
+let opManpowerJobs = [];
+function opNormalizeManpowerEmployees(rows) {
+  return (rows || []).map(row => ({
+    name: row.name || row.Employee || "",
+    position: row.position || row.Position || "",
+    assignedTo: row.assignedTo || row["Assigned To"] || "Unassigned",
+    active: row.active === false ? false : true
+  })).filter(row => row.name);
+}
+function opNormalizeManpowerJobs(rows) {
+  return (rows || []).map(row => ({ name: row.name || row.Job || "", locked: row.locked === true || String(row.Locked || "").toLowerCase() === "true" })).filter(row => row.name);
+}
+async function opLoadManpowerEmployees() {
+  const list = document.getElementById("adminManpowerEmployeeList");
+  if (list) list.innerHTML = "<p class='admin-note'>Loading employees...</p>";
+  const url = getOperationsScriptUrl();
+  if (!url) { opManpowerEmployees = []; opRenderManpowerEmployees(); return; }
+  try {
+    const response = await fetch(url + "?action=manpowerBoard&v=" + Date.now(), { cache: "no-store" });
+    const data = await response.json();
+    opManpowerEmployees = opNormalizeManpowerEmployees(data.employees || []);
+    opManpowerJobs = opNormalizeManpowerJobs(data.jobs || []);
+  } catch (error) { console.warn("Could not load manpower employees.", error); opManpowerEmployees = []; opManpowerJobs = []; }
+  opRenderManpowerEmployees();
+}
+function opAssignedJobOptions(selected) {
+  const base = ["Unassigned", "Office", "Shop", "Vacation"];
+  const names = base.concat(opManpowerJobs.map(j => j.name)).concat(opManpowerEmployees.map(e => e.assignedTo).filter(Boolean));
+  const unique = names.filter((v, i, a) => v && a.indexOf(v) === i);
+  return unique.map(job => `<option value="${safeText(job)}" ${job === (selected || "Unassigned") ? "selected" : ""}>${safeText(job)}</option>`).join("");
+}
+function opRenderManpowerEmployees() {
+  const list = document.getElementById("adminManpowerEmployeeList");
+  if (!list) return;
+  if (!opManpowerEmployees.length) { list.innerHTML = "<p class='admin-note'>No employees added yet.</p>"; return; }
+  list.innerHTML = opManpowerEmployees.map((emp, index) => `
+    <div class="material-manager-row editable-material-row">
+      <div class="material-edit-grid">
+        <label class="admin-label">Employee<input value="${safeText(emp.name || "")}" data-admin-mp-name="${index}" /></label>
+        <label class="admin-label">Position<input value="${safeText(emp.position || "")}" data-admin-mp-position="${index}" /></label>
+        <label class="admin-label" style="grid-column: span 2;">Assigned To<select data-admin-mp-assigned="${index}" style="width:100%;min-width:300px;">${opAssignedJobOptions(emp.assignedTo)}</select></label>
+      </div>
+      <div class="material-edit-actions"><button class="save-material" data-save-admin-mp="${index}" type="button">Save</button><button class="delete-material" data-delete-admin-mp="${index}" type="button">Delete</button></div>
+    </div>`).join("");
+  document.querySelectorAll("[data-save-admin-mp]").forEach(button => button.addEventListener("click", () => opSaveManpowerEmployee(Number(button.dataset.saveAdminMp))));
+  document.querySelectorAll("[data-delete-admin-mp]").forEach(button => button.addEventListener("click", () => opDeleteManpowerEmployee(Number(button.dataset.deleteAdminMp))));
+}
+async function opSaveManpowerToSheet() {
+  const url = getOperationsScriptUrl();
+  if (!url) return alert("Missing Google Apps Script URL.");
+  const jobs = [];
+  opManpowerEmployees.forEach(emp => { if (emp.assignedTo && !jobs.some(job => String(job.name).toLowerCase() === String(emp.assignedTo).toLowerCase())) jobs.push({ name: emp.assignedTo, locked: false }); });
+  opManpowerJobs.forEach(job => { if (job.name && !jobs.some(existing => String(existing.name).toLowerCase() === String(job.name).toLowerCase())) jobs.push(job); });
+  await fetch(url, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "saveManpowerBoard", employees: opManpowerEmployees, jobs: jobs }) });
+}
+async function opAddManpowerEmployee() {
+  const nameEl = document.getElementById("adminManpowerEmployeeName");
+  const posEl = document.getElementById("adminManpowerEmployeePosition");
+  const name = (nameEl ? nameEl.value : "").trim();
+  const position = (posEl ? posEl.value : "").trim();
+  if (!name) return alert("Enter employee name.");
+  if (opManpowerEmployees.some(emp => String(emp.name || "").toLowerCase() === name.toLowerCase())) return alert("Employee already exists.");
+  opManpowerEmployees.push({ name, position, assignedTo: "Unassigned", active: true });
+  if (nameEl) nameEl.value = "";
+  if (posEl) posEl.value = "";
+  opRenderManpowerEmployees();
+  await opSaveManpowerToSheet();
+  setTimeout(opLoadManpowerEmployees, 800);
+}
+async function opSaveManpowerEmployee(index) {
+  if (!opManpowerEmployees[index]) return;
+  opManpowerEmployees[index].name = document.querySelector(`[data-admin-mp-name="${index}"]`)?.value.trim() || "";
+  opManpowerEmployees[index].position = document.querySelector(`[data-admin-mp-position="${index}"]`)?.value.trim() || "";
+  opManpowerEmployees[index].assignedTo = document.querySelector(`[data-admin-mp-assigned="${index}"]`)?.value.trim() || "Unassigned";
+  opManpowerEmployees = opManpowerEmployees.filter(emp => emp.name);
+  opRenderManpowerEmployees();
+  await opSaveManpowerToSheet();
+}
+async function opDeleteManpowerEmployee(index) {
+  if (!opManpowerEmployees[index]) return;
+  if (!confirm("Delete employee " + opManpowerEmployees[index].name + "?")) return;
+  opManpowerEmployees.splice(index, 1);
+  opRenderManpowerEmployees();
+  await opSaveManpowerToSheet();
+}
+function opWireManpowerPage() {
+  const addBtn = document.getElementById("adminAddManpowerEmployeeBtn");
+  if (addBtn && !addBtn.dataset.opWired) { addBtn.dataset.opWired = "true"; addBtn.addEventListener("click", opAddManpowerEmployee); }
+  const refreshBtn = document.getElementById("adminRefreshManpowerBtn");
+  if (refreshBtn && !refreshBtn.dataset.opWired) { refreshBtn.dataset.opWired = "true"; refreshBtn.addEventListener("click", opLoadManpowerEmployees); }
+  ["adminManpowerEmployeeName", "adminManpowerEmployeePosition"].forEach(id => { const el = document.getElementById(id); if (el && !el.dataset.opEnter) { el.dataset.opEnter = "true"; el.addEventListener("keydown", event => { if (event.key === "Enter") opAddManpowerEmployee(); }); } });
+}
+
+
+
+/* Operations Jobs manager */
+let opJobsCache = [];
+const OP_DEFAULT_JOBS = [
+  { name: "DCPS Spring Park", active: true, email: "nmcdonald@acgeneral.net" },
+  { name: "UF Jax Bay Street", active: true, email: "nmcdonald@acgeneral.net" },
+  { name: "FSDB", active: true, email: "nmcdonald@acgeneral.net" },
+  { name: "NE Park", active: true, email: "nmcdonald@acgeneral.net" },
+  { name: "SMA", active: true, email: "nmcdonald@acgeneral.net" },
+  { name: "RR", active: true, email: "nmcdonald@acgeneral.net" },
+  { name: "Other Job", active: true, email: "nmcdonald@acgeneral.net" }
+];
+function opGetStoredJobs() {
+  try {
+    const saved = JSON.parse(localStorage.getItem("materialOrderJobs") || "[]");
+    return Array.isArray(saved) && saved.length ? saved : OP_DEFAULT_JOBS.slice();
+  } catch (err) { return OP_DEFAULT_JOBS.slice(); }
+}
+function opSaveJobsLocal(jobs) {
+  localStorage.setItem("materialOrderJobs", JSON.stringify(jobs || []));
+}
+async function opLoadJobsPage() {
+  const list = document.getElementById("jobManagerList");
+  if (list) list.innerHTML = "<p class='admin-note'>Loading jobs...</p>";
+  const url = getOperationsScriptUrl();
+  if (url) {
+    try {
+      const response = await fetch(url + "?action=jobs&v=" + Date.now(), { cache: "no-store" });
+      const data = await response.json();
+      if (Array.isArray(data.jobs)) {
+        opJobsCache = data.jobs;
+        opSaveJobsLocal(opJobsCache);
+        opRenderJobs();
+        return;
+      }
+    } catch (error) { console.warn("Could not load Jobs tab from Google Sheet.", error); }
+  }
+  opJobsCache = opGetStoredJobs();
+  opRenderJobs();
+}
+async function opSyncJobsToSheet() {
+  opSaveJobsLocal(opJobsCache);
+  const url = getOperationsScriptUrl();
+  if (!url) return;
+  try {
+    await fetch(url, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ action: "saveJobs", jobs: opJobsCache })
+    });
+  } catch (error) { console.warn("Could not sync jobs to Google Sheet.", error); }
+}
+function opRenderJobs() {
+  const list = document.getElementById("jobManagerList");
+  if (!list) return;
+  if (!opJobsCache.length) {
+    list.innerHTML = "<p class='admin-note'>No jobs added yet.</p>";
+    return;
+  }
+  list.innerHTML = opJobsCache.map((job, index) => `
+    <div class="job-manager-row ${job.active === false ? "inactive-job" : ""}">
+      <div class="job-edit-fields">
+        <label class="admin-label">Job Name
+          <input value="${safeText(job.name || "")}" data-op-job-name="${index}" />
+        </label>
+        <label class="admin-label">Order Email
+          <input value="${safeText(job.email || "nmcdonald@acgeneral.net")}" data-op-job-email="${index}" placeholder="orders@example.com" />
+        </label>
+      </div>
+      <div class="job-actions">
+        <button class="save-job" data-op-save-job="${index}" type="button">Save</button>
+        <button class="toggle-job" data-op-toggle-job="${index}" type="button">${job.active === false ? "Activate" : "Hide"}</button>
+        <button class="delete-job" data-op-delete-job="${index}" type="button">Delete</button>
+      </div>
+    </div>
+  `).join("");
+  document.querySelectorAll("[data-op-save-job]").forEach(button => button.addEventListener("click", () => opSaveJob(Number(button.dataset.opSaveJob))));
+  document.querySelectorAll("[data-op-toggle-job]").forEach(button => button.addEventListener("click", () => opToggleJob(Number(button.dataset.opToggleJob))));
+  document.querySelectorAll("[data-op-delete-job]").forEach(button => button.addEventListener("click", () => opDeleteJob(Number(button.dataset.opDeleteJob))));
+}
+async function opAddJob() {
+  const input = document.getElementById("newJobName");
+  const name = (input ? input.value : "").trim();
+  if (!name) return alert("Enter a job name.");
+  if (opJobsCache.some(job => String(job.name || "").toLowerCase() === name.toLowerCase())) return alert("That job already exists.");
+  opJobsCache.push({ name, active: true, email: "nmcdonald@acgeneral.net" });
+  if (input) input.value = "";
+  opRenderJobs();
+  await opSyncJobsToSheet();
+  setTimeout(opLoadJobsPage, 800);
+}
+async function opSaveJob(index) {
+  if (!opJobsCache[index]) return;
+  const name = document.querySelector(`[data-op-job-name="${index}"]`)?.value.trim() || "";
+  const email = document.querySelector(`[data-op-job-email="${index}"]`)?.value.trim() || "nmcdonald@acgeneral.net";
+  if (!name) return alert("Job name cannot be blank.");
+  opJobsCache[index].name = name;
+  opJobsCache[index].email = email;
+  opRenderJobs();
+  await opSyncJobsToSheet();
+}
+async function opToggleJob(index) {
+  if (!opJobsCache[index]) return;
+  opJobsCache[index].active = opJobsCache[index].active === false ? true : false;
+  opRenderJobs();
+  await opSyncJobsToSheet();
+}
+async function opDeleteJob(index) {
+  if (!opJobsCache[index]) return;
+  if (!confirm("Delete job \"" + opJobsCache[index].name + "\"?")) return;
+  opJobsCache.splice(index, 1);
+  opRenderJobs();
+  await opSyncJobsToSheet();
+}
+async function opResetJobs() {
+  if (!confirm("Reset job list back to default?")) return;
+  opJobsCache = OP_DEFAULT_JOBS.slice();
+  opRenderJobs();
+  await opSyncJobsToSheet();
+}
+function opWireJobsPage() {
+  const addBtn = document.getElementById("addJobBtn");
+  if (addBtn && !addBtn.dataset.opWired) { addBtn.dataset.opWired = "true"; addBtn.addEventListener("click", opAddJob); }
+  const resetBtn = document.getElementById("resetJobsBtn");
+  if (resetBtn && !resetBtn.dataset.opWired) { resetBtn.dataset.opWired = "true"; resetBtn.addEventListener("click", opResetJobs); }
+  const newJobName = document.getElementById("newJobName");
+  if (newJobName && !newJobName.dataset.opEnter) { newJobName.dataset.opEnter = "true"; newJobName.addEventListener("keydown", event => { if (event.key === "Enter") opAddJob(); }); }
+}
+
+
+
+/* Operations Estimating moved from Admin */
+function opGetSettings() {
+  try { return JSON.parse(localStorage.getItem("materialOrderSettings") || "{}"); } catch (err) { return {}; }
+}
+function opSaveSettings(settings) {
+  localStorage.setItem("materialOrderSettings", JSON.stringify(settings || {}));
+}
+function opEstimatingDefaults() {
+  return {
+    estimatingSenderName: "AC General Estimating",
+    estimatingEmailHeading: "AC General BID Opportunity",
+    estimatingQuoteContact: "Nicholas Mcdonald – nmcdonald@acgeneral.net – Cell (904) 870-6197  Office (904) 783-4200"
+  };
+}
+function opEstimatingSafeText(text) {
+  return String(text || "")
+    .split("&").join("&amp;")
+    .split("<").join("&lt;")
+    .split(">").join("&gt;")
+    .split('"').join("&quot;")
+    .split("'").join("&#039;");
+}
+function opGetEstimatingRecipients() {
+  const settings = opGetSettings();
+  if (Array.isArray(settings.estimatingRecipients)) return settings.estimatingRecipients;
+  if (typeof settings.estimatingRecipients === "string") {
+    try { return JSON.parse(settings.estimatingRecipients); } catch (err) { return []; }
+  }
+  return [];
+}
+async function opLoadEstimatingRecipientsFromSheet() {
+  const url = getOperationsScriptUrl();
+  if (!url) return;
+  try {
+    const response = await fetch(url + "?action=estimatingRecipients&v=" + Date.now(), { cache: "no-store" });
+    const data = await response.json();
+    if (data && Array.isArray(data.estimatingRecipients)) {
+      const settings = opGetSettings();
+      settings.estimatingRecipients = data.estimatingRecipients.map(r => ({ name: r.name || r.email || "", email: r.email || "" })).filter(r => r.email);
+      opSaveSettings(settings);
+    }
+  } catch (err) { console.warn("Could not load estimating recipients from sheet", err); }
+}
+async function opSaveEstimatingRecipientsToSheet(recipients) {
+  const url = getOperationsScriptUrl();
+  if (!url) return;
+  try {
+    await fetch(url, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "saveEstimatingRecipients", recipients: recipients || [] }) });
+  } catch (err) { console.warn("Could not save estimating recipients to sheet", err); }
+}
+function opSaveEstimatingSettings(partial) {
+  const defaults = opEstimatingDefaults();
+  const settings = opGetSettings();
+  const merged = Object.assign({}, settings, partial || {});
+  opSaveSettings(merged);
+  const url = getOperationsScriptUrl();
+  if (url) {
+    try {
+      fetch(url, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "saveSettings", settings: {
+        estimatingToEmail: merged.estimatingToEmail || "",
+        estimatingCcEmail: merged.estimatingCcEmail || "",
+        estimatingSenderName: merged.estimatingSenderName || defaults.estimatingSenderName,
+        estimatingEmailHeading: merged.estimatingEmailHeading || defaults.estimatingEmailHeading,
+        estimatingQuoteContact: merged.estimatingQuoteContact || defaults.estimatingQuoteContact,
+        senderEmail: merged.senderEmail || ""
+      } }) });
+    } catch (err) { console.warn("Could not sync estimating settings", err); }
+  }
+}
+function opSelectedEstimatingBcc() {
+  return Array.from(document.querySelectorAll("[data-estimating-bcc]:checked")).map(cb => cb.value).filter(Boolean);
+}
+function opRenderEstimatingRecipients() {
+  const list = document.getElementById("estimatingRecipientList");
+  if (!list) return;
+  const recipients = opGetEstimatingRecipients();
+  if (!recipients.length) {
+    list.innerHTML = "<p class='admin-note left-note'>No saved recipients yet.</p>";
+    return;
+  }
+  list.innerHTML = recipients.map((r, i) => `
+    <div class="estimating-recipient-row">
+      <label><input type="checkbox" data-estimating-bcc value="${opEstimatingSafeText(r.email)}" /> <strong>${opEstimatingSafeText(r.name || r.email)}</strong><span>${opEstimatingSafeText(r.email)}</span></label>
+      <button type="button" class="delete-material" data-delete-estimating-recipient="${i}">Delete</button>
+    </div>`).join("");
+  list.querySelectorAll("[data-estimating-bcc]").forEach(cb => cb.addEventListener("change", opUpdateEstimatingPreview));
+  list.querySelectorAll("[data-delete-estimating-recipient]").forEach(btn => btn.addEventListener("click", () => opDeleteEstimatingRecipient(Number(btn.dataset.deleteEstimatingRecipient))));
+}
+function opAddEstimatingRecipient() {
+  const nameEl = document.getElementById("estimatingRecipientNameInput");
+  const emailEl = document.getElementById("estimatingRecipientEmailInput");
+  const name = (nameEl && nameEl.value || "").trim();
+  const email = (emailEl && emailEl.value || "").trim();
+  if (!email) return alert("Enter an email address.");
+  const recipients = opGetEstimatingRecipients().filter(r => String(r.email || "").toLowerCase() !== email.toLowerCase());
+  recipients.push({ name: name || email, email });
+  opSaveEstimatingSettings({ estimatingRecipients: recipients });
+  opSaveEstimatingRecipientsToSheet(recipients);
+  if (nameEl) nameEl.value = "";
+  if (emailEl) emailEl.value = "";
+  opRenderEstimatingRecipients();
+  opUpdateEstimatingPreview();
+}
+function opDeleteEstimatingRecipient(index) {
+  const recipients = opGetEstimatingRecipients();
+  recipients.splice(index, 1);
+  opSaveEstimatingSettings({ estimatingRecipients: recipients });
+  opSaveEstimatingRecipientsToSheet(recipients);
+  opRenderEstimatingRecipients();
+  opUpdateEstimatingPreview();
+}
+function opGetEstimatingFormData() {
+  const settings = opGetSettings();
+  const defaults = opEstimatingDefaults();
+  const jobName = (document.getElementById("estimatingJobNameInput")?.value || "").trim();
+  const bidDate = (document.getElementById("estimatingBidDateInput")?.value || "").trim();
+  const downloadLink = (document.getElementById("estimatingDownloadLinkInput")?.value || "").trim();
+  const toEmail = (document.getElementById("estimatingToInput")?.value || settings.estimatingToEmail || "").trim();
+  const fromEmail = (document.getElementById("estimatingFromEmailInput")?.value || settings.senderEmail || "").trim();
+  const senderName = (document.getElementById("estimatingSenderNameInput")?.value || settings.estimatingSenderName || defaults.estimatingSenderName).trim();
+  const cc = (document.getElementById("estimatingCcInput")?.value || settings.estimatingCcEmail || "").trim();
+  const heading = (document.getElementById("estimatingHeadingInput")?.value || settings.estimatingEmailHeading || defaults.estimatingEmailHeading).trim();
+  const quoteContact = (document.getElementById("estimatingQuoteContactInput")?.value || settings.estimatingQuoteContact || defaults.estimatingQuoteContact).trim();
+  return { jobName, bidDate, downloadLink, toEmail, fromEmail, senderName, cc, bcc: opSelectedEstimatingBcc(), heading, quoteContact };
+}
+function opBuildEstimatingSubject(data) {
+  return `Bid Request - ${data.jobName || "Project"}${data.bidDate ? " - Bid Date " + data.bidDate : ""}`;
+}
+function opBuildEstimatingPlainBody(data) {
+  return `${data.heading || "AC General BID Opportunity"}\n\n${data.jobName || "[JOB NAME]"}\n${data.bidDate || "[BID DATE]"}\n\nPlease click here to download the file for the job referenced above:\n${data.downloadLink || "[DOWNLOAD LINK]"}\n\nPlease send your quotes to:\n${data.quoteContact || "Nicholas Mcdonald – nmcdonald@acgeneral.net"}`;
+}
+function opBuildEstimatingHtmlBody(data) {
+  const link = data.downloadLink || "#";
+  return `<div style="font-family:Arial,sans-serif;max-width:720px;color:#111827;line-height:1.45;">
+    <div style="font-size:14px;letter-spacing:.08em;text-transform:uppercase;font-weight:800;color:#f97316;margin-bottom:8px;">${opEstimatingSafeText(data.heading || "AC General BID Opportunity")}</div>
+    <h2 style="margin:0 0 8px;color:#0f172a;">${opEstimatingSafeText(data.jobName || "[JOB NAME]")}</h2>
+    <p style="margin:0 0 18px;"><strong>Bid Date:</strong> ${opEstimatingSafeText(data.bidDate || "[BID DATE]")}</p>
+    <p>Please click the button below to download the files for the job referenced above.</p>
+    <p style="margin:22px 0;"><a href="${opEstimatingSafeText(link)}" style="background:#f97316;color:#ffffff;text-decoration:none;padding:12px 18px;border-radius:8px;font-weight:bold;display:inline-block;">Click Here To Download</a></p>
+    <p style="font-size:13px;color:#475569;">If the button does not open, copy and paste this link into your browser:<br>${opEstimatingSafeText(data.downloadLink || "")}</p>
+    <hr style="border:0;border-top:1px solid #e5e7eb;margin:20px 0;" />
+    <p><strong>Please send your quotes to:</strong><br>${opEstimatingSafeText(data.quoteContact || "Nicholas Mcdonald – nmcdonald@acgeneral.net")}</p>
+  </div>`;
+}
+function opUpdateEstimatingPreview() {
+  const data = opGetEstimatingFormData();
+  const preview = document.getElementById("estimatingEmailPreview");
+  if (preview) preview.innerHTML = opBuildEstimatingHtmlBody(data) + `<p><strong>To:</strong> ${opEstimatingSafeText(data.toEmail || "None")}</p><p><strong>CC:</strong> ${opEstimatingSafeText(data.cc || "None")}</p><p><strong>BCC:</strong> ${opEstimatingSafeText(data.bcc.join(", ") || "None selected")}</p>`;
+  opSaveEstimatingSettings({ estimatingToEmail: data.toEmail, estimatingCcEmail: data.cc, estimatingSenderName: data.senderName, estimatingEmailHeading: data.heading, estimatingQuoteContact: data.quoteContact, senderEmail: data.fromEmail || opGetSettings().senderEmail });
+}
+function opOpenEstimatingEmailApp() {
+  const data = opGetEstimatingFormData();
+  if (!data.jobName || !data.bidDate || !data.downloadLink) return alert("Enter the job name, bid date, and download link first.");
+  opUpdateEstimatingPreview();
+  const parts = [];
+  parts.push("subject=" + encodeURIComponent(opBuildEstimatingSubject(data)));
+  parts.push("body=" + encodeURIComponent(opBuildEstimatingPlainBody(data)));
+  if (data.cc) parts.push("cc=" + encodeURIComponent(data.cc));
+  if (data.bcc.length) parts.push("bcc=" + encodeURIComponent(data.bcc.join(",")));
+  window.location.href = "mailto:" + encodeURIComponent(data.toEmail || "") + "?" + parts.join("&");
+}
+async function opSendEstimatingEmailFromApp() {
+  const data = opGetEstimatingFormData();
+  if (!data.jobName || !data.bidDate || !data.downloadLink) return alert("Enter the job name, bid date, and download link first.");
+  if (!data.toEmail && !data.bcc.length) return alert("Enter a Send To email or select at least one BCC recipient.");
+  const url = getOperationsScriptUrl();
+  if (!url) return alert("Missing Google Apps Script URL in App Settings.");
+  opUpdateEstimatingPreview();
+  const msg = document.getElementById("estimatingMessage");
+  if (msg) msg.textContent = "Sending estimating email...";
+  await fetch(url, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "estimatingEmail", jobName: data.jobName, bidDate: data.bidDate, downloadLink: data.downloadLink, toEmail: data.toEmail, fromEmail: data.fromEmail, cc: data.cc, bcc: data.bcc.join(","), senderName: data.senderName, heading: data.heading, quoteContact: data.quoteContact }) });
+  if (msg) msg.textContent = "Estimating email sent/requested.";
+}
+async function opSetupEstimatingPage() {
+  await opLoadEstimatingRecipientsFromSheet();
+  const settings = opGetSettings();
+  const defaults = opEstimatingDefaults();
+  const set = (id, value) => { const el = document.getElementById(id); if (el && !el.value) el.value = value || ""; };
+  set("estimatingToInput", settings.estimatingToEmail || "");
+  set("estimatingFromEmailInput", settings.senderEmail || "");
+  set("estimatingSenderNameInput", settings.estimatingSenderName || defaults.estimatingSenderName);
+  set("estimatingCcInput", settings.estimatingCcEmail || "");
+  set("estimatingHeadingInput", settings.estimatingEmailHeading || defaults.estimatingEmailHeading);
+  set("estimatingQuoteContactInput", settings.estimatingQuoteContact || defaults.estimatingQuoteContact);
+  opRenderEstimatingRecipients();
+  ["estimatingJobNameInput","estimatingBidDateInput","estimatingDownloadLinkInput","estimatingToInput","estimatingFromEmailInput","estimatingSenderNameInput","estimatingCcInput","estimatingHeadingInput","estimatingQuoteContactInput"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && !el.dataset.opEstimatingWired) { el.dataset.opEstimatingWired = "true"; el.addEventListener("input", opUpdateEstimatingPreview); }
+  });
+  const addBtn = document.getElementById("addEstimatingRecipientBtn");
+  if (addBtn && !addBtn.dataset.opEstimatingWired) { addBtn.dataset.opEstimatingWired = "true"; addBtn.addEventListener("click", opAddEstimatingRecipient); }
+  const openBtn = document.getElementById("openEstimatingEmailBtn");
+  if (openBtn && !openBtn.dataset.opEstimatingWired) { openBtn.dataset.opEstimatingWired = "true"; openBtn.addEventListener("click", opOpenEstimatingEmailApp); }
+  const sendBtn = document.getElementById("sendEstimatingEmailBtn");
+  if (sendBtn && !sendBtn.dataset.opEstimatingWired) { sendBtn.dataset.opEstimatingWired = "true"; sendBtn.addEventListener("click", opSendEstimatingEmailFromApp); }
+  opUpdateEstimatingPreview();
+}
+
+    document.addEventListener("DOMContentLoaded", function(){
+      checkOperationsAccess();
+      fillOperationsDailyReportSettings();
+      document.querySelectorAll("[data-operations-page]").forEach(button => {
+        button.addEventListener("click", () => showOperationsPage(button.dataset.operationsPage));
+      });
+      const dailyBtn = document.getElementById("saveDailyReportSettingsBtn");
+      if (dailyBtn) dailyBtn.addEventListener("click", saveOperationsDailyReportSettings, true);
+
+      // Operations Rentals button wiring
+      const refreshRentalItemsBtn = document.getElementById("refreshRentalItemsBtn");
+      if (refreshRentalItemsBtn) refreshRentalItemsBtn.addEventListener("click", loadOperationsRentalsPage);
+
+      const addRentalItemBtn = document.getElementById("addRentalItemBtn");
+      if (addRentalItemBtn) addRentalItemBtn.addEventListener("click", addRentalItemAdmin);
+
+      const newRentalItemName = document.getElementById("newRentalItemName");
+      if (newRentalItemName) newRentalItemName.addEventListener("keydown", function(event) {
+        if (event.key === "Enter") addRentalItemAdmin();
+      });
+
+      const newRentalItemIcon = document.getElementById("newRentalItemIcon");
+      if (newRentalItemIcon) newRentalItemIcon.addEventListener("keydown", function(event) {
+        if (event.key === "Enter") addRentalItemAdmin();
+      });
+
+      const newRentalItemSizes = document.getElementById("newRentalItemSizes");
+      if (newRentalItemSizes) newRentalItemSizes.addEventListener("keydown", function(event) {
+        if (event.key === "Enter") addRentalItemAdmin();
+      });
+
+      setTimeout(checkOperationsAccess, 250);
+      setTimeout(fillOperationsDailyReportSettings, 250);
+      setTimeout(checkOperationsAccess, 900);
+      setTimeout(fillOperationsDailyReportSettings, 900);
+      setTimeout(opWireMaterialsPage, 300);
+      setTimeout(opWireManpowerPage, 300);
+      setTimeout(opWireJobsPage, 300);
+    });
+  </script>
+</body>
+</html>

@@ -1,368 +1,134 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin - Material Orders</title>
-  <link rel="stylesheet" href="style.css" />
-  <link rel="stylesheet" href="admin.css" />
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Admin - Material Orders</title>
+<link href="style.css" rel="stylesheet"/>
+<link href="admin.css" rel="stylesheet"/>
 </head>
 <body class="auth-locked">
-  <div class="app admin-app admin-desktop-app">
-    <section id="loginScreen" class="admin-panel admin-login-panel">
-      <header class="top-bar">
-        <div>
-          <p class="small-text">Admin Login</p>
-          <h1>Admin Panel</h1>
-        </div>
-      </header>
+<div class="app admin-app admin-desktop-app">
+<section class="admin-panel admin-login-panel" id="loginScreen">
+<header class="top-bar">
+<div>
+<p class="small-text">Admin Login</p>
+<h1>Admin Panel</h1>
+</div>
+</header>
+<div class="admin-card admin-login-card">
+<label class="admin-label">Password
+          <input id="adminPassword" placeholder="Enter password" type="password"/>
+</label>
+<button class="primary-btn" id="loginBtn" type="button">Login</button>
+<button class="admin-reset-btn" id="resetAdminBtn" type="button">Reset Admin Login</button>
+<p class="admin-error" id="loginError"></p>
+</div>
+</section>
+<section class="admin-panel hidden-admin" id="adminScreen">
+<div class="admin-layout">
+<aside class="admin-sidebar">
+<div class="admin-brand">
+<p class="small-text">Material Order App • Email/PDF Settings Visible</p>
+<h1>Admin</h1>
+</div>
+<nav class="admin-nav">
+<button data-admin-page="adminDashboardPage" type="button">Dashboard</button>
+<button data-admin-page="appSettingsPage" type="button">App Settings</button>
 
-      <div class="admin-card admin-login-card">
-        <label class="admin-label">Password
-          <input id="adminPassword" type="password" placeholder="Enter password" />
-        </label>
-        <button id="loginBtn" class="primary-btn" type="button">Login</button>
-        <button id="resetAdminBtn" class="admin-reset-btn" type="button">Reset Admin Login</button>
-        <p id="loginError" class="admin-error"></p>
-      </div>
-    </section>
-
-    <section id="adminScreen" class="admin-panel hidden-admin">
-      <div class="admin-layout">
-        <aside class="admin-sidebar">
-          <div class="admin-brand">
-            <p class="small-text">Material Order App • Email/PDF Settings Visible</p>
-            <h1>Admin</h1>
-          </div>
-          <nav class="admin-nav">
-            <button type="button" data-admin-page="adminDashboardPage">Dashboard</button>
-            <button type="button" data-admin-page="appSettingsPage">App Settings</button>
-            <button type="button" data-admin-page="dailyReportsPage">Daily Reports</button>
-            <button type="button" data-admin-page="estimatingPage">Estimating</button>
-            <button type="button" data-admin-page="rentalsPage">Rentals</button>
-            <button type="button" data-admin-page="manpowerAdminPage">Manpower</button>
-            <button type="button" data-admin-page="pdfLetterheadPage">PDF Letterhead</button>
-            <button type="button" data-admin-page="jobsPage">Jobs</button>
-            <button id="openMaterialManagerBtn" type="button" onclick="showMaterialAdmin()">Materials</button>
-          </nav>
-          <a class="admin-link admin-sidebar-link" href="index.html">Open App</a>
-        </aside>
-
-        <main class="admin-main">
-          <section id="adminDashboardPage" class="admin-page active-admin-page">
-            <div class="admin-page-head">
-              <div>
-                <p class="small-text">Admin Dashboard</p>
-                <h1>Control Center</h1><p class="admin-note left-note">Email / PDF Sending has been added. Use that page or App Settings to paste your Google Apps Script /exec URL.</p>
-              </div>
-              <a class="admin-link" href="index.html">Open App</a>
-            </div>
+<button data-admin-page="pdfLetterheadPage" type="button">PDF Letterhead</button>
+</nav>
+<a class="admin-link admin-sidebar-link" href="index.html">Open App</a>
+</aside>
+<main class="admin-main">
+<section class="admin-page active-admin-page" id="adminDashboardPage">
+<div class="admin-page-head">
+<div>
+<p class="small-text">Admin Dashboard</p>
+<h1>Control Center</h1><p class="admin-note left-note">Email / PDF Sending has been added. Use that page or App Settings to paste your Google Apps Script /exec URL.</p>
+</div>
+<a class="admin-link" href="index.html">Open App</a>
+</div>
 <div class="admin-dashboard-grid">
-              <button class="admin-menu-card" type="button" data-admin-page="appSettingsPage">
-                <span>⚙️</span><strong>App Settings</strong><small>Company title and home page heading</small>
-              </button>
-              <button class="admin-menu-card" type="button" data-admin-page="dailyReportsPage">
-                <span>📝</span><strong>Daily Reports</strong><small>Set CC email for daily report PDFs</small>
-              </button>
-              <button class="admin-menu-card" type="button" data-admin-page="estimatingPage">
-                <span>📤</span><strong>Estimating</strong><small>Create bid invite emails with download links</small>
-              </button>
-              <button class="admin-menu-card" type="button" data-admin-page="pdfLetterheadPage">
-                <span>📄</span><strong>PDF Letterhead</strong><small>Logos, company info, and PDF title</small>
-              </button>
-              <button class="admin-menu-card" type="button" data-admin-page="jobsPage">
-                <span>🏗️</span><strong>Jobs</strong><small>Add, edit, delete, and activate jobs</small>
-              </button>
-              <button class="admin-menu-card" id="openMaterialManagerCard" type="button">
-                <span>📦</span><strong>Materials</strong><small>Add and edit material categories</small>
-              </button>
-            </div>
-          </section>
+<button class="admin-menu-card" data-admin-page="appSettingsPage" type="button">
+<span>⚙️</span><strong>App Settings</strong><small>Company title and home page heading</small>
+</button>
 
-          <section id="appSettingsPage" class="admin-page">
-            <div class="admin-page-head"><div><p class="small-text">Admin Panel</p><h1>App Settings</h1></div><button class="admin-link-button" type="button" data-admin-page="adminDashboardPage">Back</button></div>
-            <div class="admin-card admin-wide-card">
-              <h2>Company / App Settings</h2>
-              <label class="admin-label">Company / App Title
-                <input id="companyTitleInput" type="text" placeholder="Example: Company Name" />
-              </label>
-              <label class="admin-label">Main Page Heading
-                <input id="mainPageTitleInput" type="text" placeholder="Example: Jobs" />
-              </label>
-              <label class="admin-label">Browser Tab Title
-                <input id="webpageTitleInput" type="text" placeholder="Example: Material Orders" />
-              </label>
+<button class="admin-menu-card" data-admin-page="pdfLetterheadPage" type="button">
+<span>📄</span><strong>PDF Letterhead</strong><small>Logos, company info, and PDF title</small>
+</button>
+</div>
+</section>
+<section class="admin-page" id="appSettingsPage">
+<div class="admin-page-head"><div><p class="small-text">Admin Panel</p><h1>App Settings</h1></div><button class="admin-link-button" data-admin-page="adminDashboardPage" type="button">Back</button></div>
+<div class="admin-card admin-wide-card">
+<h2>Company / App Settings</h2>
+<label class="admin-label">Company / App Title
+                <input id="companyTitleInput" placeholder="Example: Company Name" type="text"/>
+</label>
+<label class="admin-label">Main Page Heading
+                <input id="mainPageTitleInput" placeholder="Example: Jobs" type="text"/>
+</label>
+<label class="admin-label">Browser Tab Title
+                <input id="webpageTitleInput" placeholder="Example: Material Orders" type="text"/>
+</label>
+<hr class="admin-divider"/>
+<h2>Email + PDF Sending</h2>
+<p class="admin-note left-note">Paste your Google Apps Script Web App URL here. It must end in <strong>/exec</strong>.</p>
+<label class="admin-label">Google Apps Script Web App URL
+                <input autocomplete="off" id="googleAppsScriptUrlInputAppSettings" placeholder="https://script.google.com/macros/s/.../exec" type="url"/>
+</label>
+<label class="admin-label">Sender Email / Gmail Alias
+                <input id="senderEmailInputAppSettings" placeholder="Example: orders@yourcompany.com" type="email"/>
+</label>
+<p class="admin-note left-note">This email must be a verified Gmail send-as alias on the Google account running the Apps Script. Leave blank to send from the script owner.</p>
+<button class="primary-btn" id="saveCompanyTitleBtn" type="button">Save App Settings</button>
+</div>
+</section>
 
-              <hr class="admin-divider" />
-              <h2>Email + PDF Sending</h2>
-              <p class="admin-note left-note">Paste your Google Apps Script Web App URL here. It must end in <strong>/exec</strong>.</p>
-              <label class="admin-label">Google Apps Script Web App URL
-                <input id="googleAppsScriptUrlInputAppSettings" type="url" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off" />
-              </label>
-              <label class="admin-label">Sender Email / Gmail Alias
-                <input id="senderEmailInputAppSettings" type="email" placeholder="Example: orders@yourcompany.com" />
-              </label>
-              <p class="admin-note left-note">This email must be a verified Gmail send-as alias on the Google account running the Apps Script. Leave blank to send from the script owner.</p>
-              <button id="saveCompanyTitleBtn" class="primary-btn" type="button">Save App Settings</button>
-            </div>
-          </section>
-
-
-          <section id="dailyReportsPage" class="admin-page">
-            <div class="admin-page-head"><div><p class="small-text">Admin Panel</p><h1>Daily Reports</h1></div><button class="admin-link-button" type="button" data-admin-page="adminDashboardPage">Back</button></div>
-            <div class="admin-card admin-wide-card">
-              <h2>Daily Report Email Settings</h2>
-              <p class="admin-note left-note">Enter the lead superintendent or office email to CC on every Daily Report PDF email. Leave blank if no CC is needed.</p>
-              <label class="admin-label">Daily Report CC Email
-                <input id="dailyReportCcEmailInput" type="email" placeholder="Example: superintendent@company.com" autocomplete="off" />
-              </label>
-              <button id="saveDailyReportSettingsBtn" class="primary-btn" type="button">Save Daily Report Settings</button>
-              <p id="dailyReportSettingsMessage" class="admin-message"></p>
-            </div>
-          </section>
-
-
-          <section id="estimatingPage" class="admin-page">
-            <div class="admin-page-head"><div><p class="small-text">Admin Panel</p><h1>Estimating</h1></div><button class="admin-link-button" type="button" data-admin-page="adminDashboardPage">Back</button></div>
-            <div class="admin-grid-2">
-              <div class="admin-card">
-                <h2>Bid Email</h2>
-                <label class="admin-label">Email Heading
-                  <input id="estimatingHeadingInput" type="text" placeholder="AC General BID Opportunity" />
-                </label>
-                <label class="admin-label">Job Name
-                  <input id="estimatingJobNameInput" type="text" placeholder="Example: UF Bay Street" />
-                </label>
-                <label class="admin-label">Bid Date
-                  <input id="estimatingBidDateInput" type="text" placeholder="Example: 06/25/26 at 2:00 PM" />
-                </label>
-                <label class="admin-label">Download Link
-                  <input id="estimatingDownloadLinkInput" type="url" placeholder="Paste Google Drive, Dropbox, SharePoint, or download link" />
-                </label>
-                <label class="admin-label">Send To
-                  <input id="estimatingToInput" type="email" placeholder="Example: bids@company.com" />
-                </label>
-                <label class="admin-label">Send From / Gmail Alias
-                  <input id="estimatingFromEmailInput" type="email" placeholder="Leave blank to use saved sender email" />
-                </label>
-                <label class="admin-label">Sender Display Name
-                  <input id="estimatingSenderNameInput" type="text" placeholder="Example: AC General Estimating" />
-                </label>
-                <label class="admin-label">Always CC
-                  <input id="estimatingCcInput" type="email" placeholder="Example: estimating@acgeneral.net" />
-                </label>
-                <label class="admin-label">Quote Contact / Bottom of Email
-                  <textarea id="estimatingQuoteContactInput" rows="4" placeholder="Nicholas Mcdonald – nmcdonald@acgeneral.net – Cell (904) 870-6197  Office (904) 783-4200"></textarea>
-                </label>
-                <div class="admin-button-row">
-                  <button id="openEstimatingEmailBtn" class="primary-btn" type="button">Open Email App</button>
-                  <button id="sendEstimatingEmailBtn" class="save-material" type="button">Send From App</button>
-                </div>
-                <p id="estimatingMessage" class="admin-message"></p>
-              </div>
-
-              <div class="admin-card">
-                <h2>BCC Recipient List</h2>
-                <p class="admin-note left-note">Add your common vendors/subs here. Click a name to include them as BCC on this bid email.</p>
-                <div class="estimating-add-row">
-                  <input id="estimatingRecipientNameInput" type="text" placeholder="Name / Company" />
-                  <input id="estimatingRecipientEmailInput" type="email" placeholder="Email" />
-                  <button id="addEstimatingRecipientBtn" class="primary-btn" type="button">Add</button>
-                </div>
-                <div id="estimatingRecipientList" class="estimating-recipient-list"></div>
-              </div>
-            </div>
-
-            <div class="admin-card admin-wide-card">
-              <h2>Email Preview</h2>
-              <div id="estimatingEmailPreview" class="estimating-email-preview"></div>
-            </div>
-          </section>
-
-          <section id="pdfLetterheadPage" class="admin-page">
-            <div class="admin-page-head"><div><p class="small-text">Admin Panel</p><h1>PDF Letterhead</h1></div><button class="admin-link-button" type="button" data-admin-page="adminDashboardPage">Back</button></div>
-            <div class="admin-card admin-wide-card">
-              <p class="admin-note left-note">This controls the branded PDF attached to material order emails. Edit this page only in the admin panel.</p>
-              <div class="letterhead-preview">
-                <img id="pdfLeftLogoPreview" alt="Left logo preview" />
-                <div class="letterhead-preview-center">
-                  <strong id="letterheadPreviewTitle">Commercial Mechanical<br />Industrial Refrigeration</strong>
-                  <span id="letterheadPreviewCompany">Material Order PDF</span>
-                </div>
-                <img id="pdfRightLogoPreview" alt="Right logo preview" />
-              </div>
-              <div class="admin-two-col">
-                <label class="admin-label">Left Logo
-                  <input id="pdfLeftLogoInput" type="file" accept="image/png,image/jpeg,image/webp" />
-                </label>
-                <label class="admin-label">Right Logo
-                  <input id="pdfRightLogoInput" type="file" accept="image/png,image/jpeg,image/webp" />
-                </label>
-              </div>
-              <div class="material-edit-grid pdf-letterhead-grid">
-                <label class="admin-label pdf-half">Header Line 1<input id="pdfTitleLine1Input" type="text" placeholder="Commercial Mechanical" /></label>
-                <label class="admin-label pdf-half">Header Line 2<input id="pdfTitleLine2Input" type="text" placeholder="Industrial Refrigeration" /></label>
-                <label class="admin-label wide">Address<input id="pdfAddressInput" type="text" placeholder="401 Agmac Avenue, Jacksonville, FL 32254" /></label>
-                <label class="admin-label wide">Phone / Fax<input id="pdfPhoneFaxInput" type="text" placeholder="Phone (904) 783-4200  Fax (904) 781-0806" /></label>
-                <label class="admin-label wide">Website<input id="pdfWebsiteInput" type="text" placeholder="acgeneral.net" /></label>
-                <label class="admin-label">License<input id="pdfLicenseInput" type="text" placeholder="CMC1250807" /></label>
-                <label class="admin-label wide">PDF Company Name<input id="pdfCompanyNameInput" type="text" placeholder="Example: Company Name" /></label>
-                <label class="admin-label wide">Document Title<input id="pdfDocumentTitleInput" type="text" placeholder="MATERIAL PROCUREMENT REQUEST" /></label>
-                <label class="admin-label wide">Footer Message<input id="pdfFooterMessageInput" type="text" placeholder="Thank you for using the Material Order App!" /></label>
-              </div>
-              <div class="admin-button-row">
-                <button id="savePdfLetterheadBtn" class="primary-btn" type="button">Save PDF Letterhead</button>
-                <button id="resetPdfLetterheadBtn" class="admin-reset-btn" type="button">Reset Letterhead</button>
-              </div>
-            </div>
-          </section>
-
-          <section id="jobsPage" class="admin-page">
-            <div class="admin-page-head"><div><p class="small-text">Admin Panel</p><h1>Jobs</h1></div><button class="admin-link-button" type="button" data-admin-page="adminDashboardPage">Back</button></div>
-            <div class="admin-grid-2">
-              <div class="admin-card">
-                <h2>Add Job</h2>
-                <label class="admin-label">Job Name<input id="newJobName" type="text" placeholder="Example: UF Jax Bay Street" /></label>
-                <button id="addJobBtn" class="primary-btn" type="button">Add Job</button>
-              </div>
-              <div class="admin-card">
-                <div class="admin-card-head"><h2>Job List</h2><button id="resetJobsBtn" class="admin-danger-small" type="button">Reset</button></div>
-                <div id="jobManagerList" class="job-manager-list"></div>
-              </div>
-            </div>
-          </section>
-        
-          <section id="rentalsPage" class="admin-page">
-            <div class="admin-page-head">
-              <div>
-                <p class="small-text">Admin Panel</p>
-                <h1>Rentals</h1>
-              </div>
-              <button class="admin-link-button" type="button" data-admin-page="adminDashboardPage">Back</button>
-            </div>
-
-            <div class="admin-grid-2">
-              <div class="admin-card">
-                <h2>Add Rental Button</h2>
-                <label class="admin-label">Rental Item
-                  <input id="newRentalItemName" type="text" placeholder="Example: Conex, Lull, Scissor Lift" />
-                </label>
-                <label class="admin-label">Icon
-                  <input id="newRentalItemIcon" type="text" placeholder="Example: 🚜 or icons/lull.png" />
-                </label>
-                <label class="admin-label">Sizes / Options
-                  <input id="newRentalItemSizes" type="text" placeholder="Example: 6k, 8k, 10k, 45 ft, 60 ft" />
-                </label>
-                <button id="addRentalItemBtn" class="primary-btn" type="button">Add Rental Button</button>
-                <p class="admin-note left-note">Works like Materials. Add a rental button here and it saves to the RentalItems sheet.</p>
-              </div>
-
-              <div class="admin-card">
-                <div class="admin-card-head">
-                  <h2>Rental Button List</h2>
-                  <button id="refreshRentalItemsBtn" class="admin-danger-small refresh-orders" type="button">Refresh</button>
-                </div>
-                <p class="admin-note left-note">Edit icons, rename buttons, move them up/down, or mark them Active / Not Active.</p>
-                <div id="rentalItemsAdminList" class="job-manager-list"></div>
-              </div>
-            </div>
-          </section>
-
-
-          <section id="manpowerAdminPage" class="admin-page">
-            <div class="admin-page-head">
-              <div><p class="small-text">Admin Panel</p><h1>Manpower</h1></div>
-              <button class="admin-link-button" type="button" data-admin-page="adminDashboardPage">Back</button>
-            </div>
-
-            <div class="admin-grid-2">
-              <div class="admin-card">
-                <h2>Add Employee</h2>
-                <label class="admin-label">Employee Name
-                  <input id="adminManpowerEmployeeName" type="text" placeholder="Example: Mike" />
-                </label>
-                <label class="admin-label">Position / Trade
-                  <input id="adminManpowerEmployeePosition" type="text" placeholder="Example: Foreman, Mechanic, Helper" />
-                </label>
-                <button id="adminAddManpowerEmployeeBtn" class="primary-btn" type="button">Add Employee</button>
-              </div>
-
-              <div class="admin-card">
-                <div class="admin-card-head">
-                  <h2>Employee List</h2>
-                  <button id="adminRefreshManpowerBtn" class="admin-danger-small refresh-orders" type="button">Refresh</button>
-                </div>
-                <p class="admin-note left-note">Employees added here save to the Employees sheet and show on the Manpower board.</p>
-                <div id="adminManpowerEmployeeList" class="job-manager-list"></div>
-              </div>
-            </div>
-
-            <div class="admin-card admin-wide-card">
-              <h2>Permission</h2>
-              <p class="admin-note left-note">Users with role <strong>Admin</strong> or <strong>Manpower Manager</strong> can add and move employees. Regular users can view the board only.</p>
-            </div>
-          </section>
-
+<section class="admin-page" id="pdfLetterheadPage">
+<div class="admin-page-head"><div><p class="small-text">Admin Panel</p><h1>PDF Letterhead</h1></div><button class="admin-link-button" data-admin-page="adminDashboardPage" type="button">Back</button></div>
+<div class="admin-card admin-wide-card">
+<p class="admin-note left-note">This controls the branded PDF attached to material order emails. Edit this page only in the admin panel.</p>
+<div class="letterhead-preview">
+<img alt="Left logo preview" id="pdfLeftLogoPreview"/>
+<div class="letterhead-preview-center">
+<strong id="letterheadPreviewTitle">Commercial Mechanical<br/>Industrial Refrigeration</strong>
+<span id="letterheadPreviewCompany">Material Order PDF</span>
+</div>
+<img alt="Right logo preview" id="pdfRightLogoPreview"/>
+</div>
+<div class="admin-two-col">
+<label class="admin-label">Left Logo
+                  <input accept="image/png,image/jpeg,image/webp" id="pdfLeftLogoInput" type="file"/>
+</label>
+<label class="admin-label">Right Logo
+                  <input accept="image/png,image/jpeg,image/webp" id="pdfRightLogoInput" type="file"/>
+</label>
+</div>
+<div class="material-edit-grid pdf-letterhead-grid">
+<label class="admin-label pdf-half">Header Line 1<input id="pdfTitleLine1Input" placeholder="Commercial Mechanical" type="text"/></label>
+<label class="admin-label pdf-half">Header Line 2<input id="pdfTitleLine2Input" placeholder="Industrial Refrigeration" type="text"/></label>
+<label class="admin-label wide">Address<input id="pdfAddressInput" placeholder="401 Agmac Avenue, Jacksonville, FL 32254" type="text"/></label>
+<label class="admin-label wide">Phone / Fax<input id="pdfPhoneFaxInput" placeholder="Phone (904) 783-4200  Fax (904) 781-0806" type="text"/></label>
+<label class="admin-label wide">Website<input id="pdfWebsiteInput" placeholder="acgeneral.net" type="text"/></label>
+<label class="admin-label">License<input id="pdfLicenseInput" placeholder="CMC1250807" type="text"/></label>
+<label class="admin-label wide">PDF Company Name<input id="pdfCompanyNameInput" placeholder="Example: Company Name" type="text"/></label>
+<label class="admin-label wide">Document Title<input id="pdfDocumentTitleInput" placeholder="MATERIAL PROCUREMENT REQUEST" type="text"/></label>
+<label class="admin-label wide">Footer Message<input id="pdfFooterMessageInput" placeholder="Thank you for using the Material Order App!" type="text"/></label>
+</div>
+<div class="admin-button-row">
+<button class="primary-btn" id="savePdfLetterheadBtn" type="button">Save PDF Letterhead</button>
+<button class="admin-reset-btn" id="resetPdfLetterheadBtn" type="button">Reset Letterhead</button>
+</div>
+</div>
+</section>
 </main>
-      </div>
-    </section>
-
-    <section id="materialAdminScreen" class="admin-panel hidden-admin">
-      <div class="admin-layout">
-        <aside class="admin-sidebar">
-          <div class="admin-brand"><p class="small-text">Material Order App • Email/PDF Settings Visible</p><h1>Admin</h1></div>
-          <nav class="admin-nav"><button id="backToAdminBtn" type="button">Dashboard</button></nav>
-          <a class="admin-link admin-sidebar-link" href="index.html">Open App</a>
-        </aside>
-        <main class="admin-main">
-          <div class="admin-page-head"><div><p class="small-text">Admin Panel</p><h1>Materials</h1></div><button class="admin-link-button" type="button" onclick="showAdminHome()">Back</button></div>
-          <div class="admin-grid-2 materials-admin-grid">
-            <div class="admin-column-stack">
-              <div class="admin-card">
-                <div class="admin-card-head">
-                  <h2>Material Categories</h2>
-                  <button id="refreshMaterialCategoriesBtn" class="admin-danger-small refresh-orders" type="button">Refresh</button>
-                </div>
-                <p class="admin-note left-note">Loading categories from the MaterialCategories sheet. Click a category below to add material to it.</p>
-                <div id="materialCategoriesAdminList" class="job-manager-list">
-                  <p class="admin-note">Loading categories...</p>
-                </div>
-              </div>
-
-              <div class="admin-card materials-in-category-card">
-                <div class="admin-card-head"><h2>Materials In Category</h2></div>
-                <p class="admin-note left-note">Edit a material below and click Save. Use commas for sizes and units.</p>
-                <div id="materialManagerList" class="material-manager-list"></div>
-              </div>
-            </div>
-
-            <div class="admin-card">
-              <h2>Add Category</h2>
-              <label class="admin-label">Category Name<input id="newMaterialCategoryName" type="text" placeholder="Example: Sheet Metal" /></label>
-              <label class="admin-label">Category Key <small style="color:#94a3b8;">Optional</small><input id="newMaterialCategoryKey" type="text" placeholder="Example: sheetMetal" /></label>
-              <button id="addMaterialCategoryBtn" class="primary-btn" type="button">Add Category</button>
-              <p class="admin-note left-note">New categories save to the MaterialCategories sheet. Then select it below and add materials.</p>
-
-              <hr class="admin-soft-divider" />
-
-              <h2>Add Material</h2>
-              <label class="admin-label">Category<select id="materialCategorySelect" class="admin-select-light"></select></label>
-              <label class="admin-label">Material Name<input id="materialNameInput" type="text" placeholder="Example: Cable Ties" /></label>
-              <label class="admin-label">Icon / Emoji<input id="materialIconInput" type="text" placeholder="Example: 🔩" /></label>
-              <label class="admin-label">Size Options<input id="materialOptionsInput" type="text" placeholder='Example: 1/4&quot;, 3/8&quot;, 1/2&quot;' /></label>
-              <label class="admin-label">Unit Options<input id="materialUnitsInput" type="text" placeholder="Example: Box, Each" /></label>
-              <label class="admin-label">Note Required<select id="materialNoteRequiredInput" class="admin-select-light"><option value="false">FALSE</option><option value="true">TRUE</option></select></label>
-              <button id="addMaterialBtn" class="primary-btn" type="button">Add Material</button>
-            </div>
-          </div>
-        
-
-</main>
-      </div>
-    </section>
-  </div>
-  <script src="admin.js"></script>
-
+</div>
+</section>
+</div>
+<script src="admin.js"></script>
 <!-- V59 URL HARD SAVE FIX: keeps Apps Script URL in browser storage and mirrors to Google Settings tab -->
 <script>
 (function(){
@@ -493,6 +259,5 @@
   });
 })();
 </script>
-
 </body>
 </html>

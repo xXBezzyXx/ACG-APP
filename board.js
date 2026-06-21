@@ -62,6 +62,31 @@ function canManageRentalBoard() {
   return role === "Admin" || role === "Operations Manager";
 }
 
+function canSeeAllBoardItems() {
+  const role = currentBoardRole();
+  return role === "Admin" || role === "Operations Manager" || role === "Manpower Manager";
+}
+
+function normalizeBoardText(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function boardItemBelongsToCurrentUser(item) {
+  const user = typeof getCurrentUser === "function" ? getCurrentUser() : null;
+  if (!user) return false;
+
+  const requestedBy = normalizeBoardText(item && item.requestedBy);
+  if (!requestedBy) return false;
+
+  const possibleNames = [
+    user.displayName,
+    user.username,
+    user.email
+  ].map(normalizeBoardText).filter(Boolean);
+
+  return possibleNames.some(name => requestedBy === name);
+}
+
 function rentalStatusClass(status) {
   const value = String(status || "Requested").toLowerCase().replace(/\s+/g, "-");
   if (value === "called-off" || value === "not-active") return "delivered";
@@ -96,13 +121,15 @@ async function loadOrders() {
   try {
     const response = await fetch(getGoogleAppsScriptUrl() + "?v=" + Date.now());
     const data = await response.json();
-    const orders = Array.isArray(data.orders) ? data.orders.reverse() : [];
+    const allOrders = Array.isArray(data.orders) ? data.orders.reverse() : [];
     const canManage = canManageRentalBoard();
+    const canSeeAll = canSeeAllBoardItems();
+    const orders = canSeeAll ? allOrders : allOrders.filter(boardItemBelongsToCurrentUser);
 
-    if (debug) debug.textContent = "Shared orders found: " + orders.length;
+    if (debug) debug.textContent = canSeeAll ? ("Shared orders found: " + orders.length) : ("My orders found: " + orders.length);
 
     if (!orders.length) {
-      list.innerHTML = "<p class='admin-note'>No orders submitted yet.</p>";
+      list.innerHTML = canSeeAll ? "<p class='admin-note'>No orders submitted yet.</p>" : "<p class='admin-note'>No orders submitted by your account yet.</p>";
       return;
     }
 
@@ -206,13 +233,15 @@ async function loadRentalsBoard() {
   try {
     const response = await fetch(getGoogleAppsScriptUrl() + "?action=rentals&v=" + Date.now(), { cache: "no-store" });
     const data = await response.json();
-    const rentals = Array.isArray(data.rentals) ? data.rentals.reverse() : [];
+    const allRentals = Array.isArray(data.rentals) ? data.rentals.reverse() : [];
     const canManage = canManageRentalBoard();
+    const canSeeAll = canSeeAllBoardItems();
+    const rentals = canSeeAll ? allRentals : allRentals.filter(boardItemBelongsToCurrentUser);
 
-    if (debug) debug.textContent = "Rental requests found: " + rentals.length;
+    if (debug) debug.textContent = canSeeAll ? ("Rental requests found: " + rentals.length) : ("My rental requests found: " + rentals.length);
 
     if (!rentals.length) {
-      list.innerHTML = "<p class='admin-note'>No rental requests submitted yet.</p>";
+      list.innerHTML = canSeeAll ? "<p class='admin-note'>No rental requests submitted yet.</p>" : "<p class='admin-note'>No rental requests submitted by your account yet.</p>";
       return;
     }
 
@@ -491,13 +520,15 @@ async function loadRentalsBoard() {
   try {
     const response = await fetch(getGoogleAppsScriptUrl() + "?action=rentals&v=" + Date.now(), { cache: "no-store" });
     const data = await response.json();
-    const rentals = Array.isArray(data.rentals) ? data.rentals.reverse() : [];
+    const allRentals = Array.isArray(data.rentals) ? data.rentals.reverse() : [];
     const canManage = canManageRentalBoard();
+    const canSeeAll = canSeeAllBoardItems();
+    const rentals = canSeeAll ? allRentals : allRentals.filter(boardItemBelongsToCurrentUser);
 
-    if (debug) debug.textContent = "Rental requests found: " + rentals.length;
+    if (debug) debug.textContent = canSeeAll ? ("Rental requests found: " + rentals.length) : ("My rental requests found: " + rentals.length);
 
     if (!rentals.length) {
-      list.innerHTML = "<p class='admin-note'>No rental requests submitted yet.</p>";
+      list.innerHTML = canSeeAll ? "<p class='admin-note'>No rental requests submitted yet.</p>" : "<p class='admin-note'>No rental requests submitted by your account yet.</p>";
       return;
     }
 
