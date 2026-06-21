@@ -22,7 +22,7 @@ function getAppSettings() {
     companyTitle: "AC General",
     mainPageTitle: "Jobs",
     webpageTitle: "Material Orders",
-    googleAppsScriptUrl: "https://script.google.com/macros/s/AKfycbz_WsQB2oEqVlUn4JFdBoEgQMl4CCE_Nn86n_Quw05VqVK131y-5_SqlV_9n9aYHDtLSw/exec",
+    googleAppsScriptUrl: "https://script.google.com/macros/s/AKfycbwUTdmg06ygEMLTSQ6qRd1uaheqvNQbOh3d45UZX_clnWP2OHmUKwM5UiWVIdmX8kCj/exec",
     senderEmail: "",
     dailyReportCcEmail: "",
     pdfLetterhead: DEFAULT_PDF_LETTERHEAD
@@ -2106,11 +2106,11 @@ document.addEventListener("touchend", event => {
 }, { passive: true });
 
 /* V70 Google Sheets jobs source - shared jobs without app-data export */
-const DEFAULT_GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz_WsQB2oEqVlUn4JFdBoEgQMl4CCE_Nn86n_Quw05VqVK131y-5_SqlV_9n9aYHDtLSw/exec";
+const DEFAULT_GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwUTdmg06ygEMLTSQ6qRd1uaheqvNQbOh3d45UZX_clnWP2OHmUKwM5UiWVIdmX8kCj/exec";
 let sharedJobsLoadedOnce = false;
 
 function getGoogleAppsScriptUrl() {
-  return "https://script.google.com/macros/s/AKfycbz_WsQB2oEqVlUn4JFdBoEgQMl4CCE_Nn86n_Quw05VqVK131y-5_SqlV_9n9aYHDtLSw/exec";
+  return "https://script.google.com/macros/s/AKfycbwUTdmg06ygEMLTSQ6qRd1uaheqvNQbOh3d45UZX_clnWP2OHmUKwM5UiWVIdmX8kCj/exec";
 }
 
 function getStoredJobs() {
