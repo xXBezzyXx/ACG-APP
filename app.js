@@ -883,16 +883,20 @@ function renderMaterials() {
 }
 
 function getOrderItems() {
-  return cart.map(item => ({
-    category: item.category,
-    categoryLabel: item.categoryLabel,
-    material: item.name,
-    option: item.option || "",
-    name: displayName(item),
-    qty: item.qty,
-    unit: item.unit,
-    notes: item.notes || ""
-  }));
+  return cart.map(item => {
+    const itemNotes = item.notes || item.note || "";
+    return {
+      category: item.category,
+      categoryLabel: item.categoryLabel,
+      material: item.name,
+      option: item.option || "",
+      name: displayName(item),
+      qty: item.qty,
+      unit: item.unit,
+      notes: itemNotes,
+      note: itemNotes
+    };
+  });
 }
 
 function getLoggedInRequesterName() {
@@ -929,7 +933,10 @@ function goReview() {
 
   document.getElementById("reviewItems").innerHTML = items.map(item => `
     <div class="review-line">
-      <span>${safeText(item.name)}</span>
+      <div>
+        <span>${safeText(item.name)}</span>
+        ${item.notes ? `<div class="review-item-note">Note: ${safeText(item.notes)}</div>` : ""}
+      </div>
       <strong>${item.qty} ${safeText(item.unit)}</strong>
     </div>
   `).join("");
@@ -1033,7 +1040,12 @@ async function getPdfLetterheadForEmail() {
 }
 
 function buildEmailBody(orderRecord) {
-  const lines = (orderRecord.items || []).map(item => `- ${item.name}: ${item.qty} ${item.unit}`).join("\n");
+  const lines = (orderRecord.items || [])
+    .map(item =>
+      `- ${item.name}: ${item.qty} ${item.unit}` +
+      (item.notes || item.note ? `\n    Note: ${item.notes || item.note}` : "")
+    )
+    .join("\n");
   const companyName = orderRecord.pdfLetterhead && orderRecord.pdfLetterhead.companyName ? orderRecord.pdfLetterhead.companyName : (getAppSettings().companyTitle || "");
   return `${companyName ? companyName + "\n" : ""}Material Order Request
 
