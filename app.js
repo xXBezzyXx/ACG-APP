@@ -1209,8 +1209,11 @@ function sortProjectTrackerNewestFirst(records) {
   return [...records].sort((a, b) => {
     const aDate = String((a && (a.updatedDate || a.createdDate || a.timestamp || a.dateAdded)) || "");
     const bDate = String((b && (b.updatedDate || b.createdDate || b.timestamp || b.dateAdded)) || "");
-    if (aDate || bDate) return bDate.localeCompare(aDate);
+    const dateCompare = bDate.localeCompare(aDate);
+    if (dateCompare !== 0) return dateCompare;
 
+    // Same-day records need the ID fallback because the sheet date is formatted as yyyy-MM-dd.
+    // IDs contain the creation timestamp, so this puts newest added at the top.
     const aId = String((a && a.id) || "");
     const bId = String((b && b.id) || "");
     return bId.localeCompare(aId);
