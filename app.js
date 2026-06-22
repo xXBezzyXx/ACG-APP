@@ -275,11 +275,12 @@ async function loadMaterialsFromGoogleSheet() {
     const sheetCategories = buildCategoriesFromMaterialsRows(data.materials || [], data.materialCategories || []);
     if (!sheetCategories) return false;
 
+    const previousActiveCategory = activeCategory;
     localStorage.setItem("materialOrderCategories", JSON.stringify(cleanCategories(sheetCategories)));
     categories = getStoredCategories();
 
-    if (categories.hanging) {
-      activeCategory = "hanging";
+    if (previousActiveCategory && categories[previousActiveCategory]) {
+      activeCategory = previousActiveCategory;
     } else if (!categories[activeCategory]) {
       activeCategory = Object.keys(categories)[0] || "hanging";
     }
@@ -496,6 +497,7 @@ function renderQuickOrder() {
 }
 
 function setCategory(key) {
+  if (!key || !categories[key]) return;
   activeCategory = key;
   renderCategories();
   renderMaterials();
