@@ -1203,6 +1203,20 @@ function getProjectTrackerJobName() {
   return currentSelectedJob || "";
 }
 
+
+function sortProjectTrackerNewestFirst(records) {
+  if (!Array.isArray(records)) return [];
+  return [...records].sort((a, b) => {
+    const aDate = String((a && (a.updatedDate || a.createdDate || a.timestamp || a.dateAdded)) || "");
+    const bDate = String((b && (b.updatedDate || b.createdDate || b.timestamp || b.dateAdded)) || "");
+    if (aDate || bDate) return bDate.localeCompare(aDate);
+
+    const aId = String((a && a.id) || "");
+    const bId = String((b && b.id) || "");
+    return bId.localeCompare(aId);
+  });
+}
+
 function setProjectPermitMessage(text) {
   const msg = document.getElementById("projectPermitMessage");
   if (msg) msg.textContent = text || "";
@@ -1258,6 +1272,7 @@ function fillProjectPermitForm(permit) {
 }
 
 function renderProjectPermits(permits) {
+  permits = sortProjectTrackerNewestFirst(permits);
   const list = document.getElementById("projectPermitList");
   if (!list) return;
 
@@ -1497,6 +1512,7 @@ function fillProjectSubcontractorForm(sub) {
 }
 
 function renderProjectSubcontractors(subs) {
+  subs = sortProjectTrackerNewestFirst(subs);
   const list = document.getElementById("projectSubcontractorList");
   if (!list) return;
   if (!Array.isArray(subs) || subs.length === 0) {
@@ -1752,6 +1768,7 @@ function fillProjectSubmittalForm(submittal) {
 }
 
 function renderProjectSubmittals(submittals) {
+  submittals = sortProjectTrackerNewestFirst(submittals);
   const list = document.getElementById("projectSubmittalList");
   if (!list) return;
   if (!Array.isArray(submittals) || submittals.length === 0) {
@@ -3305,6 +3322,7 @@ function fillProjectOdpForm(odp) {
 }
 
 function renderProjectOdps(odps) {
+  odps = sortProjectTrackerNewestFirst(odps);
   const list = document.getElementById("projectOdpList");
   if (!list) return;
   if (!Array.isArray(odps) || odps.length === 0) {
@@ -3541,6 +3559,7 @@ function fillProjectEquipmentForm(item) {
 }
 
 function renderProjectEquipmentReleases(items) {
+  items = sortProjectTrackerNewestFirst(items);
   const list = document.getElementById("projectEquipmentList");
   if (!list) return;
   if (!Array.isArray(items) || items.length === 0) {
@@ -3755,6 +3774,7 @@ function fillProjectNoteForm(note) {
 }
 
 function renderProjectNotes(notes) {
+  notes = sortProjectTrackerNewestFirst(notes);
   const list = document.getElementById("projectNoteList");
   if (!list) return;
   if (!Array.isArray(notes) || notes.length === 0) {
