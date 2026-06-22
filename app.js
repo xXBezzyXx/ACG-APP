@@ -1123,6 +1123,7 @@ async function sendEmail() {
 function updateJobActionScreen() {
   const jobTitle = document.getElementById("jobActionJobName");
   if (jobTitle) jobTitle.textContent = currentSelectedJob || "Selected Job";
+  updateProjectTrackerAccess();
 }
 
 function startMaterialOrder() {
@@ -1132,6 +1133,794 @@ function startMaterialOrder() {
   showScreen("orderScreen");
 }
 
+function canAccessProjectTracker() {
+  const user = typeof getCurrentUser === "function" ? getCurrentUser() : null;
+  const role = String((user && user.role) || "").trim().toLowerCase();
+  return role === "admin" || role === "operations manager";
+}
+
+function updateProjectTrackerAccess() {
+  const btn = document.getElementById("projectTrackerChoiceBtn");
+  if (!btn) return;
+  btn.style.display = canAccessProjectTracker() ? "" : "none";
+}
+
+function startProjectTracker() {
+  if (!canAccessProjectTracker()) {
+    alert("Project Tracker is only available to Operations Managers.");
+    return;
+  }
+  const job = document.getElementById("projectTrackerJob");
+  if (job) job.textContent = currentSelectedJob || "Selected Job";
+  showScreen("projectTrackerScreen");
+}
+
+function openProjectTrackerPage(screenId) {
+  if (!canAccessProjectTracker()) {
+    alert("Project Tracker is only available to Operations Managers.");
+    return;
+  }
+  document.querySelectorAll(".tracker-job-name").forEach((el) => {
+    el.textContent = currentSelectedJob || "Selected Job";
+  });
+  showScreen(screenId);
+
+  if (screenId === "trackerPermitsScreen") {
+    loadProjectPermit();
+  }
+  if (screenId === "trackerSubcontractorsScreen") {
+    loadProjectSubcontractors();
+  }
+  if (screenId === "trackerSubmittalsScreen") {
+    loadProjectSubmittals();
+  }
+  if (screenId === "trackerOdpsScreen") {
+    loadProjectOdps();
+  }
+  if (screenId === "trackerEquipmentScreen") {
+    loadProjectEquipmentReleases();
+  }
+  if (screenId === "trackerNotesScreen") {
+    loadProjectNotes();
+  }
+}
+
+function getProjectTrackerJobName() {
+  return currentSelectedJob || "";
+}
+
+function setProjectPermitMessage(text) {
+  const msg = document.getElementById("projectPermitMessage");
+  if (msg) msg.textContent = text || "";
+}
+
+function getProjectPermitFormCard() {
+  return document.getElementById("projectPermitFormCard");
+}
+
+function showProjectPermitForm(show) {
+  const card = getProjectPermitFormCard();
+  if (card) card.style.display = show ? "" : "none";
+}
+
+function clearProjectPermitForm() {
+  const id = document.getElementById("permitIdInput");
+  const pulled = document.getElementById("permitPulledInput");
+  const number = document.getElementById("permitNumberInput");
+  const date = document.getElementById("permitDateInput");
+  const notes = document.getElementById("permitNotesInput");
+
+  if (id) id.value = "";
+  if (pulled) pulled.checked = false;
+  if (number) number.value = "";
+  if (date) date.value = "";
+  if (notes) notes.value = "";
+}
+
+function addProjectPermit() {
+  clearProjectPermitForm();
+  setProjectPermitMessage("");
+  showProjectPermitForm(true);
+}
+
+function cancelProjectPermit() {
+  clearProjectPermitForm();
+  showProjectPermitForm(false);
+}
+
+function fillProjectPermitForm(permit) {
+  const id = document.getElementById("permitIdInput");
+  const pulled = document.getElementById("permitPulledInput");
+  const number = document.getElementById("permitNumberInput");
+  const date = document.getElementById("permitDateInput");
+  const notes = document.getElementById("permitNotesInput");
+
+  if (id) id.value = (permit && permit.id) || "";
+  if (pulled) pulled.checked = permit && permit.permitPulled === true;
+  if (number) number.value = (permit && permit.permitNumber) || "";
+  if (date) date.value = (permit && permit.permitDate) || "";
+  if (notes) notes.value = (permit && permit.notes) || "";
+  showProjectPermitForm(true);
+}
+
+function renderProjectPermits(permits) {
+  const list = document.getElementById("projectPermitList");
+  if (!list) return;
+
+  if (!Array.isArray(permits) || permits.length === 0) {
+    list.className = "tracker-list empty";
+    list.innerHTML = "No permits added yet.";
+    return;
+  }
+
+  list.className = "tracker-list";
+  list.innerHTML = permits.map((permit) => {
+    const status = permit.permitPulled ? "✅ Pulled" : "⏳ Pending";
+    const permitNumber = permit.permitNumber || "No permit number";
+    const permitDate = permit.permitDate || "No date";
+    const notes = permit.notes || "No notes";
+    const updatedBy = permit.updatedBy ? "Updated by " + permit.updatedBy : "";
+    const updatedDate = permit.updatedDate ? " • " + permit.updatedDate : "";
+    return `
+      <div class="tracker-list-row" data-permit-id="${escapeHtmlForAttribute(permit.id || "")}">
+        <div class="tracker-list-main">
+          <strong>${escapeHtml(status)}</strong>
+          <span>${escapeHtml(permitNumber)}</span>
+          <small>${escapeHtml(permitDate)}</small>
+          <p>${escapeHtml(notes)}</p>
+          <small>${escapeHtml(updatedBy + updatedDate)}</small>
+        </div>
+        <div class="tracker-list-actions">
+          <button class="secondary-btn small" type="button" onclick='editProjectPermitFromList(${JSON.stringify(permit).replace(/'/g, "&#39;")})'>Edit</button>
+          <button class="danger-btn small" type="button" onclick="deleteProjectPermit('${escapeHtmlForAttribute(permit.id || "")}')">Delete</button>
+        </div>
+      </div>`;
+  }).join("");
+}
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function escapeHtmlForAttribute(value) {
+  return escapeHtml(value).replace(/`/g, "&#096;");
+}
+
+function editProjectPermitFromList(permit) {
+  fillProjectPermitForm(permit || {});
+}
+
+async function loadProjectPermits() {
+  const job = getProjectTrackerJobName();
+  clearProjectPermitForm();
+  showProjectPermitForm(false);
+  renderProjectPermits([]);
+  setProjectPermitMessage("");
+
+  if (!job) {
+    setProjectPermitMessage("Select a job first.");
+    return;
+  }
+
+  const url = getGoogleAppsScriptUrl();
+  if (!url) {
+    setProjectPermitMessage("Missing Google Apps Script URL.");
+    return;
+  }
+
+  try {
+    setProjectPermitMessage("Loading permits...");
+    const response = await fetch(
+      url + "?action=projectPermits&job=" + encodeURIComponent(job) + "&v=" + Date.now(),
+      { cache: "no-store" }
+    );
+    const data = await response.json();
+    if (data && data.success) {
+      renderProjectPermits(data.permits || []);
+      setProjectPermitMessage("");
+    } else {
+      setProjectPermitMessage("Could not load permits.");
+    }
+  } catch (error) {
+    console.warn("Could not load permits.", error);
+    setProjectPermitMessage("Could not load permits.");
+  }
+}
+
+async function saveProjectPermit() {
+  if (!canAccessProjectTracker()) {
+    alert("Project Tracker is only available to Operations Managers.");
+    return;
+  }
+
+  const job = getProjectTrackerJobName();
+  if (!job) {
+    alert("Select a job first.");
+    return;
+  }
+
+  const url = getGoogleAppsScriptUrl();
+  if (!url) {
+    alert("Missing Google Apps Script URL in App Settings.");
+    return;
+  }
+
+  const id = document.getElementById("permitIdInput");
+  const pulled = document.getElementById("permitPulledInput");
+  const number = document.getElementById("permitNumberInput");
+  const date = document.getElementById("permitDateInput");
+  const notes = document.getElementById("permitNotesInput");
+  const user = typeof getCurrentUser === "function" ? getCurrentUser() : null;
+
+  const payload = {
+    action: "saveProjectPermit",
+    id: id ? id.value.trim() : "",
+    job: job,
+    permitPulled: pulled ? pulled.checked : false,
+    permitNumber: number ? number.value.trim() : "",
+    permitDate: date ? date.value : "",
+    notes: notes ? notes.value.trim() : "",
+    updatedBy: (user && (user.displayName || user.username || user.email)) || ""
+  };
+
+  try {
+    setProjectPermitMessage("Saving permit...");
+    await fetch(url, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload)
+    });
+    setProjectPermitMessage("Permit saved.");
+    clearProjectPermitForm();
+    showProjectPermitForm(false);
+    setTimeout(loadProjectPermits, 600);
+  } catch (error) {
+    console.warn("Could not save permit.", error);
+    setProjectPermitMessage("Could not save permit.");
+  }
+}
+
+async function deleteProjectPermit(id) {
+  if (!id) return;
+  if (!confirm("Delete this permit?")) return;
+
+  const url = getGoogleAppsScriptUrl();
+  if (!url) {
+    alert("Missing Google Apps Script URL in App Settings.");
+    return;
+  }
+
+  try {
+    setProjectPermitMessage("Deleting permit...");
+    await fetch(url, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ action: "deleteProjectPermit", id: id })
+    });
+    setProjectPermitMessage("Permit deleted.");
+    setTimeout(loadProjectPermits, 600);
+  } catch (error) {
+    console.warn("Could not delete permit.", error);
+    setProjectPermitMessage("Could not delete permit.");
+  }
+}
+
+// Backwards-compatible name used by older wiring.
+function loadProjectPermit() {
+  return loadProjectPermits();
+}
+
+
+
+function setProjectSubcontractorMessage(text) {
+  const msg = document.getElementById("projectSubcontractorMessage");
+  if (msg) msg.textContent = text || "";
+}
+
+function getProjectSubcontractorFormCard() {
+  return document.getElementById("projectSubcontractorFormCard");
+}
+
+function showProjectSubcontractorForm(show) {
+  const card = getProjectSubcontractorFormCard();
+  if (card) card.style.display = show ? "" : "none";
+}
+
+function clearProjectSubcontractorForm() {
+  const fields = [
+    "subcontractorIdInput",
+    "subcontractorNameInput",
+    "subcontractorScopeInput",
+    "subcontractorAmountInput",
+    "subcontractorNotesInput"
+  ];
+  fields.forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.value = "";
+  });
+  ["contractSentInput", "contractReturnedInput", "contractExecutedInput"].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.checked = false;
+  });
+}
+
+function addProjectSubcontractor() {
+  clearProjectSubcontractorForm();
+  setProjectSubcontractorMessage("");
+  showProjectSubcontractorForm(true);
+}
+
+function cancelProjectSubcontractor() {
+  clearProjectSubcontractorForm();
+  showProjectSubcontractorForm(false);
+}
+
+function fillProjectSubcontractorForm(sub) {
+  const id = document.getElementById("subcontractorIdInput");
+  const name = document.getElementById("subcontractorNameInput");
+  const scope = document.getElementById("subcontractorScopeInput");
+  const amount = document.getElementById("subcontractorAmountInput");
+  const sent = document.getElementById("contractSentInput");
+  const returned = document.getElementById("contractReturnedInput");
+  const executed = document.getElementById("contractExecutedInput");
+  const notes = document.getElementById("subcontractorNotesInput");
+  if (id) id.value = (sub && sub.id) || "";
+  if (name) name.value = (sub && sub.subcontractor) || "";
+  if (scope) scope.value = (sub && sub.scope) || "";
+  if (amount) amount.value = (sub && sub.amount) || "";
+  if (sent) sent.checked = sub && sub.contractSent === true;
+  if (returned) returned.checked = sub && sub.contractReturned === true;
+  if (executed) executed.checked = sub && sub.executed === true;
+  if (notes) notes.value = (sub && sub.notes) || "";
+  showProjectSubcontractorForm(true);
+}
+
+function renderProjectSubcontractors(subs) {
+  const list = document.getElementById("projectSubcontractorList");
+  if (!list) return;
+  if (!Array.isArray(subs) || subs.length === 0) {
+    list.className = "tracker-list empty";
+    list.innerHTML = "No subcontractors added yet.";
+    return;
+  }
+  list.className = "tracker-list";
+  list.innerHTML = subs.map((sub) => {
+    const subcontractor = sub.subcontractor || "No subcontractor name";
+    const scope = sub.scope || "No scope";
+    const amount = sub.amount || "";
+    const sent = sub.contractSent ? "✅ Sent" : "⏳ Not Sent";
+    const returned = sub.contractReturned ? "✅ Returned" : "⏳ Not Returned";
+    const executed = sub.executed ? "✅ Executed" : "⏳ Not Executed";
+    const notes = sub.notes || "No notes";
+    const updatedBy = sub.updatedBy ? "Updated by " + sub.updatedBy : "";
+    const updatedDate = sub.updatedDate ? " • " + sub.updatedDate : "";
+    return `
+      <div class="tracker-list-row" data-subcontractor-id="${escapeHtmlForAttribute(sub.id || "")}">
+        <div class="tracker-list-main">
+          <strong>${escapeHtml(subcontractor)}</strong>
+          <span>${escapeHtml(scope)}${amount ? " • " + escapeHtml(amount) : ""}</span>
+          <small>${escapeHtml(sent + " | " + returned + " | " + executed)}</small>
+          <p>${escapeHtml(notes)}</p>
+          <small>${escapeHtml(updatedBy + updatedDate)}</small>
+        </div>
+        <div class="tracker-list-actions">
+          <button class="secondary-btn small" type="button" onclick='editProjectSubcontractorFromList(${JSON.stringify(sub).replace(/'/g, "&#39;")})'>Edit</button>
+          <button class="danger-btn small" type="button" onclick="deleteProjectSubcontractor('${escapeHtmlForAttribute(sub.id || "")}')">Delete</button>
+        </div>
+      </div>`;
+  }).join("");
+}
+
+function editProjectSubcontractorFromList(sub) {
+  fillProjectSubcontractorForm(sub || {});
+}
+
+async function loadProjectSubcontractors() {
+  const job = getProjectTrackerJobName();
+  clearProjectSubcontractorForm();
+  showProjectSubcontractorForm(false);
+  renderProjectSubcontractors([]);
+  setProjectSubcontractorMessage("");
+  if (!job) {
+    setProjectSubcontractorMessage("Select a job first.");
+    return;
+  }
+  const url = getGoogleAppsScriptUrl();
+  if (!url) {
+    setProjectSubcontractorMessage("Missing Google Apps Script URL.");
+    return;
+  }
+  try {
+    setProjectSubcontractorMessage("Loading subcontractors...");
+    const response = await fetch(url + "?action=projectSubcontractors&job=" + encodeURIComponent(job) + "&v=" + Date.now(), { cache: "no-store" });
+    const data = await response.json();
+    if (data && data.success) {
+      renderProjectSubcontractors(data.subcontractors || []);
+      setProjectSubcontractorMessage("");
+    } else {
+      setProjectSubcontractorMessage("Could not load subcontractors.");
+    }
+  } catch (error) {
+    console.warn("Could not load subcontractors.", error);
+    setProjectSubcontractorMessage("Could not load subcontractors.");
+  }
+}
+
+async function saveProjectSubcontractor() {
+  if (!canAccessProjectTracker()) {
+    alert("Project Tracker is only available to Operations Managers.");
+    return;
+  }
+  const job = getProjectTrackerJobName();
+  if (!job) {
+    alert("Select a job first.");
+    return;
+  }
+  const url = getGoogleAppsScriptUrl();
+  if (!url) {
+    alert("Missing Google Apps Script URL in App Settings.");
+    return;
+  }
+  const id = document.getElementById("subcontractorIdInput");
+  const name = document.getElementById("subcontractorNameInput");
+  const scope = document.getElementById("subcontractorScopeInput");
+  const amount = document.getElementById("subcontractorAmountInput");
+  const sent = document.getElementById("contractSentInput");
+  const returned = document.getElementById("contractReturnedInput");
+  const executed = document.getElementById("contractExecutedInput");
+  const notes = document.getElementById("subcontractorNotesInput");
+  const user = typeof getCurrentUser === "function" ? getCurrentUser() : null;
+  const payload = {
+    action: "saveProjectSubcontractor",
+    id: id ? id.value.trim() : "",
+    job: job,
+    subcontractor: name ? name.value.trim() : "",
+    scope: scope ? scope.value.trim() : "",
+    amount: amount ? amount.value.trim() : "",
+    contractSent: sent ? sent.checked : false,
+    contractReturned: returned ? returned.checked : false,
+    executed: executed ? executed.checked : false,
+    notes: notes ? notes.value.trim() : "",
+    updatedBy: (user && (user.displayName || user.username || user.email)) || ""
+  };
+  if (!payload.subcontractor) {
+    alert("Enter a subcontractor name first.");
+    return;
+  }
+  try {
+    setProjectSubcontractorMessage("Saving subcontractor...");
+    await fetch(url, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload)
+    });
+    setProjectSubcontractorMessage("Subcontractor saved.");
+    clearProjectSubcontractorForm();
+    showProjectSubcontractorForm(false);
+    setTimeout(loadProjectSubcontractors, 600);
+  } catch (error) {
+    console.warn("Could not save subcontractor.", error);
+    setProjectSubcontractorMessage("Could not save subcontractor.");
+  }
+}
+
+async function deleteProjectSubcontractor(id) {
+  if (!id) return;
+  if (!confirm("Delete this subcontractor?")) return;
+  const url = getGoogleAppsScriptUrl();
+  if (!url) {
+    alert("Missing Google Apps Script URL in App Settings.");
+    return;
+  }
+  try {
+    setProjectSubcontractorMessage("Deleting subcontractor...");
+    await fetch(url, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ action: "deleteProjectSubcontractor", id: id })
+    });
+    setProjectSubcontractorMessage("Subcontractor deleted.");
+    setTimeout(loadProjectSubcontractors, 600);
+  } catch (error) {
+    console.warn("Could not delete subcontractor.", error);
+    setProjectSubcontractorMessage("Could not delete subcontractor.");
+  }
+}
+
+
+function setProjectSubmittalMessage(text) {
+  const msg = document.getElementById("projectSubmittalMessage");
+  if (msg) msg.textContent = text || "";
+}
+
+function getProjectSubmittalFormCard() {
+  return document.getElementById("projectSubmittalFormCard");
+}
+
+function showProjectSubmittalForm(show) {
+  const card = getProjectSubmittalFormCard();
+  if (card) card.style.display = show ? "" : "none";
+}
+
+function clearProjectSubmittalForm() {
+  const fields = [
+    "submittalIdInput",
+    "submittalNameInput",
+    "submittalSpecSectionInput",
+    "submittalVendorInput",
+    "submittalRequestedDateInput",
+    "submittalReceivedDateInput",
+    "submittalSubmittedDateInput",
+    "submittalApprovedDateInput",
+    "submittalRejectedDateInput",
+    "submittalResubmittedDateInput",
+    "submittalNotesInput"
+  ];
+  fields.forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.value = "";
+  });
+  [
+    "submittalRequestedFromVendorInput",
+    "submittalReceivedFromVendorInput",
+    "submittalSubmittedInput",
+    "submittalApprovedInput",
+    "submittalRejectedInput",
+    "submittalResubmittedInput"
+  ].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.checked = false;
+  });
+}
+
+function addProjectSubmittal() {
+  clearProjectSubmittalForm();
+  showProjectSubmittalForm(true);
+}
+
+function cancelProjectSubmittal() {
+  clearProjectSubmittalForm();
+  showProjectSubmittalForm(false);
+}
+
+function fillProjectSubmittalForm(submittal) {
+  const id = document.getElementById("submittalIdInput");
+  const name = document.getElementById("submittalNameInput");
+  const spec = document.getElementById("submittalSpecSectionInput");
+  const vendor = document.getElementById("submittalVendorInput");
+
+  const requestedFromVendor = document.getElementById("submittalRequestedFromVendorInput");
+  const requestedDate = document.getElementById("submittalRequestedDateInput");
+  const receivedFromVendor = document.getElementById("submittalReceivedFromVendorInput");
+  const receivedDate = document.getElementById("submittalReceivedDateInput");
+
+  const submitted = document.getElementById("submittalSubmittedInput");
+  const submittedDate = document.getElementById("submittalSubmittedDateInput");
+  const approved = document.getElementById("submittalApprovedInput");
+  const approvedDate = document.getElementById("submittalApprovedDateInput");
+  const rejected = document.getElementById("submittalRejectedInput");
+  const rejectedDate = document.getElementById("submittalRejectedDateInput");
+  const resubmitted = document.getElementById("submittalResubmittedInput");
+  const resubmittedDate = document.getElementById("submittalResubmittedDateInput");
+
+  const notes = document.getElementById("submittalNotesInput");
+
+  if (id) id.value = (submittal && submittal.id) || "";
+  if (name) name.value = (submittal && submittal.submittalName) || "";
+  if (spec) spec.value = (submittal && submittal.specSection) || "";
+  if (vendor) vendor.value = (submittal && submittal.vendor) || "";
+
+  if (requestedFromVendor) requestedFromVendor.checked = submittal && submittal.requestedFromVendor === true;
+  if (requestedDate) requestedDate.value = (submittal && submittal.requestedDate) || "";
+  if (receivedFromVendor) receivedFromVendor.checked = submittal && submittal.receivedFromVendor === true;
+  if (receivedDate) receivedDate.value = (submittal && submittal.receivedDate) || "";
+
+  if (submitted) submitted.checked = submittal && submittal.submitted === true;
+  if (submittedDate) submittedDate.value = (submittal && submittal.submittedDate) || "";
+  if (approved) approved.checked = submittal && submittal.approved === true;
+  if (approvedDate) approvedDate.value = (submittal && submittal.approvedDate) || "";
+  if (rejected) rejected.checked = submittal && submittal.rejected === true;
+  if (rejectedDate) rejectedDate.value = (submittal && submittal.rejectedDate) || "";
+  if (resubmitted) resubmitted.checked = submittal && submittal.resubmitted === true;
+  if (resubmittedDate) resubmittedDate.value = (submittal && submittal.resubmittedDate) || "";
+
+  if (notes) notes.value = (submittal && submittal.notes) || "";
+  showProjectSubmittalForm(true);
+}
+
+function renderProjectSubmittals(submittals) {
+  const list = document.getElementById("projectSubmittalList");
+  if (!list) return;
+  if (!Array.isArray(submittals) || submittals.length === 0) {
+    list.className = "tracker-list empty";
+    list.innerHTML = "No submittals added yet.";
+    return;
+  }
+  list.className = "tracker-list";
+  list.innerHTML = submittals.map((submittal) => {
+    const name = submittal.submittalName || "No submittal name";
+    const spec = submittal.specSection || "No spec section";
+    const vendor = submittal.vendor || "No vendor";
+    const requested = submittal.requestedFromVendor ? "✅ Requested" : "⏳ Not Requested";
+    const requestedDate = submittal.requestedDate ? " (" + submittal.requestedDate + ")" : "";
+    const received = submittal.receivedFromVendor ? "✅ Received" : "⏳ Not Received";
+    const receivedDate = submittal.receivedDate ? " (" + submittal.receivedDate + ")" : "";
+    const submitted = submittal.submitted ? "✅ Submitted" : "⏳ Not Submitted";
+    const submittedDate = submittal.submittedDate ? " (" + submittal.submittedDate + ")" : "";
+    const approved = submittal.approved ? "✅ Approved" : "⏳ Not Approved";
+    const approvedDate = submittal.approvedDate ? " (" + submittal.approvedDate + ")" : "";
+    const rejected = submittal.rejected ? "❌ Rejected" : "— Not Rejected";
+    const rejectedDate = submittal.rejectedDate ? " (" + submittal.rejectedDate + ")" : "";
+    const resubmitted = submittal.resubmitted ? "✅ Resubmitted" : "— Not Resubmitted";
+    const resubmittedDate = submittal.resubmittedDate ? " (" + submittal.resubmittedDate + ")" : "";
+    const notes = submittal.notes || "No notes";
+    const updatedBy = submittal.updatedBy ? "Updated by " + submittal.updatedBy : "";
+    const updatedDate = submittal.updatedDate ? " • " + submittal.updatedDate : "";
+    return `
+      <div class="tracker-list-row" data-submittal-id="${escapeHtmlForAttribute(submittal.id || "")}">
+        <div class="tracker-list-main">
+          <strong>${escapeHtml(name)}</strong>
+          <span>${escapeHtml(spec + " | " + vendor)}</span>
+          <small>${escapeHtml(requested + requestedDate + " | " + received + receivedDate)}</small>
+          <small>${escapeHtml(submitted + submittedDate + " | " + approved + approvedDate + " | " + rejected + rejectedDate + " | " + resubmitted + resubmittedDate)}</small>
+          <p>${escapeHtml(notes)}</p>
+          <small>${escapeHtml(updatedBy + updatedDate)}</small>
+        </div>
+        <div class="tracker-list-actions">
+          <button class="secondary-btn small" type="button" onclick='editProjectSubmittalFromList(${JSON.stringify(submittal).replace(/'/g, "&#39;")})'>Edit</button>
+          <button class="danger-btn small" type="button" onclick="deleteProjectSubmittal('${escapeHtmlForAttribute(submittal.id || "")}')">Delete</button>
+        </div>
+      </div>`;
+  }).join("");
+}
+
+function editProjectSubmittalFromList(submittal) {
+  fillProjectSubmittalForm(submittal || {});
+}
+
+async function loadProjectSubmittals() {
+  const job = getProjectTrackerJobName();
+  clearProjectSubmittalForm();
+  showProjectSubmittalForm(false);
+  renderProjectSubmittals([]);
+  setProjectSubmittalMessage("");
+  if (!job) {
+    setProjectSubmittalMessage("Select a job first.");
+    return;
+  }
+  const url = getGoogleAppsScriptUrl();
+  if (!url) {
+    setProjectSubmittalMessage("Missing Google Apps Script URL.");
+    return;
+  }
+  try {
+    setProjectSubmittalMessage("Loading submittals...");
+    const response = await fetch(url + "?action=projectSubmittals&job=" + encodeURIComponent(job) + "&v=" + Date.now(), { cache: "no-store" });
+    const data = await response.json();
+    if (data && data.success) {
+      renderProjectSubmittals(data.submittals || []);
+      setProjectSubmittalMessage("");
+    } else {
+      setProjectSubmittalMessage("Could not load submittals.");
+    }
+  } catch (error) {
+    console.warn("Could not load submittals.", error);
+    setProjectSubmittalMessage("Could not load submittals.");
+  }
+}
+
+async function saveProjectSubmittal() {
+  if (!canAccessProjectTracker()) {
+    alert("Project Tracker is only available to Operations Managers.");
+    return;
+  }
+  const job = getProjectTrackerJobName();
+  if (!job) {
+    alert("Select a job first.");
+    return;
+  }
+  const url = getGoogleAppsScriptUrl();
+  if (!url) {
+    alert("Missing Google Apps Script URL in App Settings.");
+    return;
+  }
+  const id = document.getElementById("submittalIdInput");
+  const name = document.getElementById("submittalNameInput");
+  const spec = document.getElementById("submittalSpecSectionInput");
+  const vendor = document.getElementById("submittalVendorInput");
+
+  const requestedFromVendor = document.getElementById("submittalRequestedFromVendorInput");
+  const requestedDate = document.getElementById("submittalRequestedDateInput");
+  const receivedFromVendor = document.getElementById("submittalReceivedFromVendorInput");
+  const receivedDate = document.getElementById("submittalReceivedDateInput");
+
+  const submitted = document.getElementById("submittalSubmittedInput");
+  const submittedDate = document.getElementById("submittalSubmittedDateInput");
+  const approved = document.getElementById("submittalApprovedInput");
+  const approvedDate = document.getElementById("submittalApprovedDateInput");
+  const rejected = document.getElementById("submittalRejectedInput");
+  const rejectedDate = document.getElementById("submittalRejectedDateInput");
+  const resubmitted = document.getElementById("submittalResubmittedInput");
+  const resubmittedDate = document.getElementById("submittalResubmittedDateInput");
+
+  const notes = document.getElementById("submittalNotesInput");
+  const user = typeof getCurrentUser === "function" ? getCurrentUser() : null;
+  const payload = {
+    action: "saveProjectSubmittal",
+    id: id ? id.value.trim() : "",
+    job: job,
+    submittalName: name ? name.value.trim() : "",
+    specSection: spec ? spec.value.trim() : "",
+    vendor: vendor ? vendor.value.trim() : "",
+    requestedFromVendor: requestedFromVendor ? requestedFromVendor.checked : false,
+    requestedDate: requestedDate ? requestedDate.value : "",
+    receivedFromVendor: receivedFromVendor ? receivedFromVendor.checked : false,
+    receivedDate: receivedDate ? receivedDate.value : "",
+    submitted: submitted ? submitted.checked : false,
+    submittedDate: submittedDate ? submittedDate.value : "",
+    approved: approved ? approved.checked : false,
+    approvedDate: approvedDate ? approvedDate.value : "",
+    rejected: rejected ? rejected.checked : false,
+    rejectedDate: rejectedDate ? rejectedDate.value : "",
+    resubmitted: resubmitted ? resubmitted.checked : false,
+    resubmittedDate: resubmittedDate ? resubmittedDate.value : "",
+    notes: notes ? notes.value.trim() : "",
+    updatedBy: (user && (user.displayName || user.username || user.email)) || ""
+  };
+  if (!payload.submittalName) {
+    alert("Enter a submittal name first.");
+    return;
+  }
+  try {
+    setProjectSubmittalMessage("Saving submittal...");
+    await fetch(url, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload)
+    });
+    setProjectSubmittalMessage("Submittal saved.");
+    clearProjectSubmittalForm();
+    showProjectSubmittalForm(false);
+    setTimeout(loadProjectSubmittals, 600);
+  } catch (error) {
+    console.warn("Could not save submittal.", error);
+    setProjectSubmittalMessage("Could not save submittal.");
+  }
+}
+
+async function deleteProjectSubmittal(id) {
+  if (!id) return;
+  if (!confirm("Delete this submittal?")) return;
+  const url = getGoogleAppsScriptUrl();
+  if (!url) {
+    alert("Missing Google Apps Script URL in App Settings.");
+    return;
+  }
+  try {
+    setProjectSubmittalMessage("Deleting submittal...");
+    await fetch(url, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ action: "deleteProjectSubmittal", id: id })
+    });
+    setProjectSubmittalMessage("Submittal deleted.");
+    setTimeout(loadProjectSubmittals, 600);
+  } catch (error) {
+    console.warn("Could not delete submittal.", error);
+    setProjectSubmittalMessage("Could not delete submittal.");
+  }
+}
 
 
 let rentalItems = [];
@@ -1833,6 +2622,54 @@ function setupApp() {
   const rentalChoiceBtn = document.getElementById("rentalChoiceBtn");
   if (rentalChoiceBtn) rentalChoiceBtn.addEventListener("click", startRental);
 
+  const projectTrackerChoiceBtn = document.getElementById("projectTrackerChoiceBtn");
+  if (projectTrackerChoiceBtn) projectTrackerChoiceBtn.addEventListener("click", startProjectTracker);
+  updateProjectTrackerAccess();
+  const trackerPermitsBtn = document.getElementById("trackerPermitsBtn");
+  if (trackerPermitsBtn) trackerPermitsBtn.addEventListener("click", () => openProjectTrackerPage("trackerPermitsScreen"));
+
+  const addProjectPermitBtn = document.getElementById("addProjectPermitBtn");
+  if (addProjectPermitBtn) addProjectPermitBtn.addEventListener("click", addProjectPermit);
+
+  const saveProjectPermitBtn = document.getElementById("saveProjectPermitBtn");
+  if (saveProjectPermitBtn) saveProjectPermitBtn.addEventListener("click", saveProjectPermit);
+
+  const cancelProjectPermitBtn = document.getElementById("cancelProjectPermitBtn");
+  if (cancelProjectPermitBtn) cancelProjectPermitBtn.addEventListener("click", cancelProjectPermit);
+
+  const trackerSubcontractorsBtn = document.getElementById("trackerSubcontractorsBtn");
+  if (trackerSubcontractorsBtn) trackerSubcontractorsBtn.addEventListener("click", () => openProjectTrackerPage("trackerSubcontractorsScreen"));
+
+  const addProjectSubcontractorBtn = document.getElementById("addProjectSubcontractorBtn");
+  if (addProjectSubcontractorBtn) addProjectSubcontractorBtn.addEventListener("click", addProjectSubcontractor);
+
+  const saveProjectSubcontractorBtn = document.getElementById("saveProjectSubcontractorBtn");
+  if (saveProjectSubcontractorBtn) saveProjectSubcontractorBtn.addEventListener("click", saveProjectSubcontractor);
+
+  const cancelProjectSubcontractorBtn = document.getElementById("cancelProjectSubcontractorBtn");
+  if (cancelProjectSubcontractorBtn) cancelProjectSubcontractorBtn.addEventListener("click", cancelProjectSubcontractor);
+
+  const trackerSubmittalsBtn = document.getElementById("trackerSubmittalsBtn");
+  if (trackerSubmittalsBtn) trackerSubmittalsBtn.addEventListener("click", () => openProjectTrackerPage("trackerSubmittalsScreen"));
+
+  const addProjectSubmittalBtn = document.getElementById("addProjectSubmittalBtn");
+  if (addProjectSubmittalBtn) addProjectSubmittalBtn.addEventListener("click", addProjectSubmittal);
+
+  const saveProjectSubmittalBtn = document.getElementById("saveProjectSubmittalBtn");
+  if (saveProjectSubmittalBtn) saveProjectSubmittalBtn.addEventListener("click", saveProjectSubmittal);
+
+  const cancelProjectSubmittalBtn = document.getElementById("cancelProjectSubmittalBtn");
+  if (cancelProjectSubmittalBtn) cancelProjectSubmittalBtn.addEventListener("click", cancelProjectSubmittal);
+
+  const trackerOdpsBtn = document.getElementById("trackerOdpsBtn");
+  if (trackerOdpsBtn) trackerOdpsBtn.addEventListener("click", () => openProjectTrackerPage("trackerOdpsScreen"));
+
+  const trackerEquipmentBtn = document.getElementById("trackerEquipmentBtn");
+  if (trackerEquipmentBtn) trackerEquipmentBtn.addEventListener("click", () => openProjectTrackerPage("trackerEquipmentScreen"));
+
+  const trackerNotesBtn = document.getElementById("trackerNotesBtn");
+  if (trackerNotesBtn) trackerNotesBtn.addEventListener("click", () => openProjectTrackerPage("trackerNotesScreen"));
+
   const addRentalToListBtn = document.getElementById("addRentalToListBtn");
   if (addRentalToListBtn) addRentalToListBtn.addEventListener("click", addRentalToList);
 
@@ -2389,3 +3226,675 @@ document.addEventListener("DOMContentLoaded", () => {
     if (typeof loadRentalItemsFromGoogleSheet === "function") loadRentalItemsFromGoogleSheet();
   }, 900);
 });
+
+function setProjectOdpMessage(text) {
+  const msg = document.getElementById("projectOdpMessage");
+  if (msg) msg.textContent = text || "";
+}
+
+function getProjectOdpFormCard() {
+  return document.getElementById("projectOdpFormCard");
+}
+
+function showProjectOdpForm(show) {
+  const card = getProjectOdpFormCard();
+  if (card) card.style.display = show ? "" : "none";
+}
+
+function clearProjectOdpForm() {
+  const fields = ["odpIdInput","odpNameInput","odpVendorInput","odpValueBeforeTaxInput","odpSentDateInput","odpReceivedDateInput","odpApprovedDateInput","odpNotesInput"];
+  fields.forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.value = "";
+  });
+  ["odpSentToVendorInput", "odpReceivedFromVendorInput", "odpApprovedInput"].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.checked = false;
+  });
+}
+
+function addProjectOdp() {
+  clearProjectOdpForm();
+  showProjectOdpForm(true);
+}
+
+function cancelProjectOdp() {
+  clearProjectOdpForm();
+  showProjectOdpForm(false);
+}
+
+function fillProjectOdpForm(odp) {
+  const id = document.getElementById("odpIdInput");
+  const name = document.getElementById("odpNameInput");
+  const vendor = document.getElementById("odpVendorInput");
+  const value = document.getElementById("odpValueBeforeTaxInput");
+  const sent = document.getElementById("odpSentToVendorInput");
+  const sentDate = document.getElementById("odpSentDateInput");
+  const received = document.getElementById("odpReceivedFromVendorInput");
+  const receivedDate = document.getElementById("odpReceivedDateInput");
+  const approved = document.getElementById("odpApprovedInput");
+  const approvedDate = document.getElementById("odpApprovedDateInput");
+  const notes = document.getElementById("odpNotesInput");
+
+  if (id) id.value = (odp && odp.id) || "";
+  if (name) name.value = (odp && odp.odpName) || "";
+  if (vendor) vendor.value = (odp && odp.vendor) || "";
+  if (value) value.value = (odp && odp.valueBeforeTax) || "";
+  if (sent) sent.checked = odp && odp.sentToVendor === true;
+  if (sentDate) sentDate.value = (odp && odp.sentDate) || "";
+  if (received) received.checked = odp && odp.receivedFromVendor === true;
+  if (receivedDate) receivedDate.value = (odp && odp.receivedDate) || "";
+  if (approved) approved.checked = odp && odp.approved === true;
+  if (approvedDate) approvedDate.value = (odp && odp.approvedDate) || "";
+  if (notes) notes.value = (odp && odp.notes) || "";
+  showProjectOdpForm(true);
+}
+
+function renderProjectOdps(odps) {
+  const list = document.getElementById("projectOdpList");
+  if (!list) return;
+  if (!Array.isArray(odps) || odps.length === 0) {
+    list.className = "tracker-list empty";
+    list.innerHTML = "No ODPs added yet.";
+    return;
+  }
+  list.className = "tracker-list";
+  list.innerHTML = odps.map((odp) => {
+    const name = odp.odpName || "No ODP name";
+    const vendor = odp.vendor || "No vendor";
+    const valueNumber = Number(odp.valueBeforeTax || 0);
+    const value = "$" + valueNumber.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    const sent = odp.sentToVendor ? "✅ Sent" : "⏳ Not Sent";
+    const sentDate = odp.sentDate ? " (" + odp.sentDate + ")" : "";
+    const received = odp.receivedFromVendor ? "✅ Received" : "⏳ Not Received";
+    const receivedDate = odp.receivedDate ? " (" + odp.receivedDate + ")" : "";
+    const approved = odp.approved ? "✅ Approved" : "⏳ Not Approved";
+    const approvedDate = odp.approvedDate ? " (" + odp.approvedDate + ")" : "";
+    const notes = odp.notes || "No notes";
+    const updatedBy = odp.updatedBy ? "Updated by " + odp.updatedBy : "";
+    const updatedDate = odp.updatedDate ? " • " + odp.updatedDate : "";
+    return `
+      <div class="tracker-list-row" data-odp-id="${escapeHtmlForAttribute(odp.id || "")}">
+        <div class="tracker-list-main">
+          <strong>${escapeHtml(name)}</strong>
+          <span>${escapeHtml(vendor + " | Value Before Tax: " + value)}</span>
+          <small>${escapeHtml(sent + sentDate + " | " + received + receivedDate + " | " + approved + approvedDate)}</small>
+          <p>${escapeHtml(notes)}</p>
+          <small>${escapeHtml(updatedBy + updatedDate)}</small>
+        </div>
+        <div class="tracker-list-actions">
+          <button class="secondary-btn small" type="button" onclick='editProjectOdpFromList(${JSON.stringify(odp).replace(/'/g, "&#39;")})'>Edit</button>
+          <button class="danger-btn small" type="button" onclick="deleteProjectOdp('${escapeHtmlForAttribute(odp.id || "")}')">Delete</button>
+        </div>
+      </div>`;
+  }).join("");
+}
+
+function editProjectOdpFromList(odp) {
+  fillProjectOdpForm(odp || {});
+}
+
+async function loadProjectOdps() {
+  const job = getProjectTrackerJobName();
+  clearProjectOdpForm();
+  showProjectOdpForm(false);
+  renderProjectOdps([]);
+  setProjectOdpMessage("");
+  if (!job) {
+    setProjectOdpMessage("Select a job first.");
+    return;
+  }
+  const url = getGoogleAppsScriptUrl();
+  if (!url) {
+    setProjectOdpMessage("Missing Google Apps Script URL.");
+    return;
+  }
+  try {
+    setProjectOdpMessage("Loading ODPs...");
+    const response = await fetch(url + "?action=projectOdps&job=" + encodeURIComponent(job) + "&v=" + Date.now(), { cache: "no-store" });
+    const data = await response.json();
+    if (data && data.success) {
+      renderProjectOdps(data.odps || []);
+      setProjectOdpMessage("");
+    } else {
+      setProjectOdpMessage("Could not load ODPs.");
+    }
+  } catch (error) {
+    console.warn("Could not load ODPs.", error);
+    setProjectOdpMessage("Could not load ODPs.");
+  }
+}
+
+async function saveProjectOdp() {
+  if (!canAccessProjectTracker()) {
+    alert("Project Tracker is only available to Operations Managers.");
+    return;
+  }
+  const job = getProjectTrackerJobName();
+  if (!job) {
+    alert("Select a job first.");
+    return;
+  }
+  const url = getGoogleAppsScriptUrl();
+  if (!url) {
+    alert("Missing Google Apps Script URL in App Settings.");
+    return;
+  }
+  const user = typeof getCurrentUser === "function" ? getCurrentUser() : null;
+  const payload = {
+    action: "saveProjectOdp",
+    id: document.getElementById("odpIdInput")?.value.trim() || "",
+    job: job,
+    odpName: document.getElementById("odpNameInput")?.value.trim() || "",
+    vendor: document.getElementById("odpVendorInput")?.value.trim() || "",
+    valueBeforeTax: document.getElementById("odpValueBeforeTaxInput")?.value || "",
+    sentToVendor: document.getElementById("odpSentToVendorInput")?.checked || false,
+    sentDate: document.getElementById("odpSentDateInput")?.value || "",
+    receivedFromVendor: document.getElementById("odpReceivedFromVendorInput")?.checked || false,
+    receivedDate: document.getElementById("odpReceivedDateInput")?.value || "",
+    approved: document.getElementById("odpApprovedInput")?.checked || false,
+    approvedDate: document.getElementById("odpApprovedDateInput")?.value || "",
+    notes: document.getElementById("odpNotesInput")?.value.trim() || "",
+    updatedBy: (user && (user.displayName || user.username || user.email)) || ""
+  };
+  if (!payload.odpName) {
+    alert("Enter an ODP name first.");
+    return;
+  }
+  try {
+    setProjectOdpMessage("Saving ODP...");
+    await fetch(url, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload)
+    });
+    setProjectOdpMessage("ODP saved.");
+    clearProjectOdpForm();
+    showProjectOdpForm(false);
+    setTimeout(loadProjectOdps, 600);
+  } catch (error) {
+    console.warn("Could not save ODP.", error);
+    setProjectOdpMessage("Could not save ODP.");
+  }
+}
+
+async function deleteProjectOdp(id) {
+  if (!id) return;
+  if (!confirm("Delete this ODP?")) return;
+  const url = getGoogleAppsScriptUrl();
+  if (!url) {
+    alert("Missing Google Apps Script URL in App Settings.");
+    return;
+  }
+  try {
+    setProjectOdpMessage("Deleting ODP...");
+    await fetch(url, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ action: "deleteProjectOdp", id: id })
+    });
+    setProjectOdpMessage("ODP deleted.");
+    setTimeout(loadProjectOdps, 600);
+  } catch (error) {
+    console.warn("Could not delete ODP.", error);
+    setProjectOdpMessage("Could not delete ODP.");
+  }
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+  const addOdpBtn = document.getElementById("addProjectOdpBtn");
+  if (addOdpBtn && !addOdpBtn.dataset.wired) {
+    addOdpBtn.dataset.wired = "true";
+    addOdpBtn.addEventListener("click", addProjectOdp);
+  }
+  const saveOdpBtn = document.getElementById("saveProjectOdpBtn");
+  if (saveOdpBtn && !saveOdpBtn.dataset.wired) {
+    saveOdpBtn.dataset.wired = "true";
+    saveOdpBtn.addEventListener("click", saveProjectOdp);
+  }
+  const cancelOdpBtn = document.getElementById("cancelProjectOdpBtn");
+  if (cancelOdpBtn && !cancelOdpBtn.dataset.wired) {
+    cancelOdpBtn.dataset.wired = "true";
+    cancelOdpBtn.addEventListener("click", cancelProjectOdp);
+  }
+});
+
+
+
+function setProjectEquipmentMessage(text) {
+  const msg = document.getElementById("projectEquipmentMessage");
+  if (msg) msg.textContent = text || "";
+}
+
+function getProjectEquipmentFormCard() {
+  return document.getElementById("projectEquipmentFormCard");
+}
+
+function showProjectEquipmentForm(show) {
+  const card = getProjectEquipmentFormCard();
+  if (card) card.style.display = show ? "" : "none";
+}
+
+function clearProjectEquipmentForm() {
+  const fields = [
+    "equipmentIdInput",
+    "equipmentNameInput",
+    "equipmentVendorInput",
+    "equipmentReleasedDateInput",
+    "equipmentLeadTimeInput",
+    "equipmentExpectedDeliveryDateInput",
+    "equipmentNotesInput"
+  ];
+  fields.forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.value = "";
+  });
+  const released = document.getElementById("equipmentReleasedInput");
+  if (released) released.checked = false;
+}
+
+function addProjectEquipmentRelease() {
+  clearProjectEquipmentForm();
+  showProjectEquipmentForm(true);
+}
+
+function cancelProjectEquipmentRelease() {
+  clearProjectEquipmentForm();
+  showProjectEquipmentForm(false);
+}
+
+function fillProjectEquipmentForm(item) {
+  const id = document.getElementById("equipmentIdInput");
+  const name = document.getElementById("equipmentNameInput");
+  const vendor = document.getElementById("equipmentVendorInput");
+  const released = document.getElementById("equipmentReleasedInput");
+  const releasedDate = document.getElementById("equipmentReleasedDateInput");
+  const leadTime = document.getElementById("equipmentLeadTimeInput");
+  const expectedDeliveryDate = document.getElementById("equipmentExpectedDeliveryDateInput");
+  const notes = document.getElementById("equipmentNotesInput");
+
+  if (id) id.value = (item && item.id) || "";
+  if (name) name.value = (item && item.equipmentName) || "";
+  if (vendor) vendor.value = (item && item.vendor) || "";
+  if (released) released.checked = item && item.released === true;
+  if (releasedDate) releasedDate.value = (item && item.releasedDate) || "";
+  if (leadTime) leadTime.value = (item && item.leadTime) || "";
+  if (expectedDeliveryDate) expectedDeliveryDate.value = (item && item.expectedDeliveryDate) || "";
+  if (notes) notes.value = (item && item.notes) || "";
+  showProjectEquipmentForm(true);
+}
+
+function renderProjectEquipmentReleases(items) {
+  const list = document.getElementById("projectEquipmentList");
+  if (!list) return;
+  if (!Array.isArray(items) || items.length === 0) {
+    list.className = "tracker-list empty";
+    list.innerHTML = "No release items added yet.";
+    return;
+  }
+  list.className = "tracker-list";
+  list.innerHTML = items.map((item) => {
+    const name = item.equipmentName || "No item name";
+    const vendor = item.vendor || "No vendor";
+    const released = item.released ? "✅ Released" : "⏳ Not Released";
+    const releasedDate = item.releasedDate ? " (" + item.releasedDate + ")" : "";
+    const leadTime = item.leadTime || "No lead time";
+    const expectedDeliveryDate = item.expectedDeliveryDate || "No expected delivery date";
+    const notes = item.notes || "No notes";
+    const updatedBy = item.updatedBy ? "Updated by " + item.updatedBy : "";
+    const updatedDate = item.updatedDate ? " • " + item.updatedDate : "";
+    return `
+      <div class="tracker-list-row" data-equipment-id="${escapeHtmlForAttribute(item.id || "")}">
+        <div class="tracker-list-main">
+          <strong>${escapeHtml(name)}</strong>
+          <span>${escapeHtml(vendor)}</span>
+          <small>${escapeHtml(released + releasedDate + " | Lead Time: " + leadTime + " | Expected Delivery: " + expectedDeliveryDate)}</small>
+          <p>${escapeHtml(notes)}</p>
+          <small>${escapeHtml(updatedBy + updatedDate)}</small>
+        </div>
+        <div class="tracker-list-actions">
+          <button class="secondary-btn small" type="button" onclick='editProjectEquipmentFromList(${JSON.stringify(item).replace(/'/g, "&#39;")})'>Edit</button>
+          <button class="danger-btn small" type="button" onclick="deleteProjectEquipmentRelease('${escapeHtmlForAttribute(item.id || "")}')">Delete</button>
+        </div>
+      </div>`;
+  }).join("");
+}
+
+function editProjectEquipmentFromList(item) {
+  fillProjectEquipmentForm(item || {});
+}
+
+async function loadProjectEquipmentReleases() {
+  const job = getProjectTrackerJobName();
+  clearProjectEquipmentForm();
+  showProjectEquipmentForm(false);
+  renderProjectEquipmentReleases([]);
+  setProjectEquipmentMessage("");
+  if (!job) {
+    setProjectEquipmentMessage("Select a job first.");
+    return;
+  }
+  const url = getGoogleAppsScriptUrl();
+  if (!url) {
+    setProjectEquipmentMessage("Missing Google Apps Script URL.");
+    return;
+  }
+  try {
+    setProjectEquipmentMessage("Loading release items...");
+    const response = await fetch(url + "?action=projectEquipmentReleases&job=" + encodeURIComponent(job) + "&v=" + Date.now(), { cache: "no-store" });
+    const data = await response.json();
+    if (data && data.success) {
+      renderProjectEquipmentReleases(data.equipmentReleases || []);
+      setProjectEquipmentMessage("");
+    } else {
+      setProjectEquipmentMessage("Could not load release items.");
+    }
+  } catch (error) {
+    console.warn("Could not load release items.", error);
+    setProjectEquipmentMessage("Could not load release items.");
+  }
+}
+
+async function saveProjectEquipmentRelease() {
+  if (!canAccessProjectTracker()) {
+    alert("Project Tracker is only available to Operations Managers.");
+    return;
+  }
+  const job = getProjectTrackerJobName();
+  if (!job) {
+    alert("Select a job first.");
+    return;
+  }
+  const url = getGoogleAppsScriptUrl();
+  if (!url) {
+    alert("Missing Google Apps Script URL in App Settings.");
+    return;
+  }
+  const user = typeof getCurrentUser === "function" ? getCurrentUser() : null;
+  const payload = {
+    action: "saveProjectEquipmentRelease",
+    id: document.getElementById("equipmentIdInput")?.value.trim() || "",
+    job: job,
+    equipmentName: document.getElementById("equipmentNameInput")?.value.trim() || "",
+    vendor: document.getElementById("equipmentVendorInput")?.value.trim() || "",
+    released: document.getElementById("equipmentReleasedInput")?.checked || false,
+    releasedDate: document.getElementById("equipmentReleasedDateInput")?.value || "",
+    leadTime: document.getElementById("equipmentLeadTimeInput")?.value.trim() || "",
+    expectedDeliveryDate: document.getElementById("equipmentExpectedDeliveryDateInput")?.value || "",
+    notes: document.getElementById("equipmentNotesInput")?.value.trim() || "",
+    updatedBy: (user && (user.displayName || user.username || user.email)) || ""
+  };
+  if (!payload.equipmentName) {
+    alert("Enter an item/equipment name first.");
+    return;
+  }
+  try {
+    setProjectEquipmentMessage("Saving release item...");
+    await fetch(url, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload)
+    });
+    setProjectEquipmentMessage("Release item saved.");
+    clearProjectEquipmentForm();
+    showProjectEquipmentForm(false);
+    setTimeout(loadProjectEquipmentReleases, 600);
+  } catch (error) {
+    console.warn("Could not save release item.", error);
+    setProjectEquipmentMessage("Could not save release item.");
+  }
+}
+
+async function deleteProjectEquipmentRelease(id) {
+  if (!id) return;
+  if (!confirm("Delete this release item?")) return;
+  const url = getGoogleAppsScriptUrl();
+  if (!url) {
+    alert("Missing Google Apps Script URL in App Settings.");
+    return;
+  }
+  try {
+    setProjectEquipmentMessage("Deleting release item...");
+    await fetch(url, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ action: "deleteProjectEquipmentRelease", id: id })
+    });
+    setProjectEquipmentMessage("Release item deleted.");
+    setTimeout(loadProjectEquipmentReleases, 600);
+  } catch (error) {
+    console.warn("Could not delete release item.", error);
+    setProjectEquipmentMessage("Could not delete release item.");
+  }
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+  const addBtn = document.getElementById("addProjectEquipmentBtn");
+  if (addBtn && !addBtn.dataset.wired) {
+    addBtn.dataset.wired = "true";
+    addBtn.addEventListener("click", addProjectEquipmentRelease);
+  }
+  const saveBtn = document.getElementById("saveProjectEquipmentBtn");
+  if (saveBtn && !saveBtn.dataset.wired) {
+    saveBtn.dataset.wired = "true";
+    saveBtn.addEventListener("click", saveProjectEquipmentRelease);
+  }
+  const cancelBtn = document.getElementById("cancelProjectEquipmentBtn");
+  if (cancelBtn && !cancelBtn.dataset.wired) {
+    cancelBtn.dataset.wired = "true";
+    cancelBtn.addEventListener("click", cancelProjectEquipmentRelease);
+  }
+});
+
+
+
+function setProjectNoteMessage(text) {
+  const msg = document.getElementById("projectNoteMessage");
+  if (msg) msg.textContent = text || "";
+}
+
+function getProjectNoteFormCard() {
+  return document.getElementById("projectNoteFormCard");
+}
+
+function showProjectNoteForm(show) {
+  const card = getProjectNoteFormCard();
+  if (card) card.style.display = show ? "" : "none";
+}
+
+function clearProjectNoteForm() {
+  ["noteIdInput", "noteTitleInput", "noteFollowUpDateInput", "noteTextInput"].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.value = "";
+  });
+  const type = document.getElementById("noteTypeInput");
+  if (type) type.value = "General";
+}
+
+function addProjectNote() {
+  clearProjectNoteForm();
+  showProjectNoteForm(true);
+}
+
+function cancelProjectNote() {
+  clearProjectNoteForm();
+  showProjectNoteForm(false);
+}
+
+function fillProjectNoteForm(note) {
+  const id = document.getElementById("noteIdInput");
+  const type = document.getElementById("noteTypeInput");
+  const title = document.getElementById("noteTitleInput");
+  const followUp = document.getElementById("noteFollowUpDateInput");
+  const text = document.getElementById("noteTextInput");
+
+  if (id) id.value = (note && note.id) || "";
+  if (type) type.value = (note && note.noteType) || "General";
+  if (title) title.value = (note && note.title) || "";
+  if (followUp) followUp.value = (note && note.followUpDate) || "";
+  if (text) text.value = (note && note.noteText) || "";
+  showProjectNoteForm(true);
+}
+
+function renderProjectNotes(notes) {
+  const list = document.getElementById("projectNoteList");
+  if (!list) return;
+  if (!Array.isArray(notes) || notes.length === 0) {
+    list.className = "tracker-list empty";
+    list.innerHTML = "No notes added yet.";
+    return;
+  }
+  list.className = "tracker-list";
+  list.innerHTML = notes.map((note) => {
+    const type = note.noteType || "General";
+    const title = note.title || "No title";
+    const followUp = note.followUpDate ? "Follow up: " + note.followUpDate : "No follow up date";
+    const text = note.noteText || "No note text";
+    const updatedBy = note.updatedBy ? "Updated by " + note.updatedBy : "";
+    const updatedDate = note.updatedDate ? " • " + note.updatedDate : "";
+    return `
+      <div class="tracker-list-row" data-note-id="${escapeHtmlForAttribute(note.id || "")}">
+        <div class="tracker-list-main">
+          <strong>${escapeHtml(title)}</strong>
+          <span>${escapeHtml(type + " | " + followUp)}</span>
+          <p>${escapeHtml(text)}</p>
+          <small>${escapeHtml(updatedBy + updatedDate)}</small>
+        </div>
+        <div class="tracker-list-actions">
+          <button class="secondary-btn small" type="button" onclick='editProjectNoteFromList(${JSON.stringify(note).replace(/'/g, "&#39;")})'>Edit</button>
+          <button class="danger-btn small" type="button" onclick="deleteProjectNote('${escapeHtmlForAttribute(note.id || "")}')">Delete</button>
+        </div>
+      </div>`;
+  }).join("");
+}
+
+function editProjectNoteFromList(note) {
+  fillProjectNoteForm(note || {});
+}
+
+async function loadProjectNotes() {
+  const job = getProjectTrackerJobName();
+  clearProjectNoteForm();
+  showProjectNoteForm(false);
+  renderProjectNotes([]);
+  setProjectNoteMessage("");
+  if (!job) {
+    setProjectNoteMessage("Select a job first.");
+    return;
+  }
+  const url = getGoogleAppsScriptUrl();
+  if (!url) {
+    setProjectNoteMessage("Missing Google Apps Script URL.");
+    return;
+  }
+  try {
+    setProjectNoteMessage("Loading notes...");
+    const response = await fetch(url + "?action=projectNotes&job=" + encodeURIComponent(job) + "&v=" + Date.now(), { cache: "no-store" });
+    const data = await response.json();
+    if (data && data.success) {
+      renderProjectNotes(data.notes || []);
+      setProjectNoteMessage("");
+    } else {
+      setProjectNoteMessage("Could not load notes.");
+    }
+  } catch (error) {
+    console.warn("Could not load notes.", error);
+    setProjectNoteMessage("Could not load notes.");
+  }
+}
+
+async function saveProjectNote() {
+  if (!canAccessProjectTracker()) {
+    alert("Project Tracker is only available to Operations Managers.");
+    return;
+  }
+  const job = getProjectTrackerJobName();
+  if (!job) {
+    alert("Select a job first.");
+    return;
+  }
+  const url = getGoogleAppsScriptUrl();
+  if (!url) {
+    alert("Missing Google Apps Script URL in App Settings.");
+    return;
+  }
+  const user = typeof getCurrentUser === "function" ? getCurrentUser() : null;
+  const payload = {
+    action: "saveProjectNote",
+    id: document.getElementById("noteIdInput")?.value.trim() || "",
+    job: job,
+    noteType: document.getElementById("noteTypeInput")?.value || "General",
+    title: document.getElementById("noteTitleInput")?.value.trim() || "",
+    followUpDate: document.getElementById("noteFollowUpDateInput")?.value || "",
+    noteText: document.getElementById("noteTextInput")?.value.trim() || "",
+    updatedBy: (user && (user.displayName || user.username || user.email)) || ""
+  };
+  if (!payload.title && !payload.noteText) {
+    alert("Enter a title or note first.");
+    return;
+  }
+  try {
+    setProjectNoteMessage("Saving note...");
+    await fetch(url, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload)
+    });
+    setProjectNoteMessage("Note saved.");
+    clearProjectNoteForm();
+    showProjectNoteForm(false);
+    setTimeout(loadProjectNotes, 600);
+  } catch (error) {
+    console.warn("Could not save note.", error);
+    setProjectNoteMessage("Could not save note.");
+  }
+}
+
+async function deleteProjectNote(id) {
+  if (!id) return;
+  if (!confirm("Delete this note?")) return;
+  const url = getGoogleAppsScriptUrl();
+  if (!url) {
+    alert("Missing Google Apps Script URL in App Settings.");
+    return;
+  }
+  try {
+    setProjectNoteMessage("Deleting note...");
+    await fetch(url, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ action: "deleteProjectNote", id: id })
+    });
+    setProjectNoteMessage("Note deleted.");
+    setTimeout(loadProjectNotes, 600);
+  } catch (error) {
+    console.warn("Could not delete note.", error);
+    setProjectNoteMessage("Could not delete note.");
+  }
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+  const addBtn = document.getElementById("addProjectNoteBtn");
+  if (addBtn && !addBtn.dataset.wired) {
+    addBtn.dataset.wired = "true";
+    addBtn.addEventListener("click", addProjectNote);
+  }
+  const saveBtn = document.getElementById("saveProjectNoteBtn");
+  if (saveBtn && !saveBtn.dataset.wired) {
+    saveBtn.dataset.wired = "true";
+    saveBtn.addEventListener("click", saveProjectNote);
+  }
+  const cancelBtn = document.getElementById("cancelProjectNoteBtn");
+  if (cancelBtn && !cancelBtn.dataset.wired) {
+    cancelBtn.dataset.wired = "true";
+    cancelBtn.addEventListener("click", cancelProjectNote);
+  }
+});
+
+

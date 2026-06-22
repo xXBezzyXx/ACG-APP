@@ -28,9 +28,198 @@
         <button id="dailyReportChoiceBtn" class="action-choice-card" type="button"><span>📝</span><strong>Daily Report</strong><small>Manpower, work performed, issues, photos</small></button>
         <button id="materialOrderChoiceBtn" class="action-choice-card" type="button"><span>📦</span><strong>Material Order</strong><small>Request materials and email PDF</small></button>
         <button id="rentalChoiceBtn" class="action-choice-card" type="button"><span>🚜</span><strong>Job Site Rentals</strong><small>Track conex, lull, lifts, and rental quantity</small></button>
+        <button id="projectTrackerChoiceBtn" class="action-choice-card" type="button" style="display:none;"><span>📋</span><strong>Project Tracker</strong><small>Submittals, permits, ODPs, releases, notes</small></button>
       </div>
     </section>
 
+
+    <section id="projectTrackerScreen" class="screen">
+      <header class="top-bar center"><button class="back-btn" onclick="showScreen('jobActionScreen')" type="button">‹</button><h2>Project Tracker</h2><span></span></header>
+      <div class="daily-auto-grid">
+        <div class="daily-auto-box"><span>Job</span><strong id="projectTrackerJob">Selected Job</strong></div>
+        <div class="daily-auto-box"><span>Access</span><strong>Operations Manager Only</strong></div>
+      </div>
+      <div class="daily-form-card">
+        <h3>Project Tracker</h3>
+        <p class="send-note">Choose what you want to track for this job.</p>
+        <div class="project-tracker-grid">
+          <button id="trackerPermitsBtn" class="project-tracker-card" type="button"><span>📄</span><strong>Permits</strong><small>Permit pulled, permit notes, status</small></button>
+          <button id="trackerSubcontractorsBtn" class="project-tracker-card" type="button"><span>🤝</span><strong>Subcontractors</strong><small>Subs, contracts, scope notes</small></button>
+          <button id="trackerSubmittalsBtn" class="project-tracker-card" type="button"><span>📑</span><strong>Submittals</strong><small>Required, sent, approved, rejected</small></button>
+          <button id="trackerOdpsBtn" class="project-tracker-card" type="button"><span>🧾</span><strong>ODPs</strong><small>ODP paperwork and status</small></button>
+          <button id="trackerEquipmentBtn" class="project-tracker-card" type="button"><span>🏭</span><strong>Equipment Release</strong><small>Louvers, equipment, long lead items</small></button>
+          <button id="trackerNotesBtn" class="project-tracker-card" type="button"><span>📝</span><strong>Notes</strong><small>Lead times and project notes</small></button>
+        </div>
+      </div>
+    </section>
+
+    <section id="trackerPermitsScreen" class="screen">
+      <header class="top-bar center"><button class="back-btn" onclick="showScreen('projectTrackerScreen')" type="button">‹</button><h2>Permits</h2><span></span></header>
+      <div class="daily-auto-grid"><div class="daily-auto-box"><span>Job</span><strong class="tracker-job-name">Selected Job</strong></div></div>
+      <div class="daily-form-card">
+        <div class="tracker-section-header"><div><h3>Permits</h3><p class="send-note">Track permits for this job. This saves to the ProjectPermits tab in Excel.</p></div><button id="addProjectPermitBtn" class="primary-btn orange" type="button">+ Add Permit</button></div>
+        <div id="projectPermitList" class="tracker-list empty">No permits added yet.</div>
+        <p id="projectPermitMessage" class="send-note"></p>
+      </div>
+      <div id="projectPermitFormCard" class="daily-form-card project-tracker-form-card" style="display:none;">
+        <input id="permitIdInput" type="hidden" />
+        <h3>Add / Edit Permit</h3>
+        <label class="tracker-checkbox-row"><input id="permitPulledInput" type="checkbox" /><span>Permit Pulled</span></label>
+        <label class="form-label">Permit Number<input id="permitNumberInput" class="field-input" type="text" placeholder="Permit number" /></label>
+        <label class="form-label">Permit Date<input id="permitDateInput" class="field-input" type="date" /></label>
+        <label class="form-label">Permit Notes<textarea id="permitNotesInput" class="field-input tracker-textarea" rows="5" placeholder="Notes about permit status, inspections, AHJ, delays, etc."></textarea></label>
+        <div class="tracker-form-actions"><button id="saveProjectPermitBtn" class="primary-btn orange" type="button">Save Permit</button><button id="cancelProjectPermitBtn" class="secondary-btn" type="button">Cancel</button></div>
+      </div>
+    </section>
+
+    <section id="trackerSubcontractorsScreen" class="screen">
+      <header class="top-bar center"><button class="back-btn" onclick="showScreen('projectTrackerScreen')" type="button">‹</button><h2>Subcontractors</h2><span></span></header>
+      <div class="daily-auto-grid"><div class="daily-auto-box"><span>Job</span><strong class="tracker-job-name">Selected Job</strong></div></div>
+      <div class="daily-form-card">
+        <div class="tracker-section-header"><div><h3>Subcontractors</h3><p class="send-note">Track subcontractor contract status for this job. This saves to the ProjectSubcontractors tab in Excel.</p></div><button id="addProjectSubcontractorBtn" class="primary-btn orange" type="button">+ Add Subcontractor</button></div>
+        <div id="projectSubcontractorList" class="tracker-list empty">No subcontractors added yet.</div>
+        <p id="projectSubcontractorMessage" class="send-note"></p>
+      </div>
+      <div id="projectSubcontractorFormCard" class="daily-form-card project-tracker-form-card" style="display:none;">
+        <input id="subcontractorIdInput" type="hidden" />
+        <h3>Add / Edit Subcontractor</h3>
+        <label class="form-label">Subcontractor Name<input id="subcontractorNameInput" class="field-input" type="text" placeholder="Company / subcontractor name" /></label>
+        <label class="form-label">Scope<input id="subcontractorScopeInput" class="field-input" type="text" placeholder="Insulation, TAB, Controls, Louvers, Crane, etc." /></label>
+        <label class="form-label">Contract Amount<input id="subcontractorAmountInput" class="field-input" type="text" placeholder="$0.00" /></label>
+        <label class="tracker-checkbox-row"><input id="contractSentInput" type="checkbox" /><span>Contract Sent</span></label>
+        <label class="tracker-checkbox-row"><input id="contractReturnedInput" type="checkbox" /><span>Contract Returned</span></label>
+        <label class="tracker-checkbox-row"><input id="contractExecutedInput" type="checkbox" /><span>Executed</span></label>
+        <label class="form-label">Notes<textarea id="subcontractorNotesInput" class="field-input tracker-textarea" rows="5" placeholder="Notes about contract status, missing COI, scope gaps, hold ups, etc."></textarea></label>
+        <div class="tracker-form-actions"><button id="saveProjectSubcontractorBtn" class="primary-btn orange" type="button">Save Subcontractor</button><button id="cancelProjectSubcontractorBtn" class="secondary-btn" type="button">Cancel</button></div>
+      </div>
+    </section>
+
+    <section id="trackerSubmittalsScreen" class="screen">
+      <header class="top-bar center"><button class="back-btn" onclick="showScreen('projectTrackerScreen')" type="button">‹</button><h2>Submittals</h2><span></span></header>
+      <div class="daily-auto-grid"><div class="daily-auto-box"><span>Job</span><strong class="tracker-job-name">Selected Job</strong></div></div>
+      <div class="daily-form-card">
+        <div class="tracker-section-header"><div><h3>Submittals</h3><p class="send-note">Track submittal status for this job. This saves to the ProjectSubmittals tab in Excel.</p></div><button id="addProjectSubmittalBtn" class="primary-btn orange" type="button">+ Add Submittal</button></div>
+        <div id="projectSubmittalList" class="tracker-list empty">No submittals added yet.</div>
+        <p id="projectSubmittalMessage" class="send-note"></p>
+      </div>
+      <div id="projectSubmittalFormCard" class="daily-form-card project-tracker-form-card" style="display:none;">
+        <input id="submittalIdInput" type="hidden" />
+        <h3>Add / Edit Submittal</h3>
+        <label class="form-label">Submittal Name<input id="submittalNameInput" class="field-input" type="text" placeholder="AHU, VAVs, insulation, louvers, etc." /></label>
+        <label class="form-label">Spec Section<input id="submittalSpecSectionInput" class="field-input" type="text" placeholder="23 05 00, 23 07 00, etc." /></label>
+        <label class="form-label">Vendor<input id="submittalVendorInput" class="field-input" type="text" placeholder="Trane, Stan Weaver, ALC, insulation sub, etc." /></label>
+
+        <div class="tracker-status-grid">
+          <label class="tracker-checkbox-row"><input id="submittalRequestedFromVendorInput" type="checkbox" /><span>Requested From Vendor</span></label>
+          <label class="form-label compact">Requested Date<input id="submittalRequestedDateInput" class="field-input" type="date" /></label>
+
+          <label class="tracker-checkbox-row"><input id="submittalReceivedFromVendorInput" type="checkbox" /><span>Received From Vendor</span></label>
+          <label class="form-label compact">Received Date<input id="submittalReceivedDateInput" class="field-input" type="date" /></label>
+
+          <label class="tracker-checkbox-row"><input id="submittalSubmittedInput" type="checkbox" /><span>Submitted To Engineer</span></label>
+          <label class="form-label compact">Submitted Date<input id="submittalSubmittedDateInput" class="field-input" type="date" /></label>
+
+          <label class="tracker-checkbox-row"><input id="submittalApprovedInput" type="checkbox" /><span>Approved</span></label>
+          <label class="form-label compact">Approved Date<input id="submittalApprovedDateInput" class="field-input" type="date" /></label>
+
+          <label class="tracker-checkbox-row"><input id="submittalRejectedInput" type="checkbox" /><span>Rejected</span></label>
+          <label class="form-label compact">Rejected Date<input id="submittalRejectedDateInput" class="field-input" type="date" /></label>
+
+          <label class="tracker-checkbox-row"><input id="submittalResubmittedInput" type="checkbox" /><span>Resubmitted</span></label>
+          <label class="form-label compact">Resubmitted Date<input id="submittalResubmittedDateInput" class="field-input" type="date" /></label>
+        </div>
+
+        <label class="form-label">Notes<textarea id="submittalNotesInput" class="field-input tracker-textarea" rows="5" placeholder="Vendor follow-up, review comments, resubmittal notes, missing info, approvals, etc."></textarea></label>
+        <div class="tracker-form-actions"><button id="saveProjectSubmittalBtn" class="primary-btn orange" type="button">Save Submittal</button><button id="cancelProjectSubmittalBtn" class="secondary-btn" type="button">Cancel</button></div>
+      </div>
+    </section>
+
+    <section id="trackerOdpsScreen" class="screen">
+      <header class="top-bar center"><button class="back-btn" onclick="showScreen('projectTrackerScreen')" type="button">‹</button><h2>ODPs</h2><span></span></header>
+      <div class="daily-auto-grid"><div class="daily-auto-box"><span>Job</span><strong class="tracker-job-name">Selected Job</strong></div></div>
+      <div class="daily-form-card">
+        <div class="tracker-section-header"><div><h3>ODPs</h3><p class="send-note">Track ODP requests, vendor returns, approval, and value before tax.</p></div><button id="addProjectOdpBtn" class="primary-btn orange" type="button">+ Add ODP</button></div>
+        <div id="projectOdpList" class="tracker-list empty">No ODPs added yet.</div>
+        <p id="projectOdpMessage" class="send-note"></p>
+      </div>
+      <div id="projectOdpFormCard" class="daily-form-card project-tracker-form-card" style="display:none;">
+        <input id="odpIdInput" type="hidden" />
+        <h3>Add / Edit ODP</h3>
+        <label class="form-label">ODP Name<input id="odpNameInput" class="field-input" type="text" placeholder="ODP #1, equipment change, added scope, etc." /></label>
+        <label class="form-label">Vendor<input id="odpVendorInput" class="field-input" type="text" placeholder="Vendor or subcontractor name" /></label>
+        <label class="form-label">ODP Value Before Tax<input id="odpValueBeforeTaxInput" class="field-input" type="number" step="0.01" placeholder="0.00" /></label>
+
+        <div class="tracker-status-grid">
+          <label class="tracker-checkbox-row"><input id="odpSentToVendorInput" type="checkbox" /><span>Sent To Vendor</span></label>
+          <label class="form-label compact">Sent Date<input id="odpSentDateInput" class="field-input" type="date" /></label>
+
+          <label class="tracker-checkbox-row"><input id="odpReceivedFromVendorInput" type="checkbox" /><span>Received From Vendor</span></label>
+          <label class="form-label compact">Received Date<input id="odpReceivedDateInput" class="field-input" type="date" /></label>
+
+          <label class="tracker-checkbox-row"><input id="odpApprovedInput" type="checkbox" /><span>Approved</span></label>
+          <label class="form-label compact">Approved Date<input id="odpApprovedDateInput" class="field-input" type="date" /></label>
+        </div>
+
+        <label class="form-label">Notes<textarea id="odpNotesInput" class="field-input tracker-textarea" rows="5" placeholder="ODP notes, pricing info, approval comments, etc."></textarea></label>
+        <div class="tracker-form-actions"><button id="saveProjectOdpBtn" class="primary-btn orange" type="button">Save ODP</button><button id="cancelProjectOdpBtn" class="secondary-btn" type="button">Cancel</button></div>
+      </div>
+    </section>
+
+    <section id="trackerEquipmentScreen" class="screen">
+      <header class="top-bar center"><button class="back-btn" onclick="showScreen('projectTrackerScreen')" type="button">‹</button><h2>Equipment Release</h2><span></span></header>
+      <div class="daily-auto-grid"><div class="daily-auto-box"><span>Job</span><strong class="tracker-job-name">Selected Job</strong></div></div>
+      <div class="daily-form-card">
+        <div class="tracker-section-header"><div><h3>Equipment Release</h3><p class="send-note">Track louvers, equipment, controls, TAB, insulation, and other released items.</p></div><button id="addProjectEquipmentBtn" class="primary-btn orange" type="button">+ Add Release Item</button></div>
+        <div id="projectEquipmentList" class="tracker-list empty">No release items added yet.</div>
+        <p id="projectEquipmentMessage" class="send-note"></p>
+      </div>
+      <div id="projectEquipmentFormCard" class="daily-form-card project-tracker-form-card" style="display:none;">
+        <input id="equipmentIdInput" type="hidden" />
+        <h3>Add / Edit Release Item</h3>
+        <label class="form-label">Item / Equipment Name<input id="equipmentNameInput" class="field-input" type="text" placeholder="Louvers, AHU, RTU, VAVs, controls, TAB, insulation, etc." /></label>
+        <label class="form-label">Vendor<input id="equipmentVendorInput" class="field-input" type="text" placeholder="Vendor or subcontractor name" /></label>
+
+        <div class="tracker-status-grid">
+          <label class="tracker-checkbox-row"><input id="equipmentReleasedInput" type="checkbox" /><span>Released</span></label>
+          <label class="form-label compact">Released Date<input id="equipmentReleasedDateInput" class="field-input" type="date" /></label>
+
+          <label class="form-label compact">Lead Time<input id="equipmentLeadTimeInput" class="field-input" type="text" placeholder="8 weeks, 10-12 weeks, etc." /></label>
+          <label class="form-label compact">Expected Delivery Date<input id="equipmentExpectedDeliveryDateInput" class="field-input" type="date" /></label>
+        </div>
+
+        <label class="form-label">Notes<textarea id="equipmentNotesInput" class="field-input tracker-textarea" rows="5" placeholder="Release notes, shipping notes, vendor updates, long lead concerns, etc."></textarea></label>
+        <div class="tracker-form-actions"><button id="saveProjectEquipmentBtn" class="primary-btn orange" type="button">Save Release Item</button><button id="cancelProjectEquipmentBtn" class="secondary-btn" type="button">Cancel</button></div>
+      </div>
+    </section>
+
+    <section id="trackerNotesScreen" class="screen">
+      <header class="top-bar center"><button class="back-btn" onclick="showScreen('projectTrackerScreen')" type="button">‹</button><h2>Notes</h2><span></span></header>
+      <div class="daily-auto-grid"><div class="daily-auto-box"><span>Job</span><strong class="tracker-job-name">Selected Job</strong></div></div>
+      <div class="daily-form-card">
+        <div class="tracker-section-header"><div><h3>Project Notes</h3><p class="send-note">Track lead times, general notes, problems, reminders, and PM updates.</p></div><button id="addProjectNoteBtn" class="primary-btn orange" type="button">+ Add Note</button></div>
+        <div id="projectNoteList" class="tracker-list empty">No notes added yet.</div>
+        <p id="projectNoteMessage" class="send-note"></p>
+      </div>
+      <div id="projectNoteFormCard" class="daily-form-card project-tracker-form-card" style="display:none;">
+        <input id="noteIdInput" type="hidden" />
+        <h3>Add / Edit Note</h3>
+        <label class="form-label">Note Type
+          <select id="noteTypeInput" class="field-input">
+            <option value="General">General</option>
+            <option value="Lead Time">Lead Time</option>
+            <option value="Reminder">Reminder</option>
+            <option value="Problem / Issue">Problem / Issue</option>
+            <option value="Owner / GC">Owner / GC</option>
+            <option value="Vendor">Vendor</option>
+            <option value="Closeout">Closeout</option>
+          </select>
+        </label>
+        <label class="form-label">Title<input id="noteTitleInput" class="field-input" type="text" placeholder="Short note title" /></label>
+        <label class="form-label">Follow Up Date<input id="noteFollowUpDateInput" class="field-input" type="date" /></label>
+        <label class="form-label">Note<textarea id="noteTextInput" class="field-input tracker-textarea" rows="6" placeholder="Type project note, lead time, reminder, issue, or update here..."></textarea></label>
+        <div class="tracker-form-actions"><button id="saveProjectNoteBtn" class="primary-btn orange" type="button">Save Note</button><button id="cancelProjectNoteBtn" class="secondary-btn" type="button">Cancel</button></div>
+      </div>
+    </section>
 
     <section id="rentalScreen" class="screen">
       <header class="top-bar center"><button class="back-btn" onclick="showScreen('jobActionScreen')" type="button">‹</button><h2>Job Site Rental</h2><span></span></header>
