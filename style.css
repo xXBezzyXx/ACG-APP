@@ -2654,3 +2654,8 @@ label[for="dailySafety"]{
     grid-template-columns: 1fr;
   }
 }
+
+
+.project-tracker-form-card + .tracker-list {
+  margin-top: 15px;
+}

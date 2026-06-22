@@ -58,10 +58,7 @@
       <div class="daily-auto-grid"><div class="daily-auto-box"><span>Job</span><strong class="tracker-job-name">Selected Job</strong></div></div>
       <div class="daily-form-card">
         <div class="tracker-section-header"><div><h3>Permits</h3><p class="send-note">Track permits for this job. This saves to the ProjectPermits tab in Excel.</p></div><button id="addProjectPermitBtn" class="primary-btn orange" type="button">+ Add Permit</button></div>
-        <div id="projectPermitList" class="tracker-list empty">No permits added yet.</div>
-        <p id="projectPermitMessage" class="send-note"></p>
-      </div>
-      <div id="projectPermitFormCard" class="daily-form-card project-tracker-form-card" style="display:none;">
+        <div id="projectPermitFormCard" class="daily-form-card project-tracker-form-card" style="display:none;">
         <input id="permitIdInput" type="hidden" />
         <h3>Add / Edit Permit</h3>
         <label class="tracker-checkbox-row"><input id="permitPulledInput" type="checkbox" /><span>Permit Pulled</span></label>
@@ -70,6 +67,10 @@
         <label class="form-label">Permit Notes<textarea id="permitNotesInput" class="field-input tracker-textarea" rows="5" placeholder="Notes about permit status, inspections, AHJ, delays, etc."></textarea></label>
         <div class="tracker-form-actions"><button id="saveProjectPermitBtn" class="primary-btn orange" type="button">Save Permit</button><button id="cancelProjectPermitBtn" class="secondary-btn" type="button">Cancel</button></div>
       </div>
+      <div id="projectPermitList" class="tracker-list empty">No permits added yet.</div>
+        <p id="projectPermitMessage" class="send-note"></p>
+      </div>
+      
     </section>
 
     <section id="trackerSubcontractorsScreen" class="screen">
@@ -77,10 +78,7 @@
       <div class="daily-auto-grid"><div class="daily-auto-box"><span>Job</span><strong class="tracker-job-name">Selected Job</strong></div></div>
       <div class="daily-form-card">
         <div class="tracker-section-header"><div><h3>Subcontractors</h3><p class="send-note">Track subcontractor contract status for this job. This saves to the ProjectSubcontractors tab in Excel.</p></div><button id="addProjectSubcontractorBtn" class="primary-btn orange" type="button">+ Add Subcontractor</button></div>
-        <div id="projectSubcontractorList" class="tracker-list empty">No subcontractors added yet.</div>
-        <p id="projectSubcontractorMessage" class="send-note"></p>
-      </div>
-      <div id="projectSubcontractorFormCard" class="daily-form-card project-tracker-form-card" style="display:none;">
+        <div id="projectSubcontractorFormCard" class="daily-form-card project-tracker-form-card" style="display:none;">
         <input id="subcontractorIdInput" type="hidden" />
         <h3>Add / Edit Subcontractor</h3>
         <label class="form-label">Subcontractor Name<input id="subcontractorNameInput" class="field-input" type="text" placeholder="Company / subcontractor name" /></label>
@@ -92,6 +90,10 @@
         <label class="form-label">Notes<textarea id="subcontractorNotesInput" class="field-input tracker-textarea" rows="5" placeholder="Notes about contract status, missing COI, scope gaps, hold ups, etc."></textarea></label>
         <div class="tracker-form-actions"><button id="saveProjectSubcontractorBtn" class="primary-btn orange" type="button">Save Subcontractor</button><button id="cancelProjectSubcontractorBtn" class="secondary-btn" type="button">Cancel</button></div>
       </div>
+      <div id="projectSubcontractorList" class="tracker-list empty">No subcontractors added yet.</div>
+        <p id="projectSubcontractorMessage" class="send-note"></p>
+      </div>
+      
     </section>
 
     <section id="trackerSubmittalsScreen" class="screen">
@@ -99,10 +101,7 @@
       <div class="daily-auto-grid"><div class="daily-auto-box"><span>Job</span><strong class="tracker-job-name">Selected Job</strong></div></div>
       <div class="daily-form-card">
         <div class="tracker-section-header"><div><h3>Submittals</h3><p class="send-note">Track submittal status for this job. This saves to the ProjectSubmittals tab in Excel.</p></div><button id="addProjectSubmittalBtn" class="primary-btn orange" type="button">+ Add Submittal</button></div>
-        <div id="projectSubmittalList" class="tracker-list empty">No submittals added yet.</div>
-        <p id="projectSubmittalMessage" class="send-note"></p>
-      </div>
-      <div id="projectSubmittalFormCard" class="daily-form-card project-tracker-form-card" style="display:none;">
+        <div id="projectSubmittalFormCard" class="daily-form-card project-tracker-form-card" style="display:none;">
         <input id="submittalIdInput" type="hidden" />
         <h3>Add / Edit Submittal</h3>
         <label class="form-label">Submittal Name<input id="submittalNameInput" class="field-input" type="text" placeholder="AHU, VAVs, insulation, louvers, etc." /></label>
@@ -132,6 +131,10 @@
         <label class="form-label">Notes<textarea id="submittalNotesInput" class="field-input tracker-textarea" rows="5" placeholder="Vendor follow-up, review comments, resubmittal notes, missing info, approvals, etc."></textarea></label>
         <div class="tracker-form-actions"><button id="saveProjectSubmittalBtn" class="primary-btn orange" type="button">Save Submittal</button><button id="cancelProjectSubmittalBtn" class="secondary-btn" type="button">Cancel</button></div>
       </div>
+      <div id="projectSubmittalList" class="tracker-list empty">No submittals added yet.</div>
+        <p id="projectSubmittalMessage" class="send-note"></p>
+      </div>
+      
     </section>
 
     <section id="trackerOdpsScreen" class="screen">
@@ -139,10 +142,7 @@
       <div class="daily-auto-grid"><div class="daily-auto-box"><span>Job</span><strong class="tracker-job-name">Selected Job</strong></div></div>
       <div class="daily-form-card">
         <div class="tracker-section-header"><div><h3>ODPs</h3><p class="send-note">Track ODP requests, vendor returns, approval, and value before tax.</p></div><button id="addProjectOdpBtn" class="primary-btn orange" type="button">+ Add ODP</button></div>
-        <div id="projectOdpList" class="tracker-list empty">No ODPs added yet.</div>
-        <p id="projectOdpMessage" class="send-note"></p>
-      </div>
-      <div id="projectOdpFormCard" class="daily-form-card project-tracker-form-card" style="display:none;">
+        <div id="projectOdpFormCard" class="daily-form-card project-tracker-form-card" style="display:none;">
         <input id="odpIdInput" type="hidden" />
         <h3>Add / Edit ODP</h3>
         <label class="form-label">ODP Name<input id="odpNameInput" class="field-input" type="text" placeholder="ODP #1, equipment change, added scope, etc." /></label>
@@ -163,6 +163,10 @@
         <label class="form-label">Notes<textarea id="odpNotesInput" class="field-input tracker-textarea" rows="5" placeholder="ODP notes, pricing info, approval comments, etc."></textarea></label>
         <div class="tracker-form-actions"><button id="saveProjectOdpBtn" class="primary-btn orange" type="button">Save ODP</button><button id="cancelProjectOdpBtn" class="secondary-btn" type="button">Cancel</button></div>
       </div>
+      <div id="projectOdpList" class="tracker-list empty">No ODPs added yet.</div>
+        <p id="projectOdpMessage" class="send-note"></p>
+      </div>
+      
     </section>
 
     <section id="trackerEquipmentScreen" class="screen">
@@ -170,10 +174,7 @@
       <div class="daily-auto-grid"><div class="daily-auto-box"><span>Job</span><strong class="tracker-job-name">Selected Job</strong></div></div>
       <div class="daily-form-card">
         <div class="tracker-section-header"><div><h3>Equipment Release</h3><p class="send-note">Track louvers, equipment, controls, TAB, insulation, and other released items.</p></div><button id="addProjectEquipmentBtn" class="primary-btn orange" type="button">+ Add Release Item</button></div>
-        <div id="projectEquipmentList" class="tracker-list empty">No release items added yet.</div>
-        <p id="projectEquipmentMessage" class="send-note"></p>
-      </div>
-      <div id="projectEquipmentFormCard" class="daily-form-card project-tracker-form-card" style="display:none;">
+        <div id="projectEquipmentFormCard" class="daily-form-card project-tracker-form-card" style="display:none;">
         <input id="equipmentIdInput" type="hidden" />
         <h3>Add / Edit Release Item</h3>
         <label class="form-label">Item / Equipment Name<input id="equipmentNameInput" class="field-input" type="text" placeholder="Louvers, AHU, RTU, VAVs, controls, TAB, insulation, etc." /></label>
@@ -190,6 +191,10 @@
         <label class="form-label">Notes<textarea id="equipmentNotesInput" class="field-input tracker-textarea" rows="5" placeholder="Release notes, shipping notes, vendor updates, long lead concerns, etc."></textarea></label>
         <div class="tracker-form-actions"><button id="saveProjectEquipmentBtn" class="primary-btn orange" type="button">Save Release Item</button><button id="cancelProjectEquipmentBtn" class="secondary-btn" type="button">Cancel</button></div>
       </div>
+      <div id="projectEquipmentList" class="tracker-list empty">No release items added yet.</div>
+        <p id="projectEquipmentMessage" class="send-note"></p>
+      </div>
+      
     </section>
 
     <section id="trackerNotesScreen" class="screen">
@@ -197,10 +202,7 @@
       <div class="daily-auto-grid"><div class="daily-auto-box"><span>Job</span><strong class="tracker-job-name">Selected Job</strong></div></div>
       <div class="daily-form-card">
         <div class="tracker-section-header"><div><h3>Project Notes</h3><p class="send-note">Track lead times, general notes, problems, reminders, and PM updates.</p></div><button id="addProjectNoteBtn" class="primary-btn orange" type="button">+ Add Note</button></div>
-        <div id="projectNoteList" class="tracker-list empty">No notes added yet.</div>
-        <p id="projectNoteMessage" class="send-note"></p>
-      </div>
-      <div id="projectNoteFormCard" class="daily-form-card project-tracker-form-card" style="display:none;">
+        <div id="projectNoteFormCard" class="daily-form-card project-tracker-form-card" style="display:none;">
         <input id="noteIdInput" type="hidden" />
         <h3>Add / Edit Note</h3>
         <label class="form-label">Note Type
@@ -219,6 +221,10 @@
         <label class="form-label">Note<textarea id="noteTextInput" class="field-input tracker-textarea" rows="6" placeholder="Type project note, lead time, reminder, issue, or update here..."></textarea></label>
         <div class="tracker-form-actions"><button id="saveProjectNoteBtn" class="primary-btn orange" type="button">Save Note</button><button id="cancelProjectNoteBtn" class="secondary-btn" type="button">Cancel</button></div>
       </div>
+      <div id="projectNoteList" class="tracker-list empty">No notes added yet.</div>
+        <p id="projectNoteMessage" class="send-note"></p>
+      </div>
+      
     </section>
 
     <section id="rentalScreen" class="screen">
