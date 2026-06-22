@@ -1772,6 +1772,18 @@ function fillProjectSubmittalForm(submittal) {
 
 function renderProjectSubmittals(submittals) {
   submittals = sortProjectTrackerNewestFirst(submittals);
+  const filter = document.getElementById("submittalFilter")?.value || "all";
+  if (filter !== "all") {
+    submittals = submittals.filter(s => {
+      if (filter === "requested") return s.requestedFromVendor;
+      if (filter === "received") return s.receivedFromVendor;
+      if (filter === "submitted") return s.submitted;
+      if (filter === "approved") return s.approved;
+      if (filter === "rejected") return s.rejected;
+      if (filter === "resubmitted") return s.resubmitted;
+      return true;
+    });
+  }
   const list = document.getElementById("projectSubmittalList");
   if (!list) return;
   if (!Array.isArray(submittals) || submittals.length === 0) {
@@ -3563,6 +3575,9 @@ function fillProjectEquipmentForm(item) {
 
 function renderProjectEquipmentReleases(items) {
   items = sortProjectTrackerNewestFirst(items);
+  const filter = document.getElementById("equipmentFilter")?.value || "all";
+  if (filter === "released") items = items.filter(i => i.released);
+  if (filter === "notreleased") items = items.filter(i => !i.released);
   const list = document.getElementById("projectEquipmentList");
   if (!list) return;
   if (!Array.isArray(items) || items.length === 0) {
@@ -3935,3 +3950,13 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 
+
+
+document.addEventListener("change", function(e){
+  if(e.target && e.target.id==="submittalFilter"){
+    loadProjectSubmittals();
+  }
+  if(e.target && e.target.id==="equipmentFilter"){
+    loadProjectEquipmentReleases();
+  }
+});
