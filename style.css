@@ -2744,8 +2744,8 @@ label[for="dailySafety"]{
 /* V98 Manpower double vertical job gaps */
 /* Doubles the vertical space between job cards in the Option B masonry columns. */
 #manpowerScreen .manpower-masonry-col {
-  gap: 72px !important;
-  row-gap: 72px !important;
+  gap: 108px !important;
+  row-gap: 108px !important;
 }
 
 #manpowerScreen .manpower-masonry-col > .manpower-column {
