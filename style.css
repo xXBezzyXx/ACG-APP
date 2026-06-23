@@ -2661,12 +2661,33 @@ label[for="dailySafety"]{
 }
 
 
-/* V95 Manpower full names visible - no inner scroll */
-/* Keeps the cleaner closer rows, but lets each job card grow so all employees show. */
+/* V96 Manpower column-stack layout */
+/* This keeps the same clean job-card look, removes inner scrollbars,
+   shows every employee, and lets the job under a tall job move down only in that column. */
 #manpowerScreen .manpower-board {
   display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
+  grid-auto-flow: column !important;
+  grid-template-rows: masonry !important;
   gap: 28px 16px !important;
   align-items: start !important;
+}
+
+/* Browser fallback: CSS columns gives the exact independent vertical stacking you asked for. */
+@supports not (grid-template-rows: masonry) {
+  #manpowerScreen .manpower-board {
+    display: block !important;
+    column-count: 5 !important;
+    column-gap: 16px !important;
+  }
+
+  #manpowerScreen .manpower-column {
+    display: inline-block !important;
+    width: 100% !important;
+    margin: 0 0 28px 0 !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
 }
 
 #manpowerScreen .manpower-column {
@@ -2683,25 +2704,49 @@ label[for="dailySafety"]{
   display: grid !important;
   gap: 10px !important;
   align-content: start !important;
-  scrollbar-width: auto !important;
 }
 
 #manpowerScreen .manpower-column-head {
   position: static !important;
 }
 
-/* Empty jobs keep a clean body area without being huge. */
 #manpowerScreen .manpower-dropzone:has(.send-note) {
   min-height: 140px !important;
 }
 
-@media (max-width: 720px) {
-  #manpowerScreen .manpower-board {
-    gap: 20px 16px !important;
+@media (min-width: 1900px) {
+  @supports not (grid-template-rows: masonry) {
+    #manpowerScreen .manpower-board { column-count: 6 !important; }
   }
+}
 
-  #manpowerScreen .manpower-dropzone {
-    min-height: 100px !important;
+@media (max-width: 1600px) {
+  @supports not (grid-template-rows: masonry) {
+    #manpowerScreen .manpower-board { column-count: 5 !important; }
+  }
+}
+
+@media (max-width: 1300px) {
+  @supports not (grid-template-rows: masonry) {
+    #manpowerScreen .manpower-board { column-count: 4 !important; }
+  }
+}
+
+@media (max-width: 1050px) {
+  @supports not (grid-template-rows: masonry) {
+    #manpowerScreen .manpower-board { column-count: 3 !important; }
+  }
+}
+
+@media (max-width: 800px) {
+  @supports not (grid-template-rows: masonry) {
+    #manpowerScreen .manpower-board { column-count: 2 !important; }
+  }
+}
+
+@media (max-width: 600px) {
+  @supports not (grid-template-rows: masonry) {
+    #manpowerScreen .manpower-board { column-count: 1 !important; }
   }
 }
 
