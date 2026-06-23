@@ -2661,51 +2661,47 @@ label[for="dailySafety"]{
 }
 
 
-/* V94 Manpower capped job height */
-/* This is the one that actually changes the blank space.
-   Grid row height is controlled by the tallest job in the row, so cap tall jobs
-   and let their employee list scroll inside the card. */
+/* V95 Manpower full names visible - no inner scroll */
+/* Keeps the cleaner closer rows, but lets each job card grow so all employees show. */
 #manpowerScreen .manpower-board {
   display: grid !important;
-  gap: 22px 16px !important;
+  gap: 28px 16px !important;
   align-items: start !important;
 }
 
 #manpowerScreen .manpower-column {
   min-height: 0 !important;
   height: auto !important;
-  max-height: 340px !important;
-  overflow: hidden !important;
+  max-height: none !important;
+  overflow: visible !important;
 }
 
 #manpowerScreen .manpower-dropzone {
   min-height: 120px !important;
-  max-height: 255px !important;
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
-  overscroll-behavior: contain !important;
-  scrollbar-width: thin !important;
+  max-height: none !important;
+  overflow: visible !important;
+  display: grid !important;
+  gap: 10px !important;
+  align-content: start !important;
+  scrollbar-width: auto !important;
 }
 
 #manpowerScreen .manpower-column-head {
   position: static !important;
 }
 
-/* Empty jobs still have a clean body area */
+/* Empty jobs keep a clean body area without being huge. */
 #manpowerScreen .manpower-dropzone:has(.send-note) {
-  min-height: 150px !important;
+  min-height: 140px !important;
 }
 
-/* Slightly tighter on smaller screens */
-@media (max-width: 900px) {
-  #manpowerScreen .manpower-column {
-    max-height: none !important;
+@media (max-width: 720px) {
+  #manpowerScreen .manpower-board {
+    gap: 20px 16px !important;
   }
 
   #manpowerScreen .manpower-dropzone {
-    max-height: none !important;
-    min-height: 110px !important;
-    overflow: visible !important;
+    min-height: 100px !important;
   }
 }
 
