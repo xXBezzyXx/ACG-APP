@@ -178,13 +178,23 @@ function parseMaterialListValue(value) {
 }
 
 
+function getSortOrderValue(value, fallback) {
+  const num = Number(value);
+  return Number.isFinite(num) && num > 0 ? num : fallback;
+}
+
 function buildCategoriesFromCategoryRows(categoryRows) {
   const nextCategories = {};
   if (!Array.isArray(categoryRows)) return nextCategories;
 
-  const sortedRows = [...categoryRows].sort((a, b) => Number(a.sortOrder ?? a.SortOrder ?? 999999) - Number(b.sortOrder ?? b.SortOrder ?? 999999));
+  const sortedRows = [...categoryRows].sort((a, b) => {
+    const ao = getSortOrderValue(a.sortOrder ?? a.SortOrder ?? a["SortOrder"], 999999);
+    const bo = getSortOrderValue(b.sortOrder ?? b.SortOrder ?? b["SortOrder"], 999999);
+    if (ao !== bo) return ao - bo;
+    return String(a.categoryLabel ?? a["Category Label"] ?? a.Category ?? a.category ?? "").localeCompare(String(b.categoryLabel ?? b["Category Label"] ?? b.Category ?? b.category ?? ""));
+  });
 
-  sortedRows.forEach(row => {
+  sortedRows.forEach((row, index) => {
     const activeValue = String(row.active ?? row.Active ?? "TRUE").trim().toLowerCase();
     if (activeValue === "false" || activeValue === "no" || activeValue === "0" || activeValue === "inactive") return;
 
@@ -194,7 +204,7 @@ function buildCategoriesFromCategoryRows(categoryRows) {
 
     nextCategories[category] = {
       label: categoryLabel || category,
-      sortOrder: Number(row.sortOrder ?? row.SortOrder ?? row["SortOrder"] ?? 999999),
+      sortOrder: getSortOrderValue(row.sortOrder ?? row.SortOrder ?? row["SortOrder"], index + 1),
       items: []
     };
   });
@@ -224,7 +234,7 @@ function buildCategoriesFromMaterialsRows(rows, categoryRows) {
     if (!nextCategories[category]) {
       nextCategories[category] = {
         label: categoryLabel || category,
-        sortOrder: Number(row.sortOrder ?? row.SortOrder ?? row["SortOrder"] ?? 999999),
+        sortOrder: getSortOrderValue(row.categorySortOrder ?? row.CategorySortOrder, 999999),
         items: []
       };
     }
@@ -232,7 +242,7 @@ function buildCategoriesFromMaterialsRows(rows, categoryRows) {
     const item = {
       icon: String(row.icon ?? row.Icon ?? "").trim() || "📦",
       name: material,
-      sortOrder: Number(row.sortOrder ?? row.SortOrder ?? row["SortOrder"] ?? 999999),
+      sortOrder: getSortOrderValue(row.sortOrder ?? row.SortOrder ?? row["SortOrder"], nextCategories[category].items.length + 1),
       units: parseMaterialListValue(row.units ?? row.Units)
     };
 
@@ -265,13 +275,15 @@ function buildCategoriesFromMaterialsRows(rows, categoryRows) {
     nextCategories[category].items.push(item);
   });
 
-  Object.keys(nextCategories).forEach(categoryKey => {
-    nextCategories[categoryKey].items.sort((a, b) => {
-      const ai = Number(a.sortOrder || 999999);
-      const bi = Number(b.sortOrder || 999999);
-      if (ai !== bi) return ai - bi;
-      return String(a.name || "").localeCompare(String(b.name || ""));
-    });
+  Object.values(nextCategories).forEach(cat => {
+    if (cat && Array.isArray(cat.items)) {
+      cat.items.sort((a, b) => {
+        const ao = getSortOrderValue(a.sortOrder, 999999);
+        const bo = getSortOrderValue(b.sortOrder, 999999);
+        if (ao !== bo) return ao - bo;
+        return String(a.name || "").localeCompare(String(b.name || ""));
+      });
+    }
   });
 
   return Object.keys(nextCategories).length ? nextCategories : null;
@@ -345,25 +357,11 @@ let selectedPriority = "Normal";
 let currentSelectedJob = localStorage.getItem("materialOrderSelectedJob") || "";
 
 
-const MATERIAL_CATEGORY_ORDER = ["hanging", "others", "fasteners", "tools", "duct", "pipe", "refrigerant"];
-
-function categorySortIndex(key) {
-  const index = MATERIAL_CATEGORY_ORDER.indexOf(String(key || "").toLowerCase());
-  return index === -1 ? 999999 : index + 1;
-}
-
-function categorySortValue(key, cat) {
-  const rawSortOrder = cat && cat.sortOrder;
-  const numericSortOrder = Number(rawSortOrder);
-  if (Number.isFinite(numericSortOrder) && numericSortOrder > 0) return numericSortOrder;
-  return categorySortIndex(key);
-}
-
 function sortCategoryEntries(categoriesObject) {
   return Object.entries(categoriesObject || {}).sort(([aKey, aCat], [bKey, bCat]) => {
-    const ai = categorySortValue(aKey, aCat);
-    const bi = categorySortValue(bKey, bCat);
-    if (ai !== bi) return ai - bi;
+    const ao = getSortOrderValue(aCat && aCat.sortOrder, 999999);
+    const bo = getSortOrderValue(bCat && bCat.sortOrder, 999999);
+    if (ao !== bo) return ao - bo;
     return String((aCat && aCat.label) || aKey).localeCompare(String((bCat && bCat.label) || bKey));
   });
 }
@@ -756,7 +754,12 @@ function renderMaterialIcon(icon) {
 function renderMaterials() {
   if (!categories[activeCategory]) activeCategory = Object.keys(categories)[0] || "hanging";
   const searchText = ((document.getElementById("materialSearch") || {}).value || "").trim().toLowerCase();
-  const allItems = categories[activeCategory].items || [];
+  const allItems = [...(categories[activeCategory].items || [])].sort((a, b) => {
+    const ao = getSortOrderValue(a && a.sortOrder, 999999);
+    const bo = getSortOrderValue(b && b.sortOrder, 999999);
+    if (ao !== bo) return ao - bo;
+    return String((a && a.name) || "").localeCompare(String((b && b.name) || ""));
+  });
   const items = searchText ? allItems.filter(item => `${item.name || ""} ${(item.options || []).join(" ")}`.toLowerCase().includes(searchText)) : allItems;
   const materialList = document.getElementById("materialList");
   if (!materialList) return;
