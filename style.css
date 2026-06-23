@@ -2661,8 +2661,10 @@ label[for="dailySafety"]{
 }
 
 
-/* V93 Manpower compact clean grid */
-/* Keeps the clean grid layout, but removes the oversized empty bottom space inside job cards. */
+/* V94 Manpower capped job height */
+/* This is the one that actually changes the blank space.
+   Grid row height is controlled by the tallest job in the row, so cap tall jobs
+   and let their employee list scroll inside the card. */
 #manpowerScreen .manpower-board {
   display: grid !important;
   gap: 22px 16px !important;
@@ -2670,26 +2672,40 @@ label[for="dailySafety"]{
 }
 
 #manpowerScreen .manpower-column {
-  min-height: auto !important;
+  min-height: 0 !important;
   height: auto !important;
+  max-height: 340px !important;
   overflow: hidden !important;
 }
 
 #manpowerScreen .manpower-dropzone {
   min-height: 120px !important;
-  max-height: none !important;
-  overflow: visible !important;
+  max-height: 255px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  overscroll-behavior: contain !important;
+  scrollbar-width: thin !important;
 }
 
-/* Empty jobs still have some body space, but not a huge blank card. */
+#manpowerScreen .manpower-column-head {
+  position: static !important;
+}
+
+/* Empty jobs still have a clean body area */
 #manpowerScreen .manpower-dropzone:has(.send-note) {
-  min-height: 130px !important;
+  min-height: 150px !important;
 }
 
-/* Phones/tablets stay compact */
-@media (max-width: 720px) {
+/* Slightly tighter on smaller screens */
+@media (max-width: 900px) {
+  #manpowerScreen .manpower-column {
+    max-height: none !important;
+  }
+
   #manpowerScreen .manpower-dropzone {
-    min-height: 95px !important;
+    max-height: none !important;
+    min-height: 110px !important;
+    overflow: visible !important;
   }
 }
 
