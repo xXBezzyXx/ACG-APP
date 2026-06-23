@@ -2661,36 +2661,27 @@ label[for="dailySafety"]{
 }
 
 
-/* V96 Manpower column-stack layout */
-/* This keeps the same clean job-card look, removes inner scrollbars,
-   shows every employee, and lets the job under a tall job move down only in that column. */
+/* V97 Manpower true masonry columns */
+/* Full-width board. Jobs stack independently in each column, so a tall job only pushes
+   the jobs below it in that same column. No inner scrollbars; all names stay visible. */
 #manpowerScreen .manpower-board {
+  width: 100% !important;
+  max-width: none !important;
   display: grid !important;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
-  grid-auto-flow: column !important;
-  grid-template-rows: masonry !important;
-  gap: 28px 16px !important;
+  grid-template-columns: repeat(5, minmax(260px, 1fr)) !important;
+  gap: 16px !important;
   align-items: start !important;
 }
 
-/* Browser fallback: CSS columns gives the exact independent vertical stacking you asked for. */
-@supports not (grid-template-rows: masonry) {
-  #manpowerScreen .manpower-board {
-    display: block !important;
-    column-count: 5 !important;
-    column-gap: 16px !important;
-  }
-
-  #manpowerScreen .manpower-column {
-    display: inline-block !important;
-    width: 100% !important;
-    margin: 0 0 28px 0 !important;
-    break-inside: avoid !important;
-    page-break-inside: avoid !important;
-  }
+#manpowerScreen .manpower-masonry-col {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 36px !important;
+  min-width: 0 !important;
 }
 
 #manpowerScreen .manpower-column {
+  min-width: 0 !important;
   min-height: 0 !important;
   height: auto !important;
   max-height: none !important;
@@ -2698,12 +2689,13 @@ label[for="dailySafety"]{
 }
 
 #manpowerScreen .manpower-dropzone {
-  min-height: 120px !important;
+  min-height: 135px !important;
   max-height: none !important;
   overflow: visible !important;
   display: grid !important;
   gap: 10px !important;
   align-content: start !important;
+  padding: 14px !important;
 }
 
 #manpowerScreen .manpower-column-head {
@@ -2711,42 +2703,40 @@ label[for="dailySafety"]{
 }
 
 #manpowerScreen .manpower-dropzone:has(.send-note) {
-  min-height: 140px !important;
+  min-height: 150px !important;
 }
 
 @media (min-width: 1900px) {
-  @supports not (grid-template-rows: masonry) {
-    #manpowerScreen .manpower-board { column-count: 6 !important; }
+  #manpowerScreen .manpower-board {
+    grid-template-columns: repeat(6, minmax(250px, 1fr)) !important;
   }
 }
 
-@media (max-width: 1600px) {
-  @supports not (grid-template-rows: masonry) {
-    #manpowerScreen .manpower-board { column-count: 5 !important; }
+@media (max-width: 1500px) {
+  #manpowerScreen .manpower-board {
+    grid-template-columns: repeat(4, minmax(260px, 1fr)) !important;
   }
 }
 
-@media (max-width: 1300px) {
-  @supports not (grid-template-rows: masonry) {
-    #manpowerScreen .manpower-board { column-count: 4 !important; }
+@media (max-width: 1200px) {
+  #manpowerScreen .manpower-board {
+    grid-template-columns: repeat(3, minmax(260px, 1fr)) !important;
   }
 }
 
-@media (max-width: 1050px) {
-  @supports not (grid-template-rows: masonry) {
-    #manpowerScreen .manpower-board { column-count: 3 !important; }
-  }
-}
-
-@media (max-width: 800px) {
-  @supports not (grid-template-rows: masonry) {
-    #manpowerScreen .manpower-board { column-count: 2 !important; }
+@media (max-width: 850px) {
+  #manpowerScreen .manpower-board {
+    grid-template-columns: repeat(2, minmax(240px, 1fr)) !important;
   }
 }
 
 @media (max-width: 600px) {
-  @supports not (grid-template-rows: masonry) {
-    #manpowerScreen .manpower-board { column-count: 1 !important; }
+  #manpowerScreen .manpower-board {
+    grid-template-columns: 1fr !important;
+  }
+
+  #manpowerScreen .manpower-masonry-col {
+    gap: 24px !important;
   }
 }
 

@@ -2570,6 +2570,75 @@ function removeManpowerEmployee(employeeName) {
   saveManpowerBoard();
 }
 
+
+/* V97 Manpower masonry helper */
+function getManpowerPinnedJobIndex(name) {
+  const key = String(name || "").trim().toLowerCase();
+  if (key === "office") return 1;
+  if (key === "shop") return 2;
+  if (key === "vacation") return 3;
+  return 999;
+}
+
+function sortManpowerJobsForBoard(jobs) {
+  return [...(jobs || [])].sort((a, b) => {
+    const ap = getManpowerPinnedJobIndex(a && a.name);
+    const bp = getManpowerPinnedJobIndex(b && b.name);
+    if (ap !== bp) return ap - bp;
+
+    const ao = Number((a && (a.sortOrder || a.SortOrder)) || 999999);
+    const bo = Number((b && (b.sortOrder || b.SortOrder)) || 999999);
+    if (ao !== bo) return ao - bo;
+
+    return String((a && a.name) || "").localeCompare(String((b && b.name) || ""));
+  });
+}
+
+function getManpowerMasonryColumnCount(board) {
+  const width = board ? board.clientWidth : window.innerWidth;
+  if (width >= 1900) return 6;
+  if (width >= 1500) return 5;
+  if (width >= 1200) return 4;
+  if (width >= 850) return 3;
+  if (width >= 600) return 2;
+  return 1;
+}
+
+function estimateManpowerJobHeight(job, assignedCount) {
+  const nameLines = Math.ceil(String((job && job.name) || "").length / 28);
+  return 118 + Math.max(0, nameLines - 1) * 26 + Math.max(1, assignedCount || 0) * 86;
+}
+
+function buildManpowerMasonryColumns(jobs, employees, board) {
+  const columnCount = Math.max(1, getManpowerMasonryColumnCount(board));
+  const columns = Array.from({ length: columnCount }, () => ({ height: 0, jobs: [] }));
+  const sortedJobs = sortManpowerJobsForBoard(jobs);
+
+  // Keep Office / Shop / Vacation locked across the top when present.
+  const pinned = sortedJobs.filter(job => getManpowerPinnedJobIndex(job && job.name) < 999);
+  const rest = sortedJobs.filter(job => getManpowerPinnedJobIndex(job && job.name) >= 999);
+
+  pinned.forEach((job, index) => {
+    const col = columns[Math.min(index, columns.length - 1)];
+    const assignedCount = employees.filter(emp => (emp.assignedTo || "Unassigned") === job.name).length;
+    col.jobs.push(job);
+    col.height += estimateManpowerJobHeight(job, assignedCount);
+  });
+
+  rest.forEach(job => {
+    const assignedCount = employees.filter(emp => (emp.assignedTo || "Unassigned") === job.name).length;
+    let target = columns[0];
+    columns.forEach(col => {
+      if (col.height < target.height) target = col;
+    });
+    target.jobs.push(job);
+    target.height += estimateManpowerJobHeight(job, assignedCount);
+  });
+
+  return columns;
+}
+
+
 function renderManpowerBoard() {
   const board = document.getElementById("manpowerBoard");
   if (!board) return;
@@ -2580,13 +2649,13 @@ function renderManpowerBoard() {
   const activeJobsEl = document.getElementById("manpowerActiveJobCount");
   const unassignedCount = manpowerEmployees.filter(emp => (emp.assignedTo || "Unassigned") === "Unassigned").length;
   const activeJobCount = new Set(
-  manpowerEmployees
-    .map(emp => emp.assignedTo || "Unassigned")
-    .filter(name =>
-      name &&
-      !["Unassigned", "Shop", "Vacation", "Office"].includes(name)
-    )
-).size;
+    manpowerEmployees
+      .map(emp => emp.assignedTo || "Unassigned")
+      .filter(name =>
+        name &&
+        !["Unassigned", "Shop", "Vacation", "Office"].includes(name)
+      )
+  ).size;
 
   if (totalOld) totalOld.textContent = `${manpowerEmployees.length} total • ${unassignedCount} unassigned • ${activeJobCount} active jobs`;
   if (totalEmployeesEl) totalEmployeesEl.textContent = String(manpowerEmployees.length);
@@ -2595,29 +2664,34 @@ function renderManpowerBoard() {
 
   const canManage = canManageManpower();
   const jobs = mergeManpowerJobs(manpowerJobs.length ? manpowerJobs : getDefaultManpowerJobs());
+  const columns = buildManpowerMasonryColumns(jobs, manpowerEmployees, board);
 
-  board.innerHTML = jobs.map(job => {
-    const assigned = manpowerEmployees.filter(emp => (emp.assignedTo || "Unassigned") === job.name);
-    return `
-      <div class="manpower-column">
-        <div class="manpower-column-head">
-          <h3>${safeText(job.name)}</h3>
-          <span>${assigned.length}</span>
-        </div>
-        <div class="manpower-dropzone" data-manpower-job="${safeText(job.name)}">
-          ${assigned.map(emp => `
-            <div class="manpower-card" draggable="${canManage ? "true" : "false"}" data-manpower-employee="${safeText(emp.name)}">
-              <div>
-                <strong>${safeText(emp.name)}</strong>
-                <small>${safeText(emp.position || "")}</small>
-              </div>
-              ${canManage ? `<button data-remove-manpower="${safeText(emp.name)}" type="button">×</button>` : ""}
+  board.innerHTML = columns.map((column, columnIndex) => `
+    <div class="manpower-masonry-col" data-manpower-col="${columnIndex + 1}">
+      ${column.jobs.map(job => {
+        const assigned = manpowerEmployees.filter(emp => (emp.assignedTo || "Unassigned") === job.name);
+        return `
+          <div class="manpower-column">
+            <div class="manpower-column-head">
+              <h3>${safeText(job.name)}</h3>
+              <span>${assigned.length}</span>
             </div>
-          `).join("") || "<p class='send-note'>Drop employees here</p>"}
-        </div>
-      </div>
-    `;
-  }).join("");
+            <div class="manpower-dropzone" data-manpower-job="${safeText(job.name)}">
+              ${assigned.map(emp => `
+                <div class="manpower-card" draggable="${canManage ? "true" : "false"}" data-manpower-employee="${safeText(emp.name)}">
+                  <div>
+                    <strong>${safeText(emp.name)}</strong>
+                    <small>${safeText(emp.position || "")}</small>
+                  </div>
+                  ${canManage ? `<button data-remove-manpower="${safeText(emp.name)}" type="button">×</button>` : ""}
+                </div>
+              `).join("") || "<p class='send-note'>Drop employees here</p>"}
+            </div>
+          </div>
+        `;
+      }).join("")}
+    </div>
+  `).join("");
 
   if (!canManage) return;
 
@@ -2653,7 +2727,6 @@ function renderManpowerBoard() {
     });
   });
 }
-
 
 function setupApp() {
   const jobSearch = document.getElementById("jobSearch");
@@ -3960,3 +4033,19 @@ document.addEventListener("change", function(e){
     loadProjectEquipmentReleases();
   }
 });
+
+
+
+/* V97 keep masonry columns correct on browser resize */
+if (!window.__manpowerMasonryResizeWired) {
+  window.__manpowerMasonryResizeWired = true;
+  window.addEventListener("resize", () => {
+    const screen = document.getElementById("manpowerScreen");
+    if (!screen || !screen.classList.contains("active")) return;
+    clearTimeout(window.__manpowerMasonryResizeTimer);
+    window.__manpowerMasonryResizeTimer = setTimeout(() => {
+      if (typeof renderManpowerBoard === "function") renderManpowerBoard();
+    }, 150);
+  });
+}
+
