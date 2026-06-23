@@ -359,6 +359,17 @@ function safeText(text) {
     .split("'").join("&#039;");
 }
 
+function fieldOpsTranslateText(value) {
+  if (typeof window !== "undefined" && typeof window.translateFieldOpsValue === "function") {
+    return window.translateFieldOpsValue(value);
+  }
+  return value;
+}
+
+function fieldOpsSafeTranslate(value) {
+  return safeText(fieldOpsTranslateText(value));
+}
+
 function showScreen(id) {
   document.querySelectorAll(".screen").forEach(screen => screen.classList.remove("active"));
   const screen = document.getElementById(id);
@@ -415,7 +426,7 @@ function selectJob(job) {
 function renderJobs() {
   const searchInput = document.getElementById("jobSearch");
   const q = searchInput ? searchInput.value.toLowerCase() : "";
-  const list = getActiveJobs().filter(job => job.toLowerCase().includes(q));
+  const list = getActiveJobs().filter(job => (`${job} ${fieldOpsTranslateText(job)}`).toLowerCase().includes(q));
   const jobList = document.getElementById("recentOrders") || document.getElementById("jobList");
   if (!jobList) return;
 
@@ -423,10 +434,10 @@ function renderJobs() {
     <button class="job-card" data-job="${safeText(job)}" type="button">
       <div class="job-thumb">📋</div>
       <div>
-        <h3>${safeText(job)}</h3>
-        <span class="job-meta">Material order ready</span>
+        <h3>${fieldOpsSafeTranslate(job)}</h3>
+        <span class="job-meta">${fieldOpsSafeTranslate("Material order ready")}</span>
       </div>
-      <span class="job-status">● Active</span>
+      <span class="job-status">${fieldOpsSafeTranslate("● Active")}</span>
       <div class="chev">›</div>
     </button>
   `).join("");
@@ -443,7 +454,7 @@ function renderJobSelect() {
   const jobs = getActiveJobs();
   const previousValue = currentSelectedJob || selectedJob.value || localStorage.getItem("materialOrderSelectedJob") || jobs[0] || "";
 
-  selectedJob.innerHTML = jobs.map(job => `<option value="${safeText(job)}">${safeText(job)}</option>`).join("");
+  selectedJob.innerHTML = jobs.map(job => `<option value="${safeText(job)}">${fieldOpsSafeTranslate(job)}</option>`).join("");
 
   if (previousValue && jobs.includes(previousValue)) {
     selectedJob.value = previousValue;
@@ -466,7 +477,7 @@ function renderCategories() {
   const tabs = document.getElementById("categoryTabs");
   if (tabs) {
     tabs.innerHTML = sortedEntries.map(([key, cat]) => `
-      <button class="chip ${key === activeCategory ? "active" : ""}" data-category="${key}" type="button">${safeText(cat.label)}</button>
+      <button class="chip ${key === activeCategory ? "active" : ""}" data-category="${key}" type="button">${fieldOpsSafeTranslate(cat.label)}</button>
     `).join("");
 
     document.querySelectorAll(".chip").forEach(button => {
@@ -483,7 +494,7 @@ function renderQuickOrder() {
   const entries = sortCategoryEntries(categories).slice(0, 5);
   quick.innerHTML = entries.map(([key, cat], index) => `
     <button class="quick-card ${key === activeCategory ? "active" : ""}" data-category="${key}" type="button">
-      <span>${icons[index] || "📦"}</span>${safeText(cat.label)}
+      <span>${icons[index] || "📦"}</span>${fieldOpsSafeTranslate(cat.label)}
     </button>
   `).join("");
   document.querySelectorAll(".quick-card").forEach(button => {
@@ -612,7 +623,7 @@ function addToCart(itemName) {
   if (qty <= 0) {
     const selectedJob = document.getElementById("selectedJob");
     if (selectedJob) setSelectedJob(selectedJob.value);
-    alert("Please add a quantity before adding to cart.");
+    alert(fieldOpsTranslateText("Please add a quantity before adding to cart."));
     showScreen("orderScreen");
     return;
   }
@@ -623,13 +634,13 @@ function addToCart(itemName) {
   const itemNotes = getMaterialNoteDraft(item).trim();
 
   if (item.custom && !customText) {
-    alert("Please type the custom material you need before adding to cart.");
+    alert(fieldOpsTranslateText("Please type the custom material you need before adding to cart."));
     showScreen("orderScreen");
     return;
   }
 
   if (item.noteRequired && !itemNotes) {
-    alert("Please type notes for this material before adding it to the cart.");
+    alert(fieldOpsTranslateText("Please type notes for this material before adding it to the cart."));
     showScreen("orderScreen");
     return;
   }
@@ -678,13 +689,13 @@ function renderCartPreview() {
   const countEl = document.getElementById("cartCount");
   const previewEl = document.getElementById("cartPreview");
 
-  if (countEl) countEl.textContent = `${count} item${count === 1 ? "" : "s"}`;
+  if (countEl) countEl.textContent = `${count} ${fieldOpsTranslateText(count === 1 ? "item" : "items")}`;
 
   if (!previewEl) return;
 
   if (cart.length === 0) {
     previewEl.className = "cart-preview-empty";
-    previewEl.innerHTML = "Nothing added yet.";
+    previewEl.innerHTML = fieldOpsSafeTranslate("Nothing added yet.");
     return;
   }
 
@@ -692,11 +703,11 @@ function renderCartPreview() {
   previewEl.innerHTML = cart.map(item => `
     <div class="cart-line">
       <div>
-        <strong>${safeText(displayName(item))}</strong>
-        <span>${safeText(item.categoryLabel)}${item.notes ? " • Notes: " + safeText(item.notes) : ""}</span>
+        <strong>${fieldOpsSafeTranslate(displayName(item))}</strong>
+        <span>${fieldOpsSafeTranslate(item.categoryLabel)}${item.notes ? " • " + fieldOpsSafeTranslate("Notes") + ": " + safeText(item.notes) : ""}</span>
       </div>
       <div class="cart-line-right">
-        <b>${item.qty} ${safeText(item.unit)}</b>
+        <b>${item.qty} ${fieldOpsSafeTranslate(item.unit)}</b>
         <button type="button" data-cart-key="${safeText(item.cartKey)}">×</button>
       </div>
     </div>
@@ -736,32 +747,32 @@ function renderMaterials() {
 
     const customInput = item.custom ? `
       <label class="select-label custom-material-label">
-        Material Needed
-        <textarea class="custom-material-input" data-item="${safeText(item.name)}" placeholder="${safeText(item.placeholder || "Type what material you need here...")}">${safeText(getCustomDraft(item))}</textarea>
+        ${fieldOpsSafeTranslate("Material Needed")}
+        <textarea class="custom-material-input" data-item="${safeText(item.name)}" placeholder="${fieldOpsSafeTranslate(item.placeholder || "Type what material you need here...")}">${safeText(getCustomDraft(item))}</textarea>
       </label>
     ` : "";
 
     const noteInput = item.noteRequired ? `
       <label class="select-label material-note-label required-note">
-        Notes (Required)
-        <textarea class="material-note-input" data-note-item="${safeText(item.name)}" placeholder="Type notes for this material...">${safeText(getMaterialNoteDraft(item))}</textarea>
+        ${fieldOpsSafeTranslate("Notes (Required)")}
+        <textarea class="material-note-input" data-note-item="${safeText(item.name)}" placeholder="${fieldOpsSafeTranslate("Type notes for this material...")}">${safeText(getMaterialNoteDraft(item))}</textarea>
       </label>
     ` : "";
 
     const sizeSelect = !item.custom && item.options ? `
       <label class="select-label">
-        Size
+        ${fieldOpsSafeTranslate("Size")}
         <select class="variant-select" data-item="${safeText(item.name)}">
-          ${item.options.map(option => `<option ${getSelectedOption(item) === option ? "selected" : ""}>${safeText(option)}</option>`).join("")}
+          ${item.options.map(option => `<option value="${safeText(option)}" ${getSelectedOption(item) === option ? "selected" : ""}>${fieldOpsSafeTranslate(option)}</option>`).join("")}
         </select>
       </label>
     ` : "";
 
     const unitSelect = `
       <label class="select-label unit-label">
-        Unit
+        ${fieldOpsSafeTranslate("Unit")}
         <select class="unit-select" data-item="${safeText(item.name)}">
-          ${(item.units || ["Each"]).map(unit => `<option ${getSelectedUnit(item) === unit ? "selected" : ""}>${safeText(unit)}</option>`).join("")}
+          ${(item.units || ["Each"]).map(unit => `<option value="${safeText(unit)}" ${getSelectedUnit(item) === unit ? "selected" : ""}>${fieldOpsSafeTranslate(unit)}</option>`).join("")}
         </select>
       </label>
     `;
@@ -770,7 +781,7 @@ function renderMaterials() {
       <div class="material-row cart-style-row">
         <div class="material-icon">${renderMaterialIcon(item.icon)}</div>
         <div class="material-info">
-          <div class="material-name">${safeText(item.name)}</div>
+          <div class="material-name">${fieldOpsSafeTranslate(item.name)}</div>
           ${customInput}
           <div class="select-row mobile-full-controls">
             ${sizeSelect}
@@ -784,7 +795,7 @@ function renderMaterials() {
           <button class="plus plus-btn" data-item="${safeText(item.name)}" type="button">+</button>
         </div>
 
-        <button class="add-cart-btn add-cart-wide" data-item="${safeText(item.name)}" type="button">Add to Cart</button>
+        <button class="add-cart-btn add-cart-wide" data-item="${safeText(item.name)}" type="button">${fieldOpsSafeTranslate("Add to Cart")}</button>
         ${noteInput}
       </div>
     `;

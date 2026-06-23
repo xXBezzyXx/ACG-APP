@@ -2809,3 +2809,38 @@ label[for="dailySafety"]{
     font-size: 13px;
   }
 }
+
+/* FieldOps speed pass: let the browser skip off-screen material/rental cards. */
+.material-row,
+.job-card,
+.board-card,
+.project-tracker-card,
+.action-choice-card,
+.daily-form-card {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 140px;
+}
+
+/* FieldOps speed pass: reduce expensive glass/blur effects on phones. */
+@media (max-width: 720px) {
+  .job-card,
+  .review-job-card,
+  .review-card,
+  .total-card,
+  .material-row,
+  .notes-box,
+  .cart-preview-card,
+  .priority-review-card,
+  .board-card,
+  .daily-form-card,
+  .action-choice-card,
+  .project-tracker-card {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    box-shadow: 0 8px 20px rgba(0,0,0,.18) !important;
+  }
+
+  .screen {
+    animation: none !important;
+  }
+}

@@ -360,33 +360,7 @@
   }
 
   function translateString(value, lang) {
-    return smartTranslate(value, lang);
-  }
-
-  function translateTextNodes(root, lang) {
-    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
-      acceptNode(node) {
-        const parent = node.parentElement;
-        if (!parent || SKIP_TAGS.has(parent.tagName)) return NodeFilter.FILTER_REJECT;
-        if (!node.nodeValue || !node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
-        return NodeFilter.FILTER_ACCEPT;
-      }
-    });
-
-    const nodes = [];
-    while (walker.nextNode()) nodes.push(walker.currentNode);
-    nodes.forEach(node => {
-      node.nodeValue = translateString(node.nodeValue, lang);
-    });
-  }
-
-  function translateAttributes(lang) {
-    document.querySelectorAll("input[placeholder], textarea[placeholder]").forEach(el => {
-      el.placeholder = translateString(el.placeholder, lang);
-    });
-    document.querySelectorAll("button[value], input[value]").forEach(el => {
-      if ((el.type || "").toLowerCase() !== "hidden") el.value = translateString(el.value, lang);
-    });
+    return smartTranslate(value, lang || getLanguage());
   }
 
   function ensureLanguageButton() {
@@ -407,41 +381,64 @@
     btn.setAttribute("aria-label", lang === "es" ? "Switch to English" : "Cambiar a Español");
   }
 
-  function applyLanguage() {
-    const lang = getLanguage();
-    translateTextNodes(document.body, lang);
-    translateAttributes(lang);
-    updateLanguageButton(lang);
-    document.documentElement.lang = lang;
+  function translateNodeText(selector, text) {
+    document.querySelectorAll(selector).forEach(el => {
+      el.textContent = translateString(text);
+    });
   }
 
-  let applying = false;
-  let timer = null;
-  function scheduleApply() {
-    if (applying) return;
-    clearTimeout(timer);
-    timer = setTimeout(() => {
-      applying = true;
-      applyLanguage();
-      applying = false;
-    }, 50);
+  function applyStaticLanguage() {
+    const lang = getLanguage();
+    document.documentElement.lang = lang;
+    updateLanguageButton(lang);
+
+    // Keep this list small and direct. Do not scan the entire app on every material/job render.
+    translateNodeText(".small-text", "Material Ordering");
+
+    const jobSearch = document.getElementById("jobSearch");
+    if (jobSearch) jobSearch.placeholder = translateString("Search jobs");
+
+    const materialSearch = document.getElementById("materialSearch");
+    if (materialSearch) materialSearch.placeholder = translateString("Search material");
+  }
+
+  function refreshVisibleDynamicParts() {
+    // These functions now render translated text directly using translateFieldOpsValue.
+    // Only re-render the visible items after the user manually switches language.
+    if (typeof window.renderJobs === "function") window.renderJobs();
+    if (typeof window.renderCategories === "function") window.renderCategories();
+    if (typeof window.renderMaterials === "function") window.renderMaterials();
+    if (typeof window.renderCartPreview === "function") window.renderCartPreview();
+    if (typeof window.updateJobActionScreen === "function") window.updateJobActionScreen();
+  }
+
+  function patchShowScreen() {
+    if (typeof window.showScreen !== "function" || window.showScreen.__fieldOpsLanguageFastPatched) return;
+    const original = window.showScreen;
+    const wrapped = function () {
+      const result = original.apply(this, arguments);
+      setTimeout(applyStaticLanguage, 0);
+      return result;
+    };
+    wrapped.__fieldOpsLanguageFastPatched = true;
+    window.showScreen = wrapped;
   }
 
   function initLanguageToggle() {
     const btn = ensureLanguageButton();
-    if (btn && !btn.dataset.ready) {
+    if (!btn.dataset.ready) {
       btn.dataset.ready = "true";
       btn.addEventListener("click", () => {
         const next = getLanguage() === "es" ? "en" : "es";
         setLanguage(next);
-        applyLanguage();
+        applyStaticLanguage();
+        refreshVisibleDynamicParts();
       });
     }
 
-    applyLanguage();
-
-    const observer = new MutationObserver(scheduleApply);
-    observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+    patchShowScreen();
+    applyStaticLanguage();
+    setTimeout(patchShowScreen, 100);
   }
 
   if (document.readyState === "loading") {
@@ -450,5 +447,8 @@
     initLanguageToggle();
   }
 
-  window.applyFieldOpsLanguage = applyLanguage;
+  window.applyFieldOpsLanguage = applyStaticLanguage;
+  window.translateFieldOpsValue = function(value) {
+    return translateString(value, getLanguage());
+  };
 })();
