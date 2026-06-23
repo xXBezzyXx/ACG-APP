@@ -194,6 +194,7 @@ function buildCategoriesFromCategoryRows(categoryRows) {
 
     nextCategories[category] = {
       label: categoryLabel || category,
+      sortOrder: Number(row.sortOrder ?? row.SortOrder ?? row["SortOrder"] ?? 999999),
       items: []
     };
   });
@@ -223,6 +224,7 @@ function buildCategoriesFromMaterialsRows(rows, categoryRows) {
     if (!nextCategories[category]) {
       nextCategories[category] = {
         label: categoryLabel || category,
+        sortOrder: Number(row.sortOrder ?? row.SortOrder ?? row["SortOrder"] ?? 999999),
         items: []
       };
     }
@@ -230,6 +232,7 @@ function buildCategoriesFromMaterialsRows(rows, categoryRows) {
     const item = {
       icon: String(row.icon ?? row.Icon ?? "").trim() || "📦",
       name: material,
+      sortOrder: Number(row.sortOrder ?? row.SortOrder ?? row["SortOrder"] ?? 999999),
       units: parseMaterialListValue(row.units ?? row.Units)
     };
 
@@ -260,6 +263,15 @@ function buildCategoriesFromMaterialsRows(rows, categoryRows) {
     }
 
     nextCategories[category].items.push(item);
+  });
+
+  Object.keys(nextCategories).forEach(categoryKey => {
+    nextCategories[categoryKey].items.sort((a, b) => {
+      const ai = Number(a.sortOrder || 999999);
+      const bi = Number(b.sortOrder || 999999);
+      if (ai !== bi) return ai - bi;
+      return String(a.name || "").localeCompare(String(b.name || ""));
+    });
   });
 
   return Object.keys(nextCategories).length ? nextCategories : null;
@@ -333,17 +345,24 @@ let selectedPriority = "Normal";
 let currentSelectedJob = localStorage.getItem("materialOrderSelectedJob") || "";
 
 
-const MATERIAL_CATEGORY_ORDER = ["hanging", "fasteners", "tools", "duct", "pipe"];
+const MATERIAL_CATEGORY_ORDER = ["hanging", "others", "fasteners", "tools", "duct", "pipe", "refrigerant"];
 
 function categorySortIndex(key) {
-  const index = MATERIAL_CATEGORY_ORDER.indexOf(String(key || ""));
-  return index === -1 ? 999 : index;
+  const index = MATERIAL_CATEGORY_ORDER.indexOf(String(key || "").toLowerCase());
+  return index === -1 ? 999999 : index + 1;
+}
+
+function categorySortValue(key, cat) {
+  const rawSortOrder = cat && cat.sortOrder;
+  const numericSortOrder = Number(rawSortOrder);
+  if (Number.isFinite(numericSortOrder) && numericSortOrder > 0) return numericSortOrder;
+  return categorySortIndex(key);
 }
 
 function sortCategoryEntries(categoriesObject) {
   return Object.entries(categoriesObject || {}).sort(([aKey, aCat], [bKey, bCat]) => {
-    const ai = categorySortIndex(aKey);
-    const bi = categorySortIndex(bKey);
+    const ai = categorySortValue(aKey, aCat);
+    const bi = categorySortValue(bKey, bCat);
     if (ai !== bi) return ai - bi;
     return String((aCat && aCat.label) || aKey).localeCompare(String((bCat && bCat.label) || bKey));
   });
