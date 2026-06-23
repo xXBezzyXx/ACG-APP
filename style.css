@@ -1907,13 +1907,7 @@ button#adminAddManpowerEmployeeBtn:hover {
     grid-template-columns: 1fr !important;
   }
 }
-/* V92 Manpower row gap override */
-#manpowerScreen .manpower-board {
-  display: grid !important;
-  column-gap: 16px !important;
-  row-gap: 32px !important;
-  gap: 32px 16px !important;
-}
+
 
 /* V96 Rental board + shared bottom nav */
 .app-top-btn,
@@ -2665,4 +2659,12 @@ label[for="dailySafety"]{
 
 .project-tracker-form-card + .tracker-list {
   margin-top: 15px;
+}
+
+/* V92 Manpower row gap override */
+#manpowerScreen .manpower-board {
+  display: grid !important;
+  column-gap: 16px !important;
+  row-gap: 32px !important;
+  gap: 32px 16px !important;
 }
