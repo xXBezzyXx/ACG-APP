@@ -3,6 +3,7 @@ const JOBS_SHEET_NAME = "Jobs";
 const USERS_SHEET_NAME = "Users";
 const SETTINGS_SHEET_NAME = "Settings";
 const DAILY_REPORTS_SHEET_NAME = "DailyReports";
+const MATERIAL_RECEIVED_SHEET_NAME = "MaterialReceived";
 const RENTALS_SHEET_NAME = "Rentals";
 const RENTAL_ITEMS_SHEET_NAME = "RentalItems";
 const MANPOWER_EMPLOYEES_SHEET_NAME = "Employees";
@@ -210,6 +211,29 @@ if (data.action === "addMaterialCategory") {
     const row = Number(data.id);
     if (row && row >= 2) sheet.deleteRow(row);
     return json_({ success: true, action: "deleteRental" });
+  }
+
+  if (data.action === "materialReceived") {
+    const receivedNumber = data.receivedNumber || makeMaterialReceivedNumber_();
+    const sheet = getMaterialReceivedSheet_();
+    const photos = Array.isArray(data.photos) ? data.photos : [];
+    sheet.appendRow([
+      new Date(),
+      data.job || "",
+      data.receivedBy || "",
+      data.notes || "",
+      Number(data.photoCount || photos.length || 0),
+      data.status || "Received",
+      receivedNumber
+    ]);
+
+    try {
+      sendMaterialReceivedEmail_(Object.assign({}, data, { receivedNumber: receivedNumber, photos: photos }));
+    } catch (err) {
+      sheet.appendRow([new Date(), "EMAIL ERROR: " + err.message, data.receivedBy || "", data.notes || "", 0, "Email Error", receivedNumber]);
+    }
+
+    return json_({ success: true, action: "materialReceived", receivedNumber: receivedNumber });
   }
 
   if (data.action === "dailyReport") {
@@ -700,6 +724,74 @@ function savePdfLetterhead_(pdf) {
   sheet.appendRow(["Setting", "Value"]);
   const rows = keys.map(key => [key, merged[key] || ""]);
   if (rows.length) sheet.getRange(2, 1, rows.length, 2).setValues(rows);
+}
+
+function getMaterialReceivedSheet_() {
+  return getOrCreateSheet_(MATERIAL_RECEIVED_SHEET_NAME, ["Timestamp", "Job", "Received By", "Notes", "Photo Count", "Status", "Received Number"]);
+}
+
+function makeMaterialReceivedNumber_() {
+  return "MR-" + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyyMMdd") + "-" + Math.floor(10000 + Math.random() * 90000);
+}
+
+function materialReceivedPhotoAttachments_(photos) {
+  if (!Array.isArray(photos)) return [];
+  return photos.slice(0, 3).map(function(photo, index) {
+    const dataUrl = String((photo && photo.dataUrl) || "");
+    const match = dataUrl.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
+    if (!match) return null;
+    const mimeType = match[1];
+    const extension = mimeType.indexOf("png") !== -1 ? "png" : "jpg";
+    const name = makeSafeFileName_(String((photo && photo.name) || ("material-received-" + (index + 1) + "." + extension)));
+    return Utilities.newBlob(Utilities.base64Decode(match[2]), mimeType, name);
+  }).filter(function(blob) { return blob; });
+}
+
+function sendMaterialReceivedEmail_(data) {
+  const to = getJobEmailByName_(data.job || "") || data.toEmail || "nmcdonald@acgeneral.net";
+  const receivedNumber = data.receivedNumber || makeMaterialReceivedNumber_();
+  const job = data.job || "";
+  const receivedBy = data.receivedBy || "";
+  const notes = data.notes || "None";
+  const created = data.createdAt ? new Date(data.createdAt) : new Date();
+  const dateText = Utilities.formatDate(created, Session.getScriptTimeZone(), "MM/dd/yyyy h:mm a");
+  const attachments = materialReceivedPhotoAttachments_(data.photos || []);
+
+  const subject = "Material Received - " + job + " - " + receivedNumber;
+  const plainBody =
+    "Material Received\n\n" +
+    "Received #: " + receivedNumber + "\n" +
+    "Job: " + job + "\n" +
+    "Received By: " + receivedBy + "\n" +
+    "Date / Time: " + dateText + "\n" +
+    "Photo Count: " + attachments.length + "\n\n" +
+    "Notes:\n" + notes;
+
+  const htmlBody =
+    '<div style="font-family:Arial,sans-serif;max-width:720px;margin:0 auto;color:#111827;">' +
+      '<div style="background:#0f172a;color:#ffffff;padding:18px 22px;border-radius:14px 14px 0 0;">' +
+        '<h1 style="margin:0;font-size:24px;">Material Received</h1>' +
+      '</div>' +
+      '<div style="border:1px solid #e5e7eb;border-top:0;padding:22px;border-radius:0 0 14px 14px;">' +
+        '<h2 style="margin:0 0 14px;font-size:22px;color:#0f172a;">' + escapeHtml_(job) + '</h2>' +
+        '<table style="width:100%;border-collapse:collapse;margin-top:10px;">' +
+          '<tr><td style="padding:12px;border:1px solid #e5e7eb;background:#f9fafb;font-weight:bold;width:34%;">Received #</td><td style="padding:12px;border:1px solid #e5e7eb;">' + escapeHtml_(receivedNumber) + '</td></tr>' +
+          '<tr><td style="padding:12px;border:1px solid #e5e7eb;background:#f9fafb;font-weight:bold;">Received By</td><td style="padding:12px;border:1px solid #e5e7eb;">' + escapeHtml_(receivedBy) + '</td></tr>' +
+          '<tr><td style="padding:12px;border:1px solid #e5e7eb;background:#f9fafb;font-weight:bold;">Date / Time</td><td style="padding:12px;border:1px solid #e5e7eb;">' + escapeHtml_(dateText) + '</td></tr>' +
+          '<tr><td style="padding:12px;border:1px solid #e5e7eb;background:#f9fafb;font-weight:bold;">Photo Count</td><td style="padding:12px;border:1px solid #e5e7eb;">' + attachments.length + '</td></tr>' +
+          '<tr><td style="padding:12px;border:1px solid #e5e7eb;background:#f9fafb;font-weight:bold;">Notes</td><td style="padding:12px;border:1px solid #e5e7eb;white-space:pre-wrap;">' + escapeHtml_(notes) + '</td></tr>' +
+        '</table>' +
+        '<p style="margin-top:18px;color:#6b7280;font-size:13px;">This material received notice was submitted from the FieldOps App.</p>' +
+      '</div>' +
+    '</div>';
+
+  MailApp.sendEmail({
+    to: to,
+    subject: subject,
+    body: plainBody,
+    htmlBody: htmlBody,
+    attachments: attachments
+  });
 }
 
 function getDailyReportsSheet_() {

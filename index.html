@@ -28,6 +28,7 @@
         <button id="dailyReportChoiceBtn" class="action-choice-card" type="button"><span>📝</span><strong>Daily Report</strong><small>Manpower, work performed, issues, photos</small></button>
         <button id="materialOrderChoiceBtn" class="action-choice-card" type="button"><span>📦</span><strong>Material Order</strong><small>Request materials and email PDF</small></button>
         <button id="rentalChoiceBtn" class="action-choice-card" type="button"><span>🚜</span><strong>Job Site Rentals</strong><small>Track conex, lull, lifts, and rental quantity</small></button>
+        <button id="fieldActivityChoiceBtn" class="action-choice-card" type="button"><span>📍</span><strong>Field Activity</strong><small>Material received and field updates</small></button>
         <button id="projectTrackerChoiceBtn" class="action-choice-card" type="button" style="display:none;"><span>📋</span><strong>Project Tracker</strong><small>Submittals, permits, ODPs, releases, notes</small></button>
       </div>
     </section>
@@ -255,6 +256,37 @@
         <p id="projectNoteMessage" class="send-note"></p>
       </div>
       
+    </section>
+
+    <section id="fieldActivityScreen" class="screen">
+      <header class="top-bar center"><button class="back-btn" onclick="showScreen('jobActionScreen')" type="button">‹</button><h2>Field Activity</h2><span></span></header>
+      <div class="review-job-card"><div class="job-image">📍</div><div><h3 id="fieldActivityJobName">Selected Job</h3><span class="status-dot">● Active</span></div></div>
+      <div class="action-choice-grid">
+        <button id="materialReceivedChoiceBtn" class="action-choice-card" type="button"><span>📦</span><strong>Material Received</strong><small>Send photo and notes to PM</small></button>
+      </div>
+    </section>
+
+    <section id="materialReceivedScreen" class="screen">
+      <header class="top-bar center"><button class="back-btn" onclick="showScreen('fieldActivityScreen')" type="button">‹</button><h2>Material Received</h2><span></span></header>
+      <div class="daily-auto-grid">
+        <div class="daily-auto-box"><span>Job</span><strong id="materialReceivedJob">Selected Job</strong></div>
+        <div class="daily-auto-box"><span>Received By</span><strong id="materialReceivedBy">Logged-in user</strong></div>
+        <div class="daily-auto-box"><span>Date / Time</span><strong id="materialReceivedDateTime">Auto</strong></div>
+      </div>
+      <div class="daily-form-card">
+        <label class="daily-label">Photo
+          <input id="materialReceivedPhoto" class="daily-input" type="file" accept="image/*" />
+          <small class="photo-help">On phone, this should let you choose Camera or Photo Library/Gallery.</small>
+        </label>
+        <div id="materialReceivedPhotoList" class="photo-note">No photo selected.</div>
+
+        <label class="daily-label">Notes
+          <textarea id="materialReceivedNotes" class="daily-textarea" placeholder="Example: RTUs delivered, ductwork delivered, material left by conex, etc."></textarea>
+        </label>
+
+        <button id="submitMaterialReceivedBtn" class="submit-btn orange-submit-btn" type="button">Submit Material Received</button>
+        <p class="send-note">This saves to Google Sheets and emails the job contact.</p>
+      </div>
     </section>
 
     <section id="rentalScreen" class="screen">
