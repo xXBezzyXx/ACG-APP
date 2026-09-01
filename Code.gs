@@ -8,6 +8,7 @@ const RENTALS_SHEET_NAME = "Rentals";
 const RENTAL_ITEMS_SHEET_NAME = "RentalItems";
 const MANPOWER_EMPLOYEES_SHEET_NAME = "Employees";
 const MANPOWER_JOBS_SHEET_NAME = "ManpowerJobs";
+const MANPOWER_META_SHEET_NAME = "ManpowerMeta";
 const MATERIALS_SHEET_NAME = "Materials";
 const MATERIAL_CATEGORIES_SHEET_NAME = "MaterialCategories";
 const PDF_LETTERHEAD_SHEET_NAME = "PDFLetterhead";
@@ -160,6 +161,7 @@ if (data.action === "addMaterialCategory") {
   if (data.action === "saveManpowerBoard") {
     saveManpowerJobs_(data.jobs || []);
     saveManpowerEmployees_(data.employees || []);
+    saveManpowerMeta_(data.updatedBy || "Unknown User", data.updatedAt || "");
     return json_({ success: true, action: "saveManpowerBoard" });
   }
 
@@ -284,6 +286,20 @@ if (data.action === "addMaterialCategory") {
 function doGet(e) {
   const action = String((e && e.parameter && e.parameter.action) || "").trim();
 
+  // Dedicated shared Manpower metadata write. Using GET here gives the
+  // front end a real JSON response so it can verify the save succeeded.
+  if (action === "saveManpowerMeta") {
+    const updatedBy = String((e.parameter && e.parameter.updatedBy) || "Unknown User");
+    const updatedAt = String((e.parameter && e.parameter.updatedAt) || "");
+    const meta = saveManpowerMeta_(updatedBy, updatedAt);
+    return json_({
+      success: true,
+      action: "saveManpowerMeta",
+      lastUpdated: meta.lastUpdated,
+      lastUpdatedBy: meta.lastUpdatedBy
+    });
+  }
+
   if (action === "projectPermit") return json_({ success: true, permit: getProjectPermit_(e.parameter.job || "") });
   if (action === "projectPermits") return json_({ success: true, permits: getProjectPermits_(e.parameter.job || "") });
   if (action === "projectSubcontractors") return json_({ success: true, subcontractors: getProjectSubcontractors_(e.parameter.job || "") });
@@ -294,7 +310,16 @@ function doGet(e) {
 
   if (action === "rentals") return json_({ success: true, rentals: getRentals_() });
   if (action === "rentalItems") return json_({ success: true, rentalItems: getRentalItems_() });
-  if (action === "manpowerBoard") return json_({ success: true, employees: getManpowerEmployees_(), jobs: getManpowerJobs_() });
+  if (action === "manpowerBoard") {
+    const meta = getManpowerMeta_();
+    return json_({
+      success: true,
+      employees: getManpowerEmployees_(),
+      jobs: getManpowerJobs_(),
+      lastUpdated: meta.lastUpdated,
+      lastUpdatedBy: meta.lastUpdatedBy
+    });
+  }
 
   if (action === "materials") {
     return json_({ success: true, materials: getMaterials_(), materialCategories: getMaterialCategories_() });
@@ -419,6 +444,51 @@ function sendRentalRequestEmail_(data) {
 }
 
 
+
+function getManpowerMetaSheet_() {
+  return getOrCreateSheet_(MANPOWER_META_SHEET_NAME, ["Last Updated", "Updated By"]);
+}
+
+function getManpowerMeta_() {
+  // The sheet is the shared source of truth so the record is visible and
+  // identical for every FieldOps device.
+  const sheet = getManpowerMetaSheet_();
+  if (sheet.getLastRow() < 2) {
+    return { lastUpdated: "", lastUpdatedBy: "" };
+  }
+
+  const values = sheet.getRange(2, 1, 1, 2).getValues()[0];
+  const rawDate = values[0];
+  let lastUpdated = "";
+  if (rawDate instanceof Date && !isNaN(rawDate.getTime())) {
+    lastUpdated = rawDate.toISOString();
+  } else if (rawDate) {
+    const parsed = new Date(rawDate);
+    lastUpdated = !isNaN(parsed.getTime()) ? parsed.toISOString() : String(rawDate);
+  }
+
+  return {
+    lastUpdated: lastUpdated,
+    lastUpdatedBy: String(values[1] || "")
+  };
+}
+
+function saveManpowerMeta_(updatedBy, updatedAt) {
+  const sheet = getManpowerMetaSheet_();
+  let timestamp = new Date();
+  if (updatedAt) {
+    const supplied = new Date(updatedAt);
+    if (!isNaN(supplied.getTime())) timestamp = supplied;
+  }
+
+  sheet.getRange(2, 1, 1, 2).setValues([[timestamp, String(updatedBy || "Unknown User")]]);
+  SpreadsheetApp.flush();
+
+  return {
+    lastUpdated: timestamp.toISOString(),
+    lastUpdatedBy: String(updatedBy || "Unknown User")
+  };
+}
 
 function getManpowerEmployeesSheet_() {
   return getOrCreateSheet_(MANPOWER_EMPLOYEES_SHEET_NAME, ["Employee", "Position", "Assigned To", "Active"]);

@@ -329,74 +329,6 @@ let qtyResetLock = {};
 let customDrafts = {};
 let materialNoteDrafts = {};
 let cart = [];
-const SAVED_CART_KEY = "fieldOpsSavedCartV1";
-
-function saveCartToStorage() {
-  try {
-    const payload = {
-      cart,
-      job: currentSelectedJob || localStorage.getItem("materialOrderSelectedJob") || "",
-      notes: (document.getElementById("notes") || {}).value || "",
-      savedAt: new Date().toISOString()
-    };
-    localStorage.setItem(SAVED_CART_KEY, JSON.stringify(payload));
-  } catch (error) {
-    console.warn("Could not save cart.", error);
-  }
-}
-
-function restoreCartFromStorage() {
-  try {
-    const saved = localStorage.getItem(SAVED_CART_KEY);
-    if (!saved) return;
-    const payload = JSON.parse(saved);
-    if (!payload || !Array.isArray(payload.cart)) return;
-
-    cart = payload.cart.filter(item => item && item.name && Number(item.qty || 0) > 0);
-
-    if (payload.job) {
-      currentSelectedJob = payload.job;
-      localStorage.setItem("materialOrderSelectedJob", payload.job);
-      const selectedJob = document.getElementById("selectedJob");
-      if (selectedJob) selectedJob.value = payload.job;
-    }
-
-    const notes = document.getElementById("notes");
-    if (notes && payload.notes) notes.value = payload.notes;
-  } catch (error) {
-    console.warn("Could not restore saved cart.", error);
-  }
-}
-
-function clearSavedCart() {
-  try {
-    localStorage.removeItem(SAVED_CART_KEY);
-  } catch (error) {
-    console.warn("Could not clear saved cart.", error);
-  }
-}
-
-function updateMaterialRowAfterAdd(row, button) {
-  if (!row) return;
-  const input = row.querySelector(".qty-number-input");
-  if (input) {
-    input.value = 0;
-    input.defaultValue = 0;
-    input.setAttribute("value", "0");
-  }
-
-  if (button) {
-    const original = button.dataset.originalText || button.textContent;
-    button.dataset.originalText = original;
-    button.textContent = "✓ " + fieldOpsTranslateText("Added");
-    button.classList.add("just-added");
-    setTimeout(() => {
-      button.textContent = button.dataset.originalText || fieldOpsTranslateText("Add to Cart");
-      button.classList.remove("just-added");
-    }, 900);
-  }
-}
-
 let selectedPriority = "Normal";
 let currentSelectedJob = localStorage.getItem("materialOrderSelectedJob") || "";
 
@@ -739,16 +671,13 @@ function addToCart(itemName) {
   draftQty[key] = 0;
   if (item.custom) customDrafts[key] = "";
   materialNoteDrafts[key] = "";
-  saveCartToStorage();
+  renderMaterials();
   renderCartPreview();
-  updateFloatingCartButton();
 }
 
 function removeCartItem(cartKey) {
   cart = cart.filter(item => item.cartKey !== cartKey);
-  saveCartToStorage();
   renderCartPreview();
-  updateFloatingCartButton();
 }
 
 function displayName(item) {
@@ -767,7 +696,6 @@ function renderCartPreview() {
   if (cart.length === 0) {
     previewEl.className = "cart-preview-empty";
     previewEl.innerHTML = fieldOpsSafeTranslate("Nothing added yet.");
-    updateFloatingCartButton();
     return;
   }
 
@@ -952,9 +880,17 @@ function renderMaterials() {
       }
 
       addToCart(button.dataset.item);
+      forceResetAllQtyInputs();
+
+      // Force this item back to zero after adding.
       draftQty[key] = 0;
-      qtyResetLock[key] = false;
-      updateMaterialRowAfterAdd(row, button);
+      qtyResetLock[key] = true;
+
+      setTimeout(() => {
+        draftQty[key] = 0;
+        qtyResetLock[key] = false;
+        renderMaterials();
+      }, 50);
     });
   });
 }
@@ -1197,7 +1133,6 @@ async function sendEmail() {
   await saveOrderToGoogleSheet(payload);
 
   cart = [];
-  clearSavedCart();
   renderCartPreview();
   document.getElementById("notes").value = "";
 
@@ -2571,6 +2506,34 @@ async function submitDailyReport() {
 /* V83 Manpower Board - Option B */
 let manpowerEmployees = [];
 let manpowerJobs = [];
+let manpowerLastUpdated = "";
+let manpowerLastUpdatedBy = "";
+const MANPOWER_META_STORAGE_KEY = "fieldOpsManpowerLastUpdate";
+
+function loadCachedManpowerMeta() {
+  try {
+    const raw = localStorage.getItem(MANPOWER_META_STORAGE_KEY);
+    if (!raw) return;
+    const cached = JSON.parse(raw);
+    if (cached && cached.lastUpdated) manpowerLastUpdated = String(cached.lastUpdated);
+    if (cached && cached.lastUpdatedBy) manpowerLastUpdatedBy = String(cached.lastUpdatedBy);
+  } catch (error) {
+    console.warn("Could not load cached Manpower update info.", error);
+  }
+}
+
+function cacheManpowerMeta(lastUpdated, lastUpdatedBy) {
+  try {
+    localStorage.setItem(MANPOWER_META_STORAGE_KEY, JSON.stringify({
+      lastUpdated: String(lastUpdated || ""),
+      lastUpdatedBy: String(lastUpdatedBy || "")
+    }));
+  } catch (error) {
+    console.warn("Could not cache Manpower update info.", error);
+  }
+}
+
+loadCachedManpowerMeta();
 let draggedManpowerEmployee = "";
 let manpowerAutoScrollTimer = null;
 let manpowerLastDragY = 0;
@@ -2650,6 +2613,13 @@ async function loadManpowerBoard() {
 
     if (Array.isArray(data.jobs) && data.jobs.length) manpowerJobs = mergeManpowerJobs(data.jobs);
     if (Array.isArray(data.employees)) manpowerEmployees = data.employees;
+    // Keep the locally saved update when the deployed Google Script is older
+    // or returns blank metadata. Only replace it with a real server value.
+    if (data.lastUpdated) {
+      manpowerLastUpdated = data.lastUpdated;
+      manpowerLastUpdatedBy = data.lastUpdatedBy || manpowerLastUpdatedBy || "";
+      cacheManpowerMeta(manpowerLastUpdated, manpowerLastUpdatedBy);
+    }
   } catch (error) {
     console.warn("Could not load Manpower board.", error);
   }
@@ -2659,6 +2629,16 @@ async function loadManpowerBoard() {
 
 async function saveManpowerBoard() {
   const url = typeof getGoogleAppsScriptUrl === "function" ? getGoogleAppsScriptUrl() : "";
+  const user = typeof getCurrentUser === "function" ? getCurrentUser() : null;
+  const updatedBy = String((user && (user.displayName || user.username || user.email)) || "Unknown User");
+  const updatedAt = new Date().toISOString();
+
+  // Update the board immediately so the field user gets instant feedback.
+  manpowerLastUpdated = updatedAt;
+  manpowerLastUpdatedBy = updatedBy;
+  cacheManpowerMeta(manpowerLastUpdated, manpowerLastUpdatedBy);
+  renderManpowerBoard();
+
   if (!url) return;
 
   try {
@@ -2669,9 +2649,29 @@ async function saveManpowerBoard() {
       body: JSON.stringify({
         action: "saveManpowerBoard",
         employees: manpowerEmployees,
-        jobs: mergeManpowerJobs(manpowerJobs)
+        jobs: mergeManpowerJobs(manpowerJobs),
+        updatedBy,
+        updatedAt
       })
     });
+
+    // Save the shared update record through a normal GET request too. Unlike
+    // the no-cors POST above, this gives us a readable response and confirms
+    // that the deployed Apps Script actually stored the metadata.
+    const metaUrl = url +
+      "?action=saveManpowerMeta" +
+      "&updatedBy=" + encodeURIComponent(updatedBy) +
+      "&updatedAt=" + encodeURIComponent(updatedAt) +
+      "&v=" + Date.now();
+    const metaResponse = await fetch(metaUrl, { cache: "no-store" });
+    const metaData = await metaResponse.json();
+    if (!metaData || metaData.success !== true || metaData.action !== "saveManpowerMeta") {
+      throw new Error("Shared Manpower update was not accepted by the deployed Apps Script.");
+    }
+    manpowerLastUpdated = metaData.lastUpdated || updatedAt;
+    manpowerLastUpdatedBy = metaData.lastUpdatedBy || updatedBy;
+    cacheManpowerMeta(manpowerLastUpdated, manpowerLastUpdatedBy);
+    renderManpowerBoard();
   } catch (error) {
     console.warn("Could not save Manpower board.", error);
   }
@@ -2805,6 +2805,19 @@ function buildManpowerMasonryColumns(jobs, employees, board) {
 
 function renderManpowerBoard() {
   const board = document.getElementById("manpowerBoard");
+  const lastUpdatedEl = document.getElementById("manpowerLastUpdated");
+  if (lastUpdatedEl) {
+    if (manpowerLastUpdated) {
+      let formatted = manpowerLastUpdated;
+      const parsed = new Date(manpowerLastUpdated);
+      if (!Number.isNaN(parsed.getTime())) {
+        formatted = parsed.toLocaleString([], { month: "numeric", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" });
+      }
+      lastUpdatedEl.textContent = `Last updated ${formatted}${manpowerLastUpdatedBy ? ` by ${manpowerLastUpdatedBy}` : ""}`;
+    } else {
+      lastUpdatedEl.textContent = "Last updated: No update recorded yet";
+    }
+  }
   if (!board) return;
 
   const totalOld = document.getElementById("manpowerTotalCount");
@@ -2995,9 +3008,6 @@ const bottomManpowerBtn = document.getElementById("bottomManpowerBtn");
   const submitBtn = document.getElementById("submitEmailBtn");
   if (submitBtn) submitBtn.addEventListener("click", sendEmail);
 
-  const notesInput = document.getElementById("notes");
-  if (notesInput) notesInput.addEventListener("input", saveCartToStorage);
-
   const reviewPrioritySelect = document.getElementById("reviewPrioritySelect");
   if (reviewPrioritySelect) {
     reviewPrioritySelect.addEventListener("change", () => {
@@ -3011,7 +3021,6 @@ const bottomManpowerBtn = document.getElementById("bottomManpowerBtn");
   renderJobs();
   renderCategories();
   renderMaterials();
-  restoreCartFromStorage();
   renderCartPreview();
   setTimeout(updatePriorityColor, 250);
 }
@@ -3167,10 +3176,9 @@ function updateFloatingCartButton() {
   }
 
   button.classList.remove("hidden");
-  const count = cart.reduce((sum, item) => sum + Number(item.qty || 0), 0);
   const rect = cartCard.getBoundingClientRect();
   const nearCart = rect.top < window.innerHeight * 0.45;
-  button.textContent = nearCart ? "Back To Top ↑" : `🛒 ${count} - Go To Cart ↓`;
+  button.textContent = nearCart ? "Back To Top ↑" : "Go To Cart ↓";
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -3235,11 +3243,11 @@ document.addEventListener("touchstart", event => {
 }, { passive: true });
 
 
-/* V57 reset after add cart touch - disabled to prevent mobile scroll jump after Add to Cart. */
+/* V57 reset after add cart touch */
 document.addEventListener("touchend", event => {
   const addBtn = event.target.closest(".add-cart-btn");
   if (!addBtn) return;
-  // Quantity is reset on the current row only. Do not rebuild the whole material list here.
+  setTimeout(forceResetAllQtyInputs, 500);
 }, { passive: true });
 
 /* V70 Google Sheets jobs source - shared jobs without app-data export */
